@@ -19,6 +19,7 @@ import {
   getTotalSalaryBudget,
   getEmployeesByBranch,
 } from '@/lib/employee-data';
+import { getTodayAttendance, getBranches, getEmployees, getAttendanceStats } from '@/lib/db';
 
 // Calculate real stats from employee data
 const realStats = {
@@ -47,15 +48,55 @@ const branchPresenceData = BRANCHES.map(branch => {
   };
 }).filter(b => b.total > 0);
 
-// Recent activity with real employee names
-const recentActivity = [
-  { id: '1', type: 'check_in', employee: 'Nodir Mahmudov', branch: 'C-Space Yunusabad', time: '09:02' },
-  { id: '2', type: 'check_in', employee: 'Sulhiya Aminova', branch: 'C-Space Labzak', time: '09:05' },
-  { id: '3', type: 'late', employee: 'Xushbaxt Abdusalomov', branch: 'C-Space Yunusabad', time: '09:18' },
-  { id: '4', type: 'check_in', employee: 'Zuxriddin Abduraxmonov', branch: 'C-Space Labzak', time: '09:00' },
-  { id: '5', type: 'check_out', employee: 'Durbek Shaymardanov', branch: 'C-Space Chust', time: '18:05' },
-  { id: '6', type: 'check_in', employee: 'Ubaydullo Pulat', branch: 'C-Space Maksim Gorkiy', time: '08:55' },
-];
+// Recent activity interface
+interface RecentActivityItem {
+  id: string;
+  type: 'check_in' | 'check_out' | 'late';
+  employee: string;
+  branch: string;
+  time: string;
+}
+
+// Function to fetch recent activity from database
+async function getRecentActivity(): Promise<RecentActivityItem[]> {
+  const attendance = await getTodayAttendance();
+
+  // Convert attendance records to activity items
+  const activities: RecentActivityItem[] = [];
+
+  attendance.forEach((record: any) => {
+    const employeeName = record.employees?.full_name || 'Unknown';
+
+    // Add check-in activity
+    if (record.check_in) {
+      const checkInBranch = record.check_in_branch?.name || '-';
+      activities.push({
+        id: `${record.id}-in`,
+        type: record.status === 'late' ? 'late' : 'check_in',
+        employee: employeeName,
+        branch: checkInBranch,
+        time: record.check_in,
+      });
+    }
+
+    // Add check-out activity
+    if (record.check_out) {
+      const checkOutBranch = record.check_out_branch?.name || record.check_in_branch?.name || '-';
+      activities.push({
+        id: `${record.id}-out`,
+        type: 'check_out',
+        employee: employeeName,
+        branch: checkOutBranch,
+        time: record.check_out,
+      });
+    }
+  });
+
+  // Sort by time descending and take first 6
+  return activities
+    .sort((a, b) => b.time.localeCompare(a.time))
+    .slice(0, 6);
+}
 
 function StatCard({
   title,
@@ -130,7 +171,7 @@ function BranchPresenceCard({
 function RecentActivityCard({
   activities,
 }: {
-  activities: typeof recentActivity;
+  activities: RecentActivityItem[];
 }) {
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -227,10 +268,16 @@ export default async function DashboardPage() {
     return new Intl.NumberFormat('uz-UZ').format(amount) + ' UZS';
   };
 
-  // Calculate simulated present/late/absent for demo
-  const presentToday = Math.floor(realStats.totalEmployees * 0.8);
-  const lateToday = Math.floor(realStats.totalEmployees * 0.05);
-  const absentToday = realStats.totalEmployees - presentToday - lateToday;
+  // Fetch real attendance data from Supabase
+  const [attendanceStats, recentActivity] = await Promise.all([
+    getAttendanceStats(),
+    getRecentActivity(),
+  ]);
+
+  // Use real stats from database
+  const presentToday = attendanceStats.present;
+  const lateToday = attendanceStats.late;
+  const absentToday = attendanceStats.absent;
 
   return (
     <div>
