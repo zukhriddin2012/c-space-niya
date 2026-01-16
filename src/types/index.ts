@@ -14,25 +14,34 @@ export interface User {
   updatedAt: Date;
 }
 
+export type EmployeeLevel = 'junior' | 'middle' | 'senior' | 'executive';
+
 export interface Employee {
   id: string;
   employeeId: string;
   fullName: string;
-  email: string;
-  phone: string;
+  email?: string;
+  phone?: string;
   dateOfBirth?: Date;
   gender?: 'male' | 'female' | 'other';
   photo?: string;
-  departmentId: string;
+  departmentId?: string;
   position: string;
+  level: EmployeeLevel;
   branchId: string;
-  startDate: Date;
+  branchLocation?: string; // Specific work location (e.g., Yunusabad, Muqimiy)
+  startDate?: Date;
   employmentType: 'full_time' | 'part_time' | 'contract' | 'intern';
-  baseSalary: number;
+  baseSalary: number; // Bazaviy oylik in UZS
+  advanceBank?: number; // Avans (Bank)
+  advanceCash?: number; // Avans (Naqd)
+  salaryBank?: number; // Oylik (Bank)
+  salaryCash?: number; // Oylik (Naqd)
   bankAccount?: string;
   taxId?: string;
   telegramId?: string;
-  status: 'active' | 'inactive' | 'terminated';
+  notes?: string; // Any notes like "Will be fired from Nov."
+  status: 'active' | 'inactive' | 'terminated' | 'probation';
   createdAt: Date;
   updatedAt: Date;
 }

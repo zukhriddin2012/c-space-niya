@@ -1,102 +1,23 @@
 import { getSession } from '@/lib/auth-server';
 import { hasPermission } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import { Plus, Search, Filter, MoreVertical, Mail, Phone } from 'lucide-react';
+import { Plus, Search, Filter, MoreVertical, Briefcase, MapPin } from 'lucide-react';
 import Link from 'next/link';
-
-// Demo employee data
-const demoEmployees = [
-  {
-    id: '1',
-    employeeId: 'EMP-001',
-    fullName: 'Aziz Karimov',
-    email: 'aziz.karimov@cspace.uz',
-    phone: '+998 90 123 4567',
-    position: 'Branch Manager',
-    department: 'Operations',
-    branch: 'C-Space Airport',
-    status: 'active',
-    startDate: '2023-06-15',
-  },
-  {
-    id: '2',
-    employeeId: 'EMP-002',
-    fullName: 'Dilnoza Rustamova',
-    email: 'dilnoza.r@cspace.uz',
-    phone: '+998 91 234 5678',
-    position: 'HR Specialist',
-    department: 'Human Resources',
-    branch: 'C-Space Beruniy',
-    status: 'active',
-    startDate: '2023-08-20',
-  },
-  {
-    id: '3',
-    employeeId: 'EMP-003',
-    fullName: 'Bobur Aliyev',
-    email: 'bobur.a@cspace.uz',
-    phone: '+998 93 345 6789',
-    position: 'Community Manager',
-    department: 'Operations',
-    branch: 'C-Space Labzak',
-    status: 'active',
-    startDate: '2024-01-10',
-  },
-  {
-    id: '4',
-    employeeId: 'EMP-004',
-    fullName: 'Madina Tosheva',
-    email: 'madina.t@cspace.uz',
-    phone: '+998 94 456 7890',
-    position: 'Receptionist',
-    department: 'Operations',
-    branch: 'C-Space Muqumiy',
-    status: 'active',
-    startDate: '2024-03-05',
-  },
-  {
-    id: '5',
-    employeeId: 'EMP-005',
-    fullName: 'Jasur Normatov',
-    email: 'jasur.n@cspace.uz',
-    phone: '+998 95 567 8901',
-    position: 'Maintenance',
-    department: 'Facilities',
-    branch: 'C-Space Chust',
-    status: 'active',
-    startDate: '2024-02-15',
-  },
-  {
-    id: '6',
-    employeeId: 'EMP-006',
-    fullName: 'Gulnora Ibragimova',
-    email: 'gulnora.i@cspace.uz',
-    phone: '+998 97 678 9012',
-    position: 'Marketing Specialist',
-    department: 'Marketing',
-    branch: 'C-Space Airport',
-    status: 'active',
-    startDate: '2023-11-01',
-  },
-  {
-    id: '7',
-    employeeId: 'EMP-007',
-    fullName: 'Sardor Yusupov',
-    email: 'sardor.y@cspace.uz',
-    phone: '+998 99 789 0123',
-    position: 'IT Support',
-    department: 'IT',
-    branch: 'C-Space Yunusabad',
-    status: 'inactive',
-    startDate: '2023-09-20',
-  },
-];
+import { EMPLOYEES, BRANCHES, getActiveEmployeesCount, getTotalSalaryBudget } from '@/lib/employee-data';
 
 function EmployeeStatusBadge({ status }: { status: string }) {
   const statusStyles = {
     active: 'bg-green-50 text-green-700',
     inactive: 'bg-gray-50 text-gray-700',
     terminated: 'bg-red-50 text-red-700',
+    probation: 'bg-yellow-50 text-yellow-700',
+  };
+
+  const statusLabels = {
+    active: 'Active',
+    inactive: 'Inactive',
+    terminated: 'Terminated',
+    probation: 'Probation',
   };
 
   return (
@@ -105,9 +26,33 @@ function EmployeeStatusBadge({ status }: { status: string }) {
         statusStyles[status as keyof typeof statusStyles] || statusStyles.inactive
       }`}
     >
-      {status.charAt(0).toUpperCase() + status.slice(1)}
+      {statusLabels[status as keyof typeof statusLabels] || status}
     </span>
   );
+}
+
+function LevelBadge({ level }: { level: string }) {
+  const levelStyles = {
+    junior: 'bg-blue-50 text-blue-700',
+    middle: 'bg-purple-50 text-purple-700',
+    senior: 'bg-indigo-50 text-indigo-700',
+    executive: 'bg-pink-50 text-pink-700',
+  };
+
+  return (
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+        levelStyles[level as keyof typeof levelStyles] || levelStyles.junior
+      }`}
+    >
+      {level.charAt(0).toUpperCase() + level.slice(1)}
+    </span>
+  );
+}
+
+function formatSalary(amount: number): string {
+  if (amount === 0) return '-';
+  return new Intl.NumberFormat('uz-UZ').format(amount) + ' UZS';
 }
 
 export default async function EmployeesPage() {
@@ -125,6 +70,17 @@ export default async function EmployeesPage() {
   const canCreateEmployee = hasPermission(user.role, 'create_employee');
   const canEditEmployee = hasPermission(user.role, 'edit_employee');
 
+  // Filter out terminated employees by default
+  const activeEmployees = EMPLOYEES.filter(emp => emp.status !== 'terminated');
+  const totalEmployees = getActiveEmployeesCount();
+  const totalBudget = getTotalSalaryBudget();
+
+  // Get branch name helper
+  const getBranchName = (branchId: string) => {
+    const branch = BRANCHES.find(b => b.id === branchId);
+    return branch?.name || branchId;
+  };
+
   return (
     <div>
       {/* Header */}
@@ -132,7 +88,7 @@ export default async function EmployeesPage() {
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Employees</h1>
           <p className="text-gray-500 mt-1">
-            Manage your workforce across all branches
+            {totalEmployees} active employees • Total budget: {formatSalary(totalBudget)}/month
           </p>
         </div>
         {canCreateEmployee && (
@@ -164,27 +120,27 @@ export default async function EmployeesPage() {
           </div>
           <select className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none">
             <option value="">All Branches</option>
-            <option value="airport">C-Space Airport</option>
-            <option value="beruniy">C-Space Beruniy</option>
-            <option value="chust">C-Space Chust</option>
-            <option value="labzak">C-Space Labzak</option>
-            <option value="muqumiy">C-Space Muqumiy</option>
-            <option value="yunusabad">C-Space Yunusabad</option>
-            <option value="elbek">C-Space Elbek</option>
+            {BRANCHES.map(branch => (
+              <option key={branch.id} value={branch.id}>{branch.name}</option>
+            ))}
           </select>
           <select className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none">
-            <option value="">All Departments</option>
-            <option value="operations">Operations</option>
-            <option value="hr">Human Resources</option>
-            <option value="marketing">Marketing</option>
-            <option value="it">IT</option>
-            <option value="facilities">Facilities</option>
+            <option value="">All Levels</option>
+            <option value="junior">Junior</option>
+            <option value="middle">Middle</option>
+            <option value="senior">Senior</option>
+            <option value="executive">Executive</option>
+          </select>
+          <select className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none">
+            <option value="">All Types</option>
+            <option value="full_time">Full-time</option>
+            <option value="part_time">Part-time</option>
           </select>
           <select className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none">
             <option value="">All Status</option>
             <option value="active">Active</option>
+            <option value="probation">Probation</option>
             <option value="inactive">Inactive</option>
-            <option value="terminated">Terminated</option>
           </select>
           <button className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
             <Filter size={18} />
@@ -202,13 +158,16 @@ export default async function EmployeesPage() {
                 Employee
               </th>
               <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Position
+                Position / Level
               </th>
               <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Branch
               </th>
               <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Contact
+                Type
+              </th>
+              <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Base Salary
               </th>
               <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
@@ -221,7 +180,7 @@ export default async function EmployeesPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {demoEmployees.map((employee) => (
+            {activeEmployees.map((employee) => (
               <tr key={employee.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
@@ -237,32 +196,38 @@ export default async function EmployeesPage() {
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <p className="text-gray-900">{employee.position}</p>
-                  <p className="text-sm text-gray-500">{employee.department}</p>
-                </td>
-                <td className="px-6 py-4">
-                  <p className="text-gray-900">{employee.branch}</p>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex flex-col gap-1">
-                    <a
-                      href={`mailto:${employee.email}`}
-                      className="inline-flex items-center gap-1.5 text-sm text-gray-600 hover:text-purple-600"
-                    >
-                      <Mail size={14} />
-                      {employee.email}
-                    </a>
-                    <a
-                      href={`tel:${employee.phone}`}
-                      className="inline-flex items-center gap-1.5 text-sm text-gray-600 hover:text-purple-600"
-                    >
-                      <Phone size={14} />
-                      {employee.phone}
-                    </a>
+                  <div className="flex items-center gap-2">
+                    <Briefcase size={14} className="text-gray-400" />
+                    <span className="text-gray-900">{employee.position}</span>
+                  </div>
+                  <div className="mt-1">
+                    <LevelBadge level={employee.level} />
                   </div>
                 </td>
                 <td className="px-6 py-4">
+                  <div className="flex items-center gap-2">
+                    <MapPin size={14} className="text-gray-400" />
+                    <span className="text-gray-900">{getBranchName(employee.branchId)}</span>
+                  </div>
+                  {employee.branchLocation && employee.branchLocation !== 'All' && (
+                    <p className="text-sm text-gray-500 mt-0.5">{employee.branchLocation}</p>
+                  )}
+                </td>
+                <td className="px-6 py-4">
+                  <span className={`text-sm ${employee.employmentType === 'full_time' ? 'text-gray-900' : 'text-gray-500'}`}>
+                    {employee.employmentType === 'full_time' ? 'Full-time' : 'Part-time'}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-right">
+                  <span className="font-medium text-gray-900">{formatSalary(employee.baseSalary)}</span>
+                </td>
+                <td className="px-6 py-4">
                   <EmployeeStatusBadge status={employee.status} />
+                  {employee.notes && (
+                    <p className="text-xs text-gray-500 mt-1 max-w-[150px] truncate" title={employee.notes}>
+                      {employee.notes}
+                    </p>
+                  )}
                 </td>
                 {canEditEmployee && (
                   <td className="px-6 py-4 text-right">
@@ -280,8 +245,8 @@ export default async function EmployeesPage() {
         <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50">
           <p className="text-sm text-gray-500">
             Showing <span className="font-medium">1</span> to{' '}
-            <span className="font-medium">{demoEmployees.length}</span> of{' '}
-            <span className="font-medium">{demoEmployees.length}</span> employees
+            <span className="font-medium">{activeEmployees.length}</span> of{' '}
+            <span className="font-medium">{activeEmployees.length}</span> employees
           </p>
           <div className="flex gap-2">
             <button
