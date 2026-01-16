@@ -1,25 +1,45 @@
 import { getSession } from '@/lib/auth-server';
 import { hasPermission } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import { Plus, MapPin, Users, Settings, CheckCircle, Clock, Wallet } from 'lucide-react';
+import { Plus, MapPin, Users, CheckCircle, Clock, Wallet, Edit, Circle } from 'lucide-react';
 import Link from 'next/link';
-import { BRANCHES, EMPLOYEES, getEmployeesByBranch } from '@/lib/employee-data';
+import { getBranches, getEmployees, getTodayAttendance } from '@/lib/db';
 
-// Build branch data with real employee counts and salary budgets
-const branchesWithStats = BRANCHES.map(branch => {
-  const employees = getEmployeesByBranch(branch.id);
-  const activeEmployees = employees.filter(e => e.status !== 'terminated');
-  const salaryBudget = activeEmployees.reduce((sum, e) => sum + e.baseSalary, 0);
-  // Simulate ~80% present for demo
-  const presentToday = Math.floor(activeEmployees.length * 0.8);
+interface BranchWithStats {
+  id: string;
+  name: string;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  geofence_radius: number;
+  isActive: boolean;
+  totalEmployees: number;
+  presentToday: number;
+  salaryBudget: number;
+}
 
-  return {
-    ...branch,
-    totalEmployees: activeEmployees.length,
-    presentToday,
-    salaryBudget,
-  };
-});
+// Fetch branch data with employee counts
+async function getBranchesWithStats(): Promise<BranchWithStats[]> {
+  const [branches, employees, attendance] = await Promise.all([
+    getBranches(),
+    getEmployees(),
+    getTodayAttendance(),
+  ]);
+
+  return branches.map(branch => {
+    const branchEmployees = employees.filter(e => e.branch_id === branch.id);
+    const salaryBudget = branchEmployees.reduce((sum, e) => sum + (e.salary || 0), 0);
+    const presentToday = attendance.filter(a => a.check_in_branch_id === branch.id).length;
+
+    return {
+      ...branch,
+      isActive: branchEmployees.length > 0,
+      totalEmployees: branchEmployees.length,
+      presentToday,
+      salaryBudget,
+    };
+  });
+}
 
 function formatSalary(amount: number): string {
   if (amount === 0) return '-';
@@ -31,13 +51,15 @@ function BranchCard({
   canManage,
   showSalary,
 }: {
-  branch: (typeof branchesWithStats)[0];
+  branch: BranchWithStats;
   canManage: boolean;
   showSalary: boolean;
 }) {
   const presencePercentage = branch.totalEmployees > 0
     ? Math.round((branch.presentToday / branch.totalEmployees) * 100)
     : 0;
+
+  const hasGeofence = branch.latitude && branch.longitude;
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
@@ -48,7 +70,7 @@ function BranchCard({
           </div>
           <div>
             <h3 className="font-semibold text-gray-900">{branch.name}</h3>
-            <p className="text-sm text-gray-500">{branch.address}</p>
+            <p className="text-sm text-gray-500">{branch.address || 'No address'}</p>
           </div>
         </div>
         {branch.isActive ? (
@@ -58,7 +80,7 @@ function BranchCard({
           </span>
         ) : (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-50 text-gray-600 rounded-full text-xs font-medium">
-            Inactive
+            No Staff
           </span>
         )}
       </div>
@@ -97,28 +119,35 @@ function BranchCard({
       </div>
 
       {/* Presence Bar */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between text-sm mb-1">
-          <span className="text-gray-500">Today&apos;s Presence</span>
-          <span className="font-medium text-gray-900">{presencePercentage}%</span>
+      {branch.totalEmployees > 0 && (
+        <div className="mb-4">
+          <div className="flex items-center justify-between text-sm mb-1">
+            <span className="text-gray-500">Today&apos;s Presence</span>
+            <span className="font-medium text-gray-900">{presencePercentage}%</span>
+          </div>
+          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all ${
+                presencePercentage >= 80
+                  ? 'bg-green-500'
+                  : presencePercentage >= 50
+                  ? 'bg-yellow-500'
+                  : 'bg-red-500'
+              }`}
+              style={{ width: `${presencePercentage}%` }}
+            />
+          </div>
         </div>
-        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-all ${
-              presencePercentage >= 80
-                ? 'bg-green-500'
-                : presencePercentage >= 50
-                ? 'bg-yellow-500'
-                : 'bg-red-500'
-            }`}
-            style={{ width: `${presencePercentage}%` }}
-          />
-        </div>
-      </div>
+      )}
 
       {/* Geofence Info */}
-      <div className="text-sm text-gray-500 mb-4">
-        <span>Geofence: {branch.geofenceRadius}m radius</span>
+      <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+        <Circle size={14} className={hasGeofence ? 'text-green-500' : 'text-gray-300'} />
+        {hasGeofence ? (
+          <span>Geofence: {branch.geofence_radius}m radius</span>
+        ) : (
+          <span className="text-orange-500">No geofence configured</span>
+        )}
       </div>
 
       {/* Actions */}
@@ -127,12 +156,15 @@ function BranchCard({
           href={`/branches/${branch.id}`}
           className="flex-1 px-4 py-2 text-center text-sm font-medium text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
         >
-          View Details
+          {canManage ? 'Edit Settings' : 'View Details'}
         </Link>
         {canManage && (
-          <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-            <Settings size={18} />
-          </button>
+          <Link
+            href={`/branches/${branch.id}`}
+            className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+          >
+            <Edit size={18} />
+          </Link>
         )}
       </div>
     </div>
@@ -154,11 +186,20 @@ export default async function BranchesPage() {
   const canManageBranches = hasPermission(user.role, 'manage_branches');
   const canViewSalaries = user.role === 'general_manager' || user.role === 'ceo';
 
-  // Filter to only show branches with employees
-  const activeBranches = branchesWithStats.filter(b => b.totalEmployees > 0);
-  const totalEmployees = activeBranches.reduce((sum, b) => sum + b.totalEmployees, 0);
-  const totalPresent = activeBranches.reduce((sum, b) => sum + b.presentToday, 0);
-  const totalSalaryBudget = activeBranches.reduce((sum, b) => sum + b.salaryBudget, 0);
+  // Fetch real branch data from Supabase
+  const branchesWithStats = await getBranchesWithStats();
+
+  // Sort: branches with employees first, then by name
+  const sortedBranches = [...branchesWithStats].sort((a, b) => {
+    if (a.totalEmployees > 0 && b.totalEmployees === 0) return -1;
+    if (a.totalEmployees === 0 && b.totalEmployees > 0) return 1;
+    return a.name.localeCompare(b.name);
+  });
+
+  const activeBranches = sortedBranches.filter(b => b.totalEmployees > 0);
+  const totalEmployees = sortedBranches.reduce((sum, b) => sum + b.totalEmployees, 0);
+  const totalPresent = sortedBranches.reduce((sum, b) => sum + b.presentToday, 0);
+  const totalSalaryBudget = sortedBranches.reduce((sum, b) => sum + b.salaryBudget, 0);
 
   return (
     <div>
@@ -167,7 +208,7 @@ export default async function BranchesPage() {
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Branches</h1>
           <p className="text-gray-500 mt-1">
-            Manage C-Space coworking locations and track presence
+            Manage C-Space coworking locations and geofencing settings
           </p>
         </div>
         {canManageBranches && (
@@ -182,10 +223,10 @@ export default async function BranchesPage() {
       </div>
 
       {/* Summary Stats */}
-      <div className={`grid grid-cols-1 md:grid-cols-${canViewSalaries ? '5' : '4'} gap-4 mb-6`}>
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-6">
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <p className="text-sm text-gray-500">Total Branches</p>
-          <p className="text-2xl font-semibold text-gray-900 mt-1">{BRANCHES.length}</p>
+          <p className="text-2xl font-semibold text-gray-900 mt-1">{sortedBranches.length}</p>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <p className="text-sm text-gray-500">With Staff</p>
@@ -211,7 +252,7 @@ export default async function BranchesPage() {
 
       {/* Branch Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {activeBranches.map((branch) => (
+        {sortedBranches.map((branch) => (
           <BranchCard
             key={branch.id}
             branch={branch}
@@ -220,6 +261,23 @@ export default async function BranchesPage() {
           />
         ))}
       </div>
+
+      {sortedBranches.length === 0 && (
+        <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
+          <MapPin size={48} className="mx-auto text-gray-300 mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No branches yet</h3>
+          <p className="text-gray-500 mb-4">Get started by adding your first branch location.</p>
+          {canManageBranches && (
+            <Link
+              href="/branches/new"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors"
+            >
+              <Plus size={20} />
+              Add Branch
+            </Link>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -146,6 +146,125 @@ export async function getBranches(): Promise<Branch[]> {
   return data || [];
 }
 
+export async function getBranchById(id: string): Promise<Branch | null> {
+  if (!isSupabaseAdminConfigured()) {
+    const { branches } = await import('@/data/branches');
+    const branch = branches.find(b => b.id === id);
+    if (!branch) return null;
+    return {
+      id: branch.id,
+      name: branch.name,
+      address: branch.address,
+      latitude: branch.latitude || null,
+      longitude: branch.longitude || null,
+      geofence_radius: 100,
+    };
+  }
+
+  const { data, error } = await supabaseAdmin!
+    .from('branches')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    console.error('Error fetching branch:', error);
+    return null;
+  }
+
+  return data;
+}
+
+export async function createBranch(branch: {
+  name: string;
+  address: string;
+  latitude?: number;
+  longitude?: number;
+  geofence_radius?: number;
+}): Promise<{ success: boolean; branch?: Branch; error?: string }> {
+  if (!isSupabaseAdminConfigured()) {
+    return { success: false, error: 'Database not configured' };
+  }
+
+  const { data, error } = await supabaseAdmin!
+    .from('branches')
+    .insert({
+      name: branch.name,
+      address: branch.address,
+      latitude: branch.latitude || null,
+      longitude: branch.longitude || null,
+      geofence_radius: branch.geofence_radius || 100,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating branch:', error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, branch: data };
+}
+
+export async function updateBranch(
+  id: string,
+  updates: {
+    name?: string;
+    address?: string;
+    latitude?: number | null;
+    longitude?: number | null;
+    geofence_radius?: number;
+  }
+): Promise<{ success: boolean; branch?: Branch; error?: string }> {
+  if (!isSupabaseAdminConfigured()) {
+    return { success: false, error: 'Database not configured' };
+  }
+
+  const { data, error } = await supabaseAdmin!
+    .from('branches')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating branch:', error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, branch: data };
+}
+
+export async function deleteBranch(id: string): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseAdminConfigured()) {
+    return { success: false, error: 'Database not configured' };
+  }
+
+  // Check if branch has employees
+  const { data: employees } = await supabaseAdmin!
+    .from('employees')
+    .select('id')
+    .eq('branch_id', id)
+    .eq('status', 'active')
+    .limit(1);
+
+  if (employees && employees.length > 0) {
+    return { success: false, error: 'Cannot delete branch with active employees' };
+  }
+
+  const { error } = await supabaseAdmin!
+    .from('branches')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error deleting branch:', error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
+}
+
 // ============================================
 // ATTENDANCE
 // ============================================
