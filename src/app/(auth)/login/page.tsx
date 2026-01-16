@@ -59,11 +59,11 @@ export default function LoginPage() {
       {/* Logo */}
       <div className="mb-8 flex flex-col items-center">
         <Image
-          src="/logo.svg"
+          src="/logo-icon.svg"
           alt="C-Space Logo"
-          width={64}
-          height={64}
-          className="mb-4 rounded-2xl"
+          width={72}
+          height={80}
+          className="mb-4"
         />
         <h1 className="text-2xl font-semibold text-gray-900">C-Space HR</h1>
         <p className="text-gray-500 mt-1">Human Resources Platform</p>

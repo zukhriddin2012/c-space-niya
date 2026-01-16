@@ -117,11 +117,11 @@ export default function Sidebar({ user }: SidebarProps) {
       <div className="p-4 border-b border-gray-200">
         <Link href="/dashboard" className="flex items-center gap-3">
           <Image
-            src="/logo.svg"
+            src="/logo-icon.svg"
             alt="C-Space Logo"
             width={40}
-            height={40}
-            className="rounded-xl"
+            height={44}
+            className="flex-shrink-0"
           />
           <div>
             <h1 className="font-semibold text-gray-900">C-Space HR</h1>
