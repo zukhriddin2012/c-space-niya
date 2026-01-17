@@ -12,7 +12,7 @@ interface Employee {
   position: string;
   level: string;
   branch_id: string | null;
-  salary: number;
+  salary: number | null;
   phone: string | null;
   email: string | null;
   status: string;
