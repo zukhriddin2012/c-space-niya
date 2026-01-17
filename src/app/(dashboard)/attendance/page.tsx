@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { getBranches, getEmployees, getAttendanceByDate } from '@/lib/db';
 import AttendanceFilters from './AttendanceFilters';
+import AttendanceMap from '@/components/AttendanceMap';
 
 interface AttendanceRecord {
   id: string;
@@ -30,6 +31,9 @@ interface AttendanceRecord {
 interface Branch {
   id: string;
   name: string;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 // Fetch attendance data for a specific date
@@ -335,12 +339,37 @@ export default async function AttendancePage({
         </div>
       )}
 
-      {/* Branch Attendance Overview */}
+      {/* Interactive Attendance Map */}
+      {!isEmployee && branches.length > 0 && (
+        <div className="mb-6">
+          <AttendanceMap
+            branches={branches.map(branch => {
+              const branchAttendance = allAttendance.filter(a => a.branchId === branch.id);
+              return {
+                id: branch.id,
+                name: branch.name,
+                address: branch.address,
+                latitude: branch.latitude,
+                longitude: branch.longitude,
+                present: branchAttendance.filter(a => a.status === 'present').length,
+                late: branchAttendance.filter(a => a.status === 'late').length,
+                absent: branchAttendance.filter(a => a.status === 'absent').length,
+                earlyLeave: branchAttendance.filter(a => a.status === 'early_leave').length,
+                total: branchAttendance.length,
+              };
+            })}
+            height="380px"
+            selectedDate={selectedDate}
+          />
+        </div>
+      )}
+
+      {/* Branch Attendance Cards */}
       {!isEmployee && activeBranches.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
           <div className="flex items-center gap-2 mb-4">
             <MapPin size={20} className="text-purple-600" />
-            <h3 className="font-semibold text-gray-900">Branch Attendance</h3>
+            <h3 className="font-semibold text-gray-900">Branch Attendance Summary</h3>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {activeBranches.map(branch => (

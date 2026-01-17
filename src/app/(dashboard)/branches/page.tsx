@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { Plus, MapPin, Users, CheckCircle, Clock, Wallet, Edit, Circle } from 'lucide-react';
 import Link from 'next/link';
 import { getBranches, getEmployees, getTodayAttendance } from '@/lib/db';
+import BranchMap from '@/components/BranchMap';
 
 interface BranchWithStats {
   id: string;
@@ -248,6 +249,23 @@ export default async function BranchesPage() {
             <p className="text-lg font-semibold text-gray-900 mt-1">{formatSalary(totalSalaryBudget)}</p>
           </div>
         )}
+      </div>
+
+      {/* Interactive Map */}
+      <div className="mb-6">
+        <BranchMap
+          branches={sortedBranches.map(b => ({
+            id: b.id,
+            name: b.name,
+            address: b.address,
+            latitude: b.latitude,
+            longitude: b.longitude,
+            geofence_radius: b.geofence_radius,
+            totalEmployees: b.totalEmployees,
+            presentToday: b.presentToday,
+          }))}
+          height="450px"
+        />
       </div>
 
       {/* Branch Grid */}
