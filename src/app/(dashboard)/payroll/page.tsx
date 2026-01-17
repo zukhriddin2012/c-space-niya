@@ -1,8 +1,8 @@
 import { getSession } from '@/lib/auth-server';
 import { hasPermission } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import { Wallet, Download, Calendar, CheckCircle, Clock, AlertCircle, FileText } from 'lucide-react';
-import { getPayrollByMonth, getPayrollStats, getBranches } from '@/lib/db';
+import { Wallet, Download, CheckCircle, Clock, AlertCircle, FileText, Building2 } from 'lucide-react';
+import { getPayrollByMonth, getPayrollStats } from '@/lib/db';
 import PayrollFilters from './PayrollFilters';
 
 function PaymentStatusBadge({ status }: { status: string }) {
@@ -178,86 +178,85 @@ export default async function PayrollPage({
 
       {/* Payroll Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-200 bg-gray-50">
-              <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Employee
-              </th>
-              <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Period
-              </th>
-              <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Base Salary
-              </th>
-              <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Bonuses
-              </th>
-              <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Deductions
-              </th>
-              <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Net Amount
-              </th>
-              <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Payment Date
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {filteredPayroll.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
-                  <FileText size={48} className="mx-auto mb-4 text-gray-300" />
-                  <p>No payroll records found for {getMonthName(selectedMonth, selectedYear)}</p>
-                  <p className="text-sm mt-1">Add employees to see payroll data</p>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Employee
+                </th>
+                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Legal Entity
+                </th>
+                <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Gross
+                </th>
+                <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Tax (12%)
+                </th>
+                <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Net Payable
+                </th>
+                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Payment Date
+                </th>
               </tr>
-            ) : (
-              filteredPayroll.map((record) => (
-                <tr key={record.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                        <span className="text-purple-700 text-sm font-medium">
-                          {record.employee_name.charAt(0)}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">{record.employee_name}</p>
-                        <p className="text-xs text-gray-500">{record.employee_position}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {formatDate(periodStart)} - {formatDate(periodEnd)}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 text-right font-medium">
-                    {formatCurrency(record.base_salary)}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-green-600 text-right">
-                    {record.bonuses > 0 ? `+${formatCurrency(record.bonuses)}` : '-'}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-red-600 text-right">
-                    -{formatCurrency(record.deductions)}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-green-600 text-right font-semibold">
-                    {formatCurrency(record.net_salary)}
-                  </td>
-                  <td className="px-6 py-4">
-                    <PaymentStatusBadge status={record.status} />
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {formatDate(record.payment_date)}
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredPayroll.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                    <FileText size={48} className="mx-auto mb-4 text-gray-300" />
+                    <p>No payroll records found for {getMonthName(selectedMonth, selectedYear)}</p>
+                    <p className="text-sm mt-1">Add employee wages to see payroll data</p>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                filteredPayroll.map((record) => (
+                  <tr key={record.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                          <span className="text-purple-700 text-sm font-medium">
+                            {record.employee_name.charAt(0)}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">{record.employee_name}</p>
+                          <p className="text-xs text-gray-500">{record.employee_position}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <Building2 size={14} className="text-gray-400" />
+                        <span className="text-sm text-gray-600">{record.legal_entity}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900 text-right font-medium">
+                      {formatCurrency(record.gross_salary)}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-red-600 text-right">
+                      -{formatCurrency(record.deductions)}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-green-600 text-right font-semibold">
+                      {formatCurrency(record.net_salary)}
+                    </td>
+                    <td className="px-6 py-4">
+                      <PaymentStatusBadge status={record.status} />
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {formatDate(record.payment_date)}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
         {/* Pagination */}
         <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50">

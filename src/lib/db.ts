@@ -746,77 +746,90 @@ export interface PayrollRecord {
   employee_id: string;
   employee_name: string;
   employee_position: string;
+  legal_entity: string;
   month: number;
   year: number;
-  base_salary: number;
+  gross_salary: number;  // Before tax
   bonuses: number;
-  deductions: number;
-  net_salary: number;
+  deductions: number;    // Tax amount
+  net_salary: number;    // What employee receives (the amount you imported)
   status: 'draft' | 'approved' | 'paid';
   payment_date: string | null;
 }
 
+// Tax rate - 12% is added ON TOP of net salary
+const TAX_RATE = 0.12;
+
+// Calculate gross from net: gross = net / (1 - tax_rate) or net * 1.136 approximately
+// But since tax is ON TOP of net: gross = net + (net * tax_rate) = net * 1.12
+function calculateGrossFromNet(netSalary: number): number {
+  return Math.round(netSalary * (1 + TAX_RATE));
+}
+
+function calculateTaxFromNet(netSalary: number): number {
+  return Math.round(netSalary * TAX_RATE);
+}
+
 // Get all payroll records for a specific month/year
+// Uses employee_wages table (net salaries) as the source
 export async function getPayrollByMonth(year: number, month: number): Promise<PayrollRecord[]> {
   if (!isSupabaseAdminConfigured()) {
     return [];
   }
 
-  // Get all employees with their salaries
+  // Get all employees
   const employees = await getEmployees();
 
-  // Get payslips for this month
-  const { data: payslips, error } = await supabaseAdmin!
+  // Get all employee wages (this is the NET salary data you imported)
+  const { data: allWages, error: wagesError } = await supabaseAdmin!
+    .from('employee_wages')
+    .select('*, legal_entities(id, name, short_name)')
+    .eq('is_active', true);
+
+  if (wagesError) {
+    console.error('Error fetching wages:', wagesError);
+  }
+
+  // Get existing payslips for this month (to check status)
+  const { data: payslips, error: payslipsError } = await supabaseAdmin!
     .from('payslips')
     .select('*')
     .eq('year', year)
     .eq('month', month);
 
-  if (error) {
-    console.error('Error fetching payroll:', error);
+  if (payslipsError) {
+    console.error('Error fetching payslips:', payslipsError);
   }
 
   const payslipMap = new Map((payslips || []).map(p => [p.employee_id, p]));
+  const employeeMap = new Map(employees.map(e => [e.id, e]));
 
-  // Build payroll records - include all employees
-  const payrollRecords: PayrollRecord[] = employees.map(emp => {
-    const payslip = payslipMap.get(emp.id);
+  // Build payroll records from wages
+  const payrollRecords: PayrollRecord[] = (allWages || []).map(wage => {
+    const employee = employeeMap.get(wage.employee_id);
+    const payslip = payslipMap.get(wage.employee_id);
+    const netSalary = wage.wage_amount || 0;
+    const grossSalary = calculateGrossFromNet(netSalary);
+    const tax = calculateTaxFromNet(netSalary);
 
-    if (payslip) {
-      return {
-        id: payslip.id,
-        employee_id: emp.id,
-        employee_name: emp.full_name,
-        employee_position: emp.position,
-        month: payslip.month,
-        year: payslip.year,
-        base_salary: payslip.base_salary || emp.salary || 0,
-        bonuses: payslip.bonuses || 0,
-        deductions: payslip.deductions || 0,
-        net_salary: payslip.net_salary || (emp.salary || 0),
-        status: payslip.status,
-        payment_date: payslip.payment_date,
-      };
-    }
-
-    // No payslip yet - create pending record from employee salary
     return {
-      id: `pending-${emp.id}-${year}-${month}`,
-      employee_id: emp.id,
-      employee_name: emp.full_name,
-      employee_position: emp.position,
+      id: payslip?.id || `wage-${wage.id}-${year}-${month}`,
+      employee_id: wage.employee_id,
+      employee_name: employee?.full_name || 'Unknown',
+      employee_position: employee?.position || '',
+      legal_entity: wage.legal_entities?.short_name || wage.legal_entities?.name || '-',
       month,
       year,
-      base_salary: emp.salary || 0,
-      bonuses: 0,
-      deductions: Math.round((emp.salary || 0) * 0.12), // Default 12% deduction
-      net_salary: Math.round((emp.salary || 0) * 0.88),
-      status: 'draft' as const,
-      payment_date: null,
+      gross_salary: grossSalary,
+      bonuses: payslip?.bonuses || 0,
+      deductions: tax,
+      net_salary: netSalary,
+      status: payslip?.status || 'draft',
+      payment_date: payslip?.payment_date || null,
     };
   });
 
-  return payrollRecords.sort((a, b) => b.base_salary - a.base_salary);
+  return payrollRecords.sort((a, b) => b.net_salary - a.net_salary);
 }
 
 // Get payroll statistics for a month
@@ -824,7 +837,7 @@ export async function getPayrollStats(year: number, month: number) {
   const payroll = await getPayrollByMonth(year, month);
 
   return {
-    totalGross: payroll.reduce((sum, p) => sum + p.base_salary + p.bonuses, 0),
+    totalGross: payroll.reduce((sum, p) => sum + p.gross_salary + p.bonuses, 0),
     totalDeductions: payroll.reduce((sum, p) => sum + p.deductions, 0),
     totalNet: payroll.reduce((sum, p) => sum + p.net_salary, 0),
     paid: payroll.filter(p => p.status === 'paid').length,
