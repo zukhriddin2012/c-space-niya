@@ -272,9 +272,10 @@ export default function PaymentRequestsSection({
   const fillAllWage = () => {
     const newAmounts: Record<string, number> = {};
     payroll.forEach(p => {
-      // Wage = Net salary - advance amount for this record
-      const advance = advanceAmounts[p.id] || 0;
-      newAmounts[p.id] = Math.max(0, p.net_salary - advance);
+      // Wage = Net salary - paid advance - pending advance input
+      const paidAdvance = paidAdvances[p.employee_id] || 0;
+      const pendingAdvance = advanceAmounts[p.id] || 0;
+      newAmounts[p.id] = Math.max(0, p.net_salary - paidAdvance - pendingAdvance);
     });
     setWageAmounts(newAmounts);
   };
