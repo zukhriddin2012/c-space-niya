@@ -7,10 +7,12 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  Send,
   Loader2,
   ArrowRight,
   Search,
+  ChevronUp,
+  ChevronDown,
+  ChevronsUpDown,
 } from 'lucide-react';
 
 interface PayrollRecord {
@@ -63,6 +65,9 @@ interface PaymentRequestsSectionProps {
   canApprove: boolean;
 }
 
+type SortField = 'name' | 'position' | 'entity' | 'salary' | 'advance' | 'wage';
+type SortDirection = 'asc' | 'desc' | null;
+
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat('uz-UZ').format(amount) + ' UZS';
 }
@@ -98,6 +103,50 @@ function RequestStatusBadge({ status }: { status: string }) {
   );
 }
 
+// Sortable column header component
+function SortableHeader({
+  label,
+  field,
+  currentSort,
+  currentDirection,
+  onSort,
+  icon,
+  align = 'left',
+}: {
+  label: string;
+  field: SortField;
+  currentSort: SortField | null;
+  currentDirection: SortDirection;
+  onSort: (field: SortField) => void;
+  icon?: React.ReactNode;
+  align?: 'left' | 'right';
+}) {
+  const isActive = currentSort === field;
+
+  return (
+    <th
+      className={`px-4 py-2 text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none ${
+        align === 'right' ? 'text-right' : 'text-left'
+      }`}
+      onClick={() => onSort(field)}
+    >
+      <span className={`inline-flex items-center gap-1 ${align === 'right' ? 'justify-end' : ''}`}>
+        {icon}
+        {label}
+        <span className="ml-1">
+          {isActive && currentDirection === 'asc' ? (
+            <ChevronUp size={14} className="text-purple-600" />
+          ) : isActive && currentDirection === 'desc' ? (
+            <ChevronDown size={14} className="text-purple-600" />
+          ) : (
+            <ChevronsUpDown size={14} className="text-gray-300" />
+          )}
+        </span>
+      </span>
+    </th>
+  );
+}
+
 export default function PaymentRequestsSection({
   year,
   month,
@@ -113,22 +162,91 @@ export default function PaymentRequestsSection({
   const [creating, setCreating] = useState<'advance' | 'wage' | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
+  // Sorting state
+  const [sortField, setSortField] = useState<SortField | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+
   // Calculate totals
   const totalNetSalary = payroll.reduce((sum, p) => sum + p.net_salary, 0);
   const advancePaid = summary.advance.paidAmount;
   const wagePaid = summary.wage.paidAmount;
 
-  // Filter employees by search
-  const filteredPayroll = useMemo(() => {
-    if (!searchQuery.trim()) return payroll;
-    const query = searchQuery.toLowerCase();
-    return payroll.filter(
-      p =>
-        p.employee_name.toLowerCase().includes(query) ||
-        p.employee_position.toLowerCase().includes(query) ||
-        p.legal_entity.toLowerCase().includes(query)
-    );
-  }, [payroll, searchQuery]);
+  // Handle sort
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      // Cycle through: asc -> desc -> null
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else if (sortDirection === 'desc') {
+        setSortField(null);
+        setSortDirection(null);
+      } else {
+        setSortDirection('asc');
+      }
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  // Filter and sort employees
+  const filteredAndSortedPayroll = useMemo(() => {
+    let result = [...payroll];
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        p =>
+          p.employee_name.toLowerCase().includes(query) ||
+          p.employee_position.toLowerCase().includes(query) ||
+          p.legal_entity.toLowerCase().includes(query)
+      );
+    }
+
+    // Apply sorting
+    if (sortField && sortDirection) {
+      result.sort((a, b) => {
+        let aVal: string | number;
+        let bVal: string | number;
+
+        switch (sortField) {
+          case 'name':
+            aVal = a.employee_name.toLowerCase();
+            bVal = b.employee_name.toLowerCase();
+            break;
+          case 'position':
+            aVal = a.employee_position.toLowerCase();
+            bVal = b.employee_position.toLowerCase();
+            break;
+          case 'entity':
+            aVal = a.legal_entity.toLowerCase();
+            bVal = b.legal_entity.toLowerCase();
+            break;
+          case 'salary':
+            aVal = a.net_salary;
+            bVal = b.net_salary;
+            break;
+          case 'advance':
+            aVal = advanceAmounts[a.employee_id] || 0;
+            bVal = advanceAmounts[b.employee_id] || 0;
+            break;
+          case 'wage':
+            aVal = wageAmounts[a.employee_id] || 0;
+            bVal = wageAmounts[b.employee_id] || 0;
+            break;
+          default:
+            return 0;
+        }
+
+        if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    return result;
+  }, [payroll, searchQuery, sortField, sortDirection, advanceAmounts, wageAmounts]);
 
   // Calculate totals for input amounts
   const totalAdvanceInput = Object.values(advanceAmounts).reduce((sum, amt) => sum + (amt || 0), 0);
@@ -353,15 +471,28 @@ export default function PaymentRequestsSection({
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
             <h3 className="font-semibold text-gray-900">Create Payment Request</h3>
-            <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search employees..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-4 py-1.5 border border-gray-300 rounded-lg text-sm w-64"
-              />
+            <div className="flex items-center gap-3">
+              {sortField && (
+                <button
+                  onClick={() => {
+                    setSortField(null);
+                    setSortDirection(null);
+                  }}
+                  className="text-xs text-gray-500 hover:text-gray-700"
+                >
+                  Clear sort
+                </button>
+              )}
+              <div className="relative">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search employees..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 pr-4 py-1.5 border border-gray-300 rounded-lg text-sm w-64"
+                />
+              </div>
             </div>
           </div>
 
@@ -385,40 +516,71 @@ export default function PaymentRequestsSection({
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="text-left px-4 py-2 text-xs font-medium text-gray-500 uppercase">Employee</th>
-                  <th className="text-left px-4 py-2 text-xs font-medium text-gray-500 uppercase">Legal Entity</th>
-                  <th className="text-right px-4 py-2 text-xs font-medium text-gray-500 uppercase">Net Salary</th>
-                  <th className="text-right px-4 py-2 text-xs font-medium text-gray-500 uppercase w-40">
-                    <span className="inline-flex items-center gap-1">
-                      <Banknote size={14} className="text-orange-500" />
-                      Advance
-                    </span>
-                  </th>
-                  <th className="text-right px-4 py-2 text-xs font-medium text-gray-500 uppercase w-40">
-                    <span className="inline-flex items-center gap-1">
-                      <Wallet size={14} className="text-green-500" />
-                      Wage
-                    </span>
-                  </th>
+                  <SortableHeader
+                    label="Employee"
+                    field="name"
+                    currentSort={sortField}
+                    currentDirection={sortDirection}
+                    onSort={handleSort}
+                  />
+                  <SortableHeader
+                    label="Position"
+                    field="position"
+                    currentSort={sortField}
+                    currentDirection={sortDirection}
+                    onSort={handleSort}
+                  />
+                  <SortableHeader
+                    label="Legal Entity"
+                    field="entity"
+                    currentSort={sortField}
+                    currentDirection={sortDirection}
+                    onSort={handleSort}
+                  />
+                  <SortableHeader
+                    label="Net Salary"
+                    field="salary"
+                    currentSort={sortField}
+                    currentDirection={sortDirection}
+                    onSort={handleSort}
+                    align="right"
+                  />
+                  <SortableHeader
+                    label="Advance"
+                    field="advance"
+                    currentSort={sortField}
+                    currentDirection={sortDirection}
+                    onSort={handleSort}
+                    icon={<Banknote size={14} className="text-orange-500" />}
+                    align="right"
+                  />
+                  <SortableHeader
+                    label="Wage"
+                    field="wage"
+                    currentSort={sortField}
+                    currentDirection={sortDirection}
+                    onSort={handleSort}
+                    icon={<Wallet size={14} className="text-green-500" />}
+                    align="right"
+                  />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filteredPayroll.map(employee => {
+                {filteredAndSortedPayroll.map(employee => {
                   const advance = advanceAmounts[employee.employee_id] || 0;
                   const wage = wageAmounts[employee.employee_id] || 0;
-                  const remaining = employee.net_salary - advance - wage;
 
                   return (
                     <tr key={employee.employee_id} className="hover:bg-gray-50">
                       <td className="px-4 py-2">
                         <p className="font-medium text-gray-900 text-sm">{employee.employee_name}</p>
-                        <p className="text-xs text-gray-500">{employee.employee_position}</p>
                       </td>
+                      <td className="px-4 py-2 text-sm text-gray-500">{employee.employee_position}</td>
                       <td className="px-4 py-2 text-sm text-gray-600">{employee.legal_entity}</td>
                       <td className="px-4 py-2 text-sm text-gray-900 text-right font-medium">
                         {formatCurrency(employee.net_salary)}
                       </td>
-                      <td className="px-4 py-2">
+                      <td className="px-4 py-2 w-36">
                         <input
                           type="text"
                           value={advance > 0 ? formatNumber(advance) : ''}
@@ -427,7 +589,7 @@ export default function PaymentRequestsSection({
                           className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm text-right focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                         />
                       </td>
-                      <td className="px-4 py-2">
+                      <td className="px-4 py-2 w-36">
                         <input
                           type="text"
                           value={wage > 0 ? formatNumber(wage) : ''}
@@ -442,7 +604,7 @@ export default function PaymentRequestsSection({
               </tbody>
               <tfoot>
                 <tr className="border-t-2 border-gray-300 bg-gray-50 font-semibold">
-                  <td className="px-4 py-3 text-sm text-gray-700" colSpan={2}>
+                  <td className="px-4 py-3 text-sm text-gray-700" colSpan={3}>
                     Total ({payroll.length} employees)
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-900 text-right">
