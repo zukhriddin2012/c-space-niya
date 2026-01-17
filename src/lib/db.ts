@@ -740,6 +740,100 @@ export async function getPayslipsByEmployee(employeeId: string): Promise<Payslip
   return data || [];
 }
 
+// Extended payslip with employee info for payroll page
+export interface PayrollRecord {
+  id: string;
+  employee_id: string;
+  employee_name: string;
+  employee_position: string;
+  month: number;
+  year: number;
+  base_salary: number;
+  bonuses: number;
+  deductions: number;
+  net_salary: number;
+  status: 'draft' | 'approved' | 'paid';
+  payment_date: string | null;
+}
+
+// Get all payroll records for a specific month/year
+export async function getPayrollByMonth(year: number, month: number): Promise<PayrollRecord[]> {
+  if (!isSupabaseAdminConfigured()) {
+    return [];
+  }
+
+  // Get all employees with their salaries
+  const employees = await getEmployees();
+
+  // Get payslips for this month
+  const { data: payslips, error } = await supabaseAdmin!
+    .from('payslips')
+    .select('*')
+    .eq('year', year)
+    .eq('month', month);
+
+  if (error) {
+    console.error('Error fetching payroll:', error);
+  }
+
+  const payslipMap = new Map((payslips || []).map(p => [p.employee_id, p]));
+
+  // Build payroll records - include all employees
+  const payrollRecords: PayrollRecord[] = employees.map(emp => {
+    const payslip = payslipMap.get(emp.id);
+
+    if (payslip) {
+      return {
+        id: payslip.id,
+        employee_id: emp.id,
+        employee_name: emp.full_name,
+        employee_position: emp.position,
+        month: payslip.month,
+        year: payslip.year,
+        base_salary: payslip.base_salary || emp.salary || 0,
+        bonuses: payslip.bonuses || 0,
+        deductions: payslip.deductions || 0,
+        net_salary: payslip.net_salary || (emp.salary || 0),
+        status: payslip.status,
+        payment_date: payslip.payment_date,
+      };
+    }
+
+    // No payslip yet - create pending record from employee salary
+    return {
+      id: `pending-${emp.id}-${year}-${month}`,
+      employee_id: emp.id,
+      employee_name: emp.full_name,
+      employee_position: emp.position,
+      month,
+      year,
+      base_salary: emp.salary || 0,
+      bonuses: 0,
+      deductions: Math.round((emp.salary || 0) * 0.12), // Default 12% deduction
+      net_salary: Math.round((emp.salary || 0) * 0.88),
+      status: 'draft' as const,
+      payment_date: null,
+    };
+  });
+
+  return payrollRecords.sort((a, b) => b.base_salary - a.base_salary);
+}
+
+// Get payroll statistics for a month
+export async function getPayrollStats(year: number, month: number) {
+  const payroll = await getPayrollByMonth(year, month);
+
+  return {
+    totalGross: payroll.reduce((sum, p) => sum + p.base_salary + p.bonuses, 0),
+    totalDeductions: payroll.reduce((sum, p) => sum + p.deductions, 0),
+    totalNet: payroll.reduce((sum, p) => sum + p.net_salary, 0),
+    paid: payroll.filter(p => p.status === 'paid').length,
+    approved: payroll.filter(p => p.status === 'approved').length,
+    draft: payroll.filter(p => p.status === 'draft').length,
+    totalEmployees: payroll.length,
+  };
+}
+
 // Get employee attendance summary for a given month
 export async function getEmployeeAttendanceSummary(employeeId: string, year: number, month: number) {
   const attendance = await getAttendanceByEmployeeAndMonth(employeeId, year, month);
