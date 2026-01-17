@@ -19,6 +19,8 @@ interface Employee {
   phone: string | null;
   email: string | null;
   status: string;
+  hire_date: string;
+  branches?: { name: string };
 }
 
 interface EditEmployeeModalProps {
