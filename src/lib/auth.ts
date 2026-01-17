@@ -784,6 +784,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'delete_employee',
     'view_wages',
     'process_payroll',
+    'approve_payroll',
     'view_budget',
     'manage_branches',
     'view_presence',
@@ -795,6 +796,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
   ceo: [
     'view_all_employees',
     'view_wages',
+    'approve_payroll',
     'view_budget',
     'view_presence',
     'view_reports',
