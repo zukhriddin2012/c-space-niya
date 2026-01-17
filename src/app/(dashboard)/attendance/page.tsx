@@ -10,7 +10,7 @@ import {
   Users,
   TrendingUp,
 } from 'lucide-react';
-import { getBranches, getEmployees, getAttendanceByDate } from '@/lib/db';
+import { getBranches, getEmployees, getAttendanceByDate, getWeeklyAttendanceSummary } from '@/lib/db';
 import AttendanceFilters from './AttendanceFilters';
 import AttendanceMap from '@/components/AttendanceMap';
 
@@ -86,26 +86,6 @@ async function getAttendanceForDate(date: string): Promise<AttendanceRecord[]> {
   return [...attendanceRecords, ...absentEmployees];
 }
 
-// Generate weekly attendance summary (could be enhanced to use real data)
-async function getWeeklySummary(totalEmployees: number) {
-  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-  // For now, generate placeholder data - could be enhanced to query historical data
-  return days.map((day) => {
-    const presentRate = 75 + Math.floor(Math.random() * 20);
-    const present = Math.floor(totalEmployees * presentRate / 100);
-    const late = Math.floor(totalEmployees * (5 + Math.random() * 10) / 100);
-    const absent = totalEmployees - present - late;
-
-    return {
-      day,
-      present,
-      late,
-      absent: Math.max(0, absent),
-      total: totalEmployees,
-    };
-  });
-}
 
 function StatusBadge({ status }: { status: string }) {
   const statusConfig: Record<
@@ -271,7 +251,7 @@ export default async function AttendancePage({
     allAttendance.some(a => a.branchId === b.id)
   );
 
-  const weeklySummary = await getWeeklySummary(allAttendance.length);
+  const weeklySummary = await getWeeklyAttendanceSummary(allAttendance.length);
 
   return (
     <div>
@@ -393,21 +373,28 @@ export default async function AttendancePage({
           </div>
           <div className="flex items-end gap-4 h-32">
             {weeklySummary.map((day, index) => {
-              const presentHeight = (day.present / day.total) * 100;
-              const lateHeight = (day.late / day.total) * 100;
+              const safeTotal = day.total > 0 ? day.total : 1;
+              const presentHeight = (day.present / safeTotal) * 100;
+              const lateHeight = (day.late / safeTotal) * 100;
+              const isToday = index === (new Date().getDay() === 0 ? 6 : new Date().getDay() - 1);
+              const isWeekend = index === 5 || index === 6; // Sat = 5, Sun = 6 in this array
               return (
                 <div key={day.day} className="flex-1 flex flex-col items-center gap-1">
-                  <div className="w-full flex flex-col-reverse h-24 bg-gray-100 rounded overflow-hidden">
-                    <div
-                      className="bg-green-500 transition-all"
-                      style={{ height: `${presentHeight}%` }}
-                    />
-                    <div
-                      className="bg-orange-400 transition-all"
-                      style={{ height: `${lateHeight}%` }}
-                    />
+                  <div className={`w-full flex flex-col-reverse h-24 rounded overflow-hidden ${isWeekend ? 'bg-gray-50' : 'bg-gray-100'}`}>
+                    {!isWeekend && (
+                      <>
+                        <div
+                          className="bg-green-500 transition-all"
+                          style={{ height: `${presentHeight}%` }}
+                        />
+                        <div
+                          className="bg-orange-400 transition-all"
+                          style={{ height: `${lateHeight}%` }}
+                        />
+                      </>
+                    )}
                   </div>
-                  <span className={`text-xs ${index === new Date().getDay() - 1 ? 'font-bold text-purple-600' : 'text-gray-500'}`}>
+                  <span className={`text-xs ${isToday ? 'font-bold text-purple-600' : isWeekend ? 'text-gray-400' : 'text-gray-500'}`}>
                     {day.day}
                   </span>
                 </div>

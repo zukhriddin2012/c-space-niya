@@ -777,6 +777,63 @@ function getWorkingDaysInMonth(year: number, month: number): number {
   return workingDays;
 }
 
+// Get weekly attendance summary for the current week from database
+export async function getWeeklyAttendanceSummary(totalEmployees: number) {
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const today = new Date();
+
+  // Get start of week (Monday)
+  const dayOfWeek = today.getDay();
+  const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Adjust for Sunday = 0
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() + diff);
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  // Ensure total is at least 1 to avoid division by zero
+  const safeTotal = Math.max(1, totalEmployees);
+
+  const weekData = [];
+
+  for (let i = 0; i < 7; i++) {
+    const currentDate = new Date(startOfWeek);
+    currentDate.setDate(startOfWeek.getDate() + i);
+    const dateStr = currentDate.toISOString().split('T')[0];
+
+    // Only fetch data for dates up to today (and skip weekends for work attendance)
+    const isWeekend = currentDate.getDay() === 0 || currentDate.getDay() === 6;
+    const isPastOrToday = currentDate <= today;
+
+    if (isPastOrToday && !isWeekend) {
+      const attendance = await getAttendanceByDate(dateStr);
+      const present = attendance.filter(a => a.status === 'present').length;
+      const late = attendance.filter(a => a.status === 'late').length;
+      const earlyLeave = attendance.filter(a => a.status === 'early_leave').length;
+      const absent = safeTotal - present - late - earlyLeave;
+
+      weekData.push({
+        day: days[i],
+        date: dateStr,
+        present,
+        late,
+        absent: Math.max(0, absent),
+        total: safeTotal,
+      });
+    } else {
+      // Future dates or weekends - no data
+      weekData.push({
+        day: days[i],
+        date: dateStr,
+        present: 0,
+        late: 0,
+        absent: isWeekend ? 0 : safeTotal,
+        total: safeTotal,
+      });
+    }
+  }
+
+  return weekData;
+}
+
 // ============================================
 // LEGAL ENTITIES
 // ============================================
