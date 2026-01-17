@@ -1,10 +1,11 @@
 import { getSession } from '@/lib/auth-server';
 import { hasPermission } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import { CheckCircle, Clock, AlertCircle, FileText, Building2 } from 'lucide-react';
-import { getPayrollByMonth, getPayrollStats } from '@/lib/db';
+import { CheckCircle, Clock, AlertCircle, FileText, Building2, Banknote, ArrowRight } from 'lucide-react';
+import { getPayrollByMonth, getPayrollStats, getPaymentRequestsSummary } from '@/lib/db';
 import PayrollFilters from './PayrollFilters';
 import PayrollActions from './PayrollActions';
+import PaymentRequestsSection from './PaymentRequestsSection';
 
 function PaymentStatusBadge({ status }: { status: string }) {
   const statusConfig: Record<
@@ -84,6 +85,7 @@ export default async function PayrollPage({
   }
 
   const canProcessPayroll = hasPermission(user.role, 'process_payroll');
+  const canApprovePayroll = hasPermission(user.role, 'approve_payroll');
 
   // Get filter params
   const params = await searchParams;
@@ -93,9 +95,10 @@ export default async function PayrollPage({
   const selectedStatus = params.status || '';
 
   // Fetch payroll data from database
-  const [payroll, stats] = await Promise.all([
+  const [payroll, stats, paymentRequestsSummary] = await Promise.all([
     getPayrollByMonth(selectedYear, selectedMonth),
     getPayrollStats(selectedYear, selectedMonth),
+    getPaymentRequestsSummary(selectedYear, selectedMonth),
   ]);
 
   // Apply status filter
@@ -163,6 +166,16 @@ export default async function PayrollPage({
           </div>
         </div>
       </div>
+
+      {/* Payment Requests Section */}
+      <PaymentRequestsSection
+        year={selectedYear}
+        month={selectedMonth}
+        payroll={payroll}
+        summary={paymentRequestsSummary}
+        canProcess={canProcessPayroll}
+        canApprove={canApprovePayroll}
+      />
 
       {/* Filters */}
       <PayrollFilters
