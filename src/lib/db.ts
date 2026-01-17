@@ -186,9 +186,25 @@ export async function createBranch(branch: {
     return { success: false, error: 'Database not configured' };
   }
 
+  // Generate a slug-based ID from the branch name
+  // e.g., "C-Space New Branch" -> "new-branch"
+  const generateId = (name: string): string => {
+    return name
+      .toLowerCase()
+      .replace(/c-space\s*/i, '') // Remove "C-Space" prefix
+      .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+      .trim()
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-') // Remove duplicate hyphens
+      || `branch-${Date.now()}`; // Fallback if name is empty after processing
+  };
+
+  const branchId = generateId(branch.name);
+
   const { data, error } = await supabaseAdmin!
     .from('branches')
     .insert({
+      id: branchId,
       name: branch.name,
       address: branch.address,
       latitude: branch.latitude || null,
