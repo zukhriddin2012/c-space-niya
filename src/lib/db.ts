@@ -452,4 +452,195 @@ export async function updateLeaveRequest(
 
   return true;
 }
-// Vercel deployment trigger - 20260116215036
+
+// Get leave requests for a specific employee
+export async function getLeaveRequestsByEmployee(employeeId: string): Promise<LeaveRequest[]> {
+  if (!isSupabaseAdminConfigured()) {
+    return [];
+  }
+
+  const { data, error } = await supabaseAdmin!
+    .from('leave_requests')
+    .select('*')
+    .eq('employee_id', employeeId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching employee leave requests:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+// Create a new leave request
+export async function createLeaveRequest(request: {
+  employee_id: string;
+  leave_type: string;
+  start_date: string;
+  end_date: string;
+  reason: string;
+}): Promise<{ success: boolean; request?: LeaveRequest; error?: string }> {
+  if (!isSupabaseAdminConfigured()) {
+    return { success: false, error: 'Database not configured' };
+  }
+
+  const { data, error } = await supabaseAdmin!
+    .from('leave_requests')
+    .insert({
+      employee_id: request.employee_id,
+      leave_type: request.leave_type,
+      start_date: request.start_date,
+      end_date: request.end_date,
+      reason: request.reason,
+      status: 'pending',
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating leave request:', error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, request: data };
+}
+
+// Get employee by email (for linking user to employee)
+export async function getEmployeeByEmail(email: string): Promise<Employee | null> {
+  if (!isSupabaseAdminConfigured()) {
+    const { employees } = await import('@/data/employees');
+    const emp = employees.find(e => e.email === email);
+    if (!emp) return null;
+    return {
+      id: emp.id,
+      employee_id: emp.employeeId,
+      full_name: emp.fullName,
+      position: emp.position,
+      level: emp.level,
+      branch_id: emp.branchId,
+      salary: emp.salary,
+      phone: emp.phone || null,
+      email: emp.email || null,
+      telegram_id: null,
+      default_shift: 'day',
+      can_rotate: false,
+      status: 'active',
+      hire_date: emp.hireDate || new Date().toISOString().split('T')[0],
+    };
+  }
+
+  const { data, error } = await supabaseAdmin!
+    .from('employees')
+    .select('*, branches(name)')
+    .eq('email', email)
+    .single();
+
+  if (error) {
+    console.error('Error fetching employee by email:', error);
+    return null;
+  }
+
+  return data;
+}
+
+// ============================================
+// PAYSLIPS
+// ============================================
+
+export interface Payslip {
+  id: string;
+  employee_id: string;
+  month: number;
+  year: number;
+  base_salary: number;
+  overtime_hours: number;
+  overtime_pay: number;
+  deductions: number;
+  bonuses: number;
+  net_salary: number;
+  status: 'draft' | 'approved' | 'paid';
+  payment_date: string | null;
+  created_at: string;
+}
+
+export async function getPayslipsByEmployee(employeeId: string): Promise<Payslip[]> {
+  if (!isSupabaseAdminConfigured()) {
+    // Return demo payslips for static data
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth() + 1;
+
+    return Array.from({ length: 6 }, (_, i) => {
+      const month = currentMonth - i;
+      const year = month <= 0 ? currentYear - 1 : currentYear;
+      const adjustedMonth = month <= 0 ? month + 12 : month;
+
+      return {
+        id: `payslip-${i}`,
+        employee_id: employeeId,
+        month: adjustedMonth,
+        year: year,
+        base_salary: 8000000,
+        overtime_hours: Math.floor(Math.random() * 20),
+        overtime_pay: Math.floor(Math.random() * 500000),
+        deductions: Math.floor(Math.random() * 300000) + 200000,
+        bonuses: Math.floor(Math.random() * 1000000),
+        net_salary: 7500000 + Math.floor(Math.random() * 1000000),
+        status: i === 0 ? 'approved' : 'paid',
+        payment_date: i === 0 ? null : `${year}-${String(adjustedMonth).padStart(2, '0')}-25`,
+        created_at: new Date().toISOString(),
+      };
+    });
+  }
+
+  const { data, error } = await supabaseAdmin!
+    .from('payslips')
+    .select('*')
+    .eq('employee_id', employeeId)
+    .order('year', { ascending: false })
+    .order('month', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching payslips:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+// Get employee attendance summary for a given month
+export async function getEmployeeAttendanceSummary(employeeId: string, year: number, month: number) {
+  const attendance = await getAttendanceByEmployeeAndMonth(employeeId, year, month);
+
+  const workingDays = getWorkingDaysInMonth(year, month);
+  const presentDays = attendance.filter(a => a.status === 'present' || a.status === 'late').length;
+  const lateDays = attendance.filter(a => a.status === 'late').length;
+  const absentDays = workingDays - presentDays;
+  const totalHours = attendance.reduce((sum, a) => sum + (a.total_hours || 0), 0);
+  const avgHoursPerDay = presentDays > 0 ? totalHours / presentDays : 0;
+
+  return {
+    workingDays,
+    presentDays,
+    lateDays,
+    absentDays,
+    totalHours: Math.round(totalHours * 10) / 10,
+    avgHoursPerDay: Math.round(avgHoursPerDay * 10) / 10,
+  };
+}
+
+function getWorkingDaysInMonth(year: number, month: number): number {
+  const daysInMonth = new Date(year, month, 0).getDate();
+  let workingDays = 0;
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(year, month - 1, day);
+    const dayOfWeek = date.getDay();
+    // Monday = 1, Sunday = 0, Saturday = 6
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      workingDays++;
+    }
+  }
+
+  return workingDays;
+}

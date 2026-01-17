@@ -15,6 +15,7 @@ import {
   Building2,
   UserPlus,
   BarChart3,
+  UserCircle,
 } from 'lucide-react';
 import type { User, UserRole } from '@/types';
 import { getRoleLabel } from '@/lib/auth';
@@ -38,6 +39,12 @@ const navItems: NavItem[] = [
     roles: ['general_manager', 'ceo', 'hr', 'recruiter', 'employee'],
   },
   {
+    name: 'My Portal',
+    href: '/my-portal',
+    icon: UserCircle,
+    roles: ['general_manager', 'ceo', 'hr', 'recruiter', 'employee'],
+  },
+  {
     name: 'Employees',
     href: '/employees',
     icon: Users,
@@ -53,7 +60,7 @@ const navItems: NavItem[] = [
     name: 'Attendance',
     href: '/attendance',
     icon: Clock,
-    roles: ['general_manager', 'ceo', 'hr', 'employee'],
+    roles: ['general_manager', 'ceo', 'hr'],
   },
   {
     name: 'Payroll',
