@@ -88,3 +88,4 @@ export const employees: StaticEmployee[] = [
   { id: '57', employeeId: 'EMP057', fullName: 'Said Florist Muqimiy', position: 'Florist', level: 'senior', branchId: 'muqimiy', salary: 700000, email: 'said.muqimiy@cspace.uz', type: 'Part-time' },
   { id: '58', employeeId: 'EMP058', fullName: 'Azizbek Samiyev', position: 'CM', level: 'junior', branchId: 'muqimiy', salary: 4000000, email: 'azizbek.samiyev@cspace.uz', type: 'Full-time' },
 ];
+// Last updated: Sat Jan 17 19:00:18 UTC 2026
