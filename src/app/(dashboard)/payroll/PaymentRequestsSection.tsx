@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Banknote,
   Wallet,
@@ -8,11 +8,9 @@ import {
   CheckCircle,
   XCircle,
   Send,
-  Plus,
-  X,
   Loader2,
   ArrowRight,
-  AlertCircle,
+  Search,
 } from 'lucide-react';
 
 interface PayrollRecord {
@@ -69,6 +67,10 @@ function formatCurrency(amount: number) {
   return new Intl.NumberFormat('uz-UZ').format(amount) + ' UZS';
 }
 
+function formatNumber(amount: number) {
+  return new Intl.NumberFormat('uz-UZ').format(amount);
+}
+
 function getMonthName(month: number, year: number) {
   return new Date(year, month - 1).toLocaleDateString('en-US', {
     month: 'long',
@@ -79,7 +81,7 @@ function getMonthName(month: number, year: number) {
 function RequestStatusBadge({ status }: { status: string }) {
   const config: Record<string, { label: string; className: string; icon: React.ComponentType<{ size?: number }> }> = {
     draft: { label: 'Draft', className: 'bg-gray-100 text-gray-700', icon: Clock },
-    pending_approval: { label: 'Pending Approval', className: 'bg-yellow-100 text-yellow-700', icon: Clock },
+    pending_approval: { label: 'Pending', className: 'bg-yellow-100 text-yellow-700', icon: Clock },
     approved: { label: 'Approved', className: 'bg-blue-100 text-blue-700', icon: CheckCircle },
     rejected: { label: 'Rejected', className: 'bg-red-100 text-red-700', icon: XCircle },
     paid: { label: 'Paid', className: 'bg-green-100 text-green-700', icon: CheckCircle },
@@ -104,56 +106,73 @@ export default function PaymentRequestsSection({
   canProcess,
   canApprove,
 }: PaymentRequestsSectionProps) {
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [createType, setCreateType] = useState<'advance' | 'wage'>('advance');
-  const [selectedEmployees, setSelectedEmployees] = useState<Map<string, number>>(new Map());
-  const [creating, setCreating] = useState(false);
-  const [notes, setNotes] = useState('');
+  // State for the table-based input
+  const [advanceAmounts, setAdvanceAmounts] = useState<Record<string, number>>({});
+  const [wageAmounts, setWageAmounts] = useState<Record<string, number>>({});
+  const [searchQuery, setSearchQuery] = useState('');
+  const [creating, setCreating] = useState<'advance' | 'wage' | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
+  // Calculate totals
   const totalNetSalary = payroll.reduce((sum, p) => sum + p.net_salary, 0);
   const advancePaid = summary.advance.paidAmount;
   const wagePaid = summary.wage.paidAmount;
-  const remainingWage = totalNetSalary - advancePaid - wagePaid;
 
-  const handleToggleEmployee = (employeeId: string, netSalary: number) => {
-    const newSelected = new Map(selectedEmployees);
-    if (newSelected.has(employeeId)) {
-      newSelected.delete(employeeId);
-    } else {
-      // For advance, start with a suggested amount (e.g., 50% of net salary)
-      // For wage, use remaining after advance
-      const amount = createType === 'advance' ? Math.round(netSalary * 0.5) : netSalary;
-      newSelected.set(employeeId, amount);
-    }
-    setSelectedEmployees(newSelected);
+  // Filter employees by search
+  const filteredPayroll = useMemo(() => {
+    if (!searchQuery.trim()) return payroll;
+    const query = searchQuery.toLowerCase();
+    return payroll.filter(
+      p =>
+        p.employee_name.toLowerCase().includes(query) ||
+        p.employee_position.toLowerCase().includes(query) ||
+        p.legal_entity.toLowerCase().includes(query)
+    );
+  }, [payroll, searchQuery]);
+
+  // Calculate totals for input amounts
+  const totalAdvanceInput = Object.values(advanceAmounts).reduce((sum, amt) => sum + (amt || 0), 0);
+  const totalWageInput = Object.values(wageAmounts).reduce((sum, amt) => sum + (amt || 0), 0);
+  const advanceCount = Object.values(advanceAmounts).filter(amt => amt > 0).length;
+  const wageCount = Object.values(wageAmounts).filter(amt => amt > 0).length;
+
+  const handleAdvanceChange = (employeeId: string, value: string) => {
+    const amount = parseInt(value.replace(/\D/g, '')) || 0;
+    setAdvanceAmounts(prev => ({ ...prev, [employeeId]: amount }));
   };
 
-  const handleAmountChange = (employeeId: string, amount: number) => {
-    const newSelected = new Map(selectedEmployees);
-    newSelected.set(employeeId, amount);
-    setSelectedEmployees(newSelected);
+  const handleWageChange = (employeeId: string, value: string) => {
+    const amount = parseInt(value.replace(/\D/g, '')) || 0;
+    setWageAmounts(prev => ({ ...prev, [employeeId]: amount }));
   };
 
-  const handleSelectAll = () => {
-    if (selectedEmployees.size === payroll.length) {
-      setSelectedEmployees(new Map());
-    } else {
-      const newSelected = new Map<string, number>();
-      payroll.forEach(p => {
-        const amount = createType === 'advance' ? Math.round(p.net_salary * 0.5) : p.net_salary;
-        newSelected.set(p.employee_id, amount);
-      });
-      setSelectedEmployees(newSelected);
-    }
+  // Quick fill functions
+  const fillAllAdvance = (percentage: number) => {
+    const newAmounts: Record<string, number> = {};
+    payroll.forEach(p => {
+      newAmounts[p.employee_id] = Math.round(p.net_salary * percentage);
+    });
+    setAdvanceAmounts(newAmounts);
   };
 
-  const handleCreateRequest = async () => {
-    if (selectedEmployees.size === 0) return;
+  const fillAllWage = () => {
+    const newAmounts: Record<string, number> = {};
+    payroll.forEach(p => {
+      // Wage = Net salary - advance amount for this employee
+      const advance = advanceAmounts[p.employee_id] || 0;
+      newAmounts[p.employee_id] = Math.max(0, p.net_salary - advance);
+    });
+    setWageAmounts(newAmounts);
+  };
 
-    setCreating(true);
-    try {
-      const items = Array.from(selectedEmployees.entries()).map(([employeeId, amount]) => {
+  const clearAdvance = () => setAdvanceAmounts({});
+  const clearWage = () => setWageAmounts({});
+
+  const handleCreateRequest = async (type: 'advance' | 'wage') => {
+    const amounts = type === 'advance' ? advanceAmounts : wageAmounts;
+    const items = Object.entries(amounts)
+      .filter(([, amount]) => amount > 0)
+      .map(([employeeId, amount]) => {
         const emp = payroll.find(p => p.employee_id === employeeId);
         return {
           employee_id: employeeId,
@@ -162,38 +181,45 @@ export default function PaymentRequestsSection({
         };
       });
 
+    if (items.length === 0) {
+      alert(`Please enter ${type} amounts for at least one employee`);
+      return;
+    }
+
+    setCreating(type);
+    try {
       const response = await fetch('/api/payment-requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          request_type: createType,
+          request_type: type,
           year,
           month,
-          notes,
           items,
         }),
       });
 
       if (response.ok) {
-        setShowCreateModal(false);
-        setSelectedEmployees(new Map());
-        setNotes('');
+        if (type === 'advance') {
+          setAdvanceAmounts({});
+        } else {
+          setWageAmounts({});
+        }
         window.location.reload();
       } else {
         const data = await response.json();
         alert(data.error || 'Failed to create payment request');
       }
-    } catch (error) {
+    } catch {
       alert('An error occurred');
     } finally {
-      setCreating(false);
+      setCreating(null);
     }
   };
 
   const handleAction = async (requestId: string, action: 'submit' | 'approve' | 'reject' | 'pay') => {
     setActionLoading(`${requestId}-${action}`);
     try {
-      let url = `/api/payment-requests/${requestId}/${action}`;
       let body = {};
 
       if (action === 'reject') {
@@ -205,7 +231,7 @@ export default function PaymentRequestsSection({
         body = { reason };
       }
 
-      const response = await fetch(url, {
+      const response = await fetch(`/api/payment-requests/${requestId}/${action}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -217,186 +243,102 @@ export default function PaymentRequestsSection({
         const data = await response.json();
         alert(data.error || `Failed to ${action} request`);
       }
-    } catch (error) {
+    } catch {
       alert('An error occurred');
     } finally {
       setActionLoading(null);
     }
   };
 
-  const totalSelected = Array.from(selectedEmployees.values()).reduce((sum, amt) => sum + amt, 0);
-
   return (
-    <>
-      {/* Payment Flow Overview */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Flow for {getMonthName(month, year)}</h3>
-
-        <div className="flex items-center gap-4 overflow-x-auto pb-2">
-          {/* Total Net Payable */}
-          <div className="flex-shrink-0 bg-gray-50 rounded-lg p-4 min-w-[180px]">
-            <p className="text-xs text-gray-500 mb-1">Total Net Payable</p>
-            <p className="text-lg font-semibold text-gray-900">{formatCurrency(totalNetSalary)}</p>
+    <div className="space-y-6 mb-6">
+      {/* Payment Flow Summary */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="flex items-center gap-3 overflow-x-auto">
+          <div className="flex-shrink-0 text-center px-4">
+            <p className="text-xs text-gray-500">Total Net</p>
+            <p className="text-lg font-bold text-gray-900">{formatCurrency(totalNetSalary)}</p>
           </div>
-
-          <ArrowRight className="text-gray-300 flex-shrink-0" size={24} />
-
-          {/* Advance Payment */}
-          <div className="flex-shrink-0 bg-orange-50 rounded-lg p-4 min-w-[180px]">
-            <div className="flex items-center gap-2 mb-1">
-              <Banknote size={16} className="text-orange-600" />
-              <p className="text-xs text-gray-500">Advance Payment</p>
-            </div>
-            <p className="text-lg font-semibold text-orange-600">{formatCurrency(advancePaid)}</p>
-            {summary.advance.pending > 0 && (
-              <p className="text-xs text-orange-500 mt-1">
-                {summary.advance.pending} pending approval
-              </p>
-            )}
+          <ArrowRight className="text-gray-300 flex-shrink-0" size={20} />
+          <div className="flex-shrink-0 text-center px-4 py-2 bg-orange-50 rounded-lg">
+            <p className="text-xs text-orange-600">Advance Paid</p>
+            <p className="text-lg font-bold text-orange-600">{formatCurrency(advancePaid)}</p>
           </div>
-
-          <ArrowRight className="text-gray-300 flex-shrink-0" size={24} />
-
-          {/* Wage Payment */}
-          <div className="flex-shrink-0 bg-green-50 rounded-lg p-4 min-w-[180px]">
-            <div className="flex items-center gap-2 mb-1">
-              <Wallet size={16} className="text-green-600" />
-              <p className="text-xs text-gray-500">Wage Payment</p>
-            </div>
-            <p className="text-lg font-semibold text-green-600">{formatCurrency(wagePaid)}</p>
-            {summary.wage.pending > 0 && (
-              <p className="text-xs text-green-500 mt-1">
-                {summary.wage.pending} pending approval
-              </p>
-            )}
+          <ArrowRight className="text-gray-300 flex-shrink-0" size={20} />
+          <div className="flex-shrink-0 text-center px-4 py-2 bg-green-50 rounded-lg">
+            <p className="text-xs text-green-600">Wage Paid</p>
+            <p className="text-lg font-bold text-green-600">{formatCurrency(wagePaid)}</p>
           </div>
-
-          <ArrowRight className="text-gray-300 flex-shrink-0" size={24} />
-
-          {/* Remaining */}
-          <div className="flex-shrink-0 bg-purple-50 rounded-lg p-4 min-w-[180px]">
-            <p className="text-xs text-gray-500 mb-1">Remaining</p>
-            <p className={`text-lg font-semibold ${remainingWage > 0 ? 'text-purple-600' : 'text-gray-400'}`}>
-              {formatCurrency(remainingWage)}
-            </p>
+          <ArrowRight className="text-gray-300 flex-shrink-0" size={20} />
+          <div className="flex-shrink-0 text-center px-4 py-2 bg-purple-50 rounded-lg">
+            <p className="text-xs text-purple-600">Remaining</p>
+            <p className="text-lg font-bold text-purple-600">{formatCurrency(totalNetSalary - advancePaid - wagePaid)}</p>
           </div>
         </div>
-
-        {/* Action Buttons */}
-        {canProcess && (
-          <div className="flex gap-3 mt-4 pt-4 border-t border-gray-100">
-            <button
-              onClick={() => {
-                setCreateType('advance');
-                setShowCreateModal(true);
-              }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
-            >
-              <Banknote size={18} />
-              Create Advance Request
-            </button>
-            <button
-              onClick={() => {
-                setCreateType('wage');
-                setShowCreateModal(true);
-              }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              <Wallet size={18} />
-              Create Wage Request
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Payment Requests List */}
       {summary.requests.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 mb-6 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="font-semibold text-gray-900">Payment Requests</h3>
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+            <h3 className="font-semibold text-gray-900">Payment Requests for {getMonthName(month, year)}</h3>
           </div>
           <div className="divide-y divide-gray-100">
             {summary.requests.map(request => (
-              <div key={request.id} className="px-6 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+              <div key={request.id} className="px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                     request.request_type === 'advance' ? 'bg-orange-100' : 'bg-green-100'
                   }`}>
                     {request.request_type === 'advance' ? (
-                      <Banknote size={20} className="text-orange-600" />
+                      <Banknote size={16} className="text-orange-600" />
                     ) : (
-                      <Wallet size={20} className="text-green-600" />
+                      <Wallet size={16} className="text-green-600" />
                     )}
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">
-                      {request.request_type === 'advance' ? 'Advance Payment' : 'Wage Payment'}
+                    <p className="font-medium text-gray-900 text-sm">
+                      {request.request_type === 'advance' ? 'Advance' : 'Wage'} • {request.employee_count} employees
                     </p>
-                    <p className="text-sm text-gray-500">
-                      {request.employee_count} employees • {formatCurrency(request.total_amount)}
-                    </p>
+                    <p className="text-xs text-gray-500">{formatCurrency(request.total_amount)}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <RequestStatusBadge status={request.status} />
-
-                  {/* Action buttons based on status and permissions */}
                   {request.status === 'draft' && canProcess && (
                     <button
                       onClick={() => handleAction(request.id, 'submit')}
-                      disabled={actionLoading === `${request.id}-submit`}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                      disabled={!!actionLoading}
+                      className="px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 disabled:opacity-50"
                     >
-                      {actionLoading === `${request.id}-submit` ? (
-                        <Loader2 size={14} className="animate-spin" />
-                      ) : (
-                        <Send size={14} />
-                      )}
-                      Submit
+                      {actionLoading === `${request.id}-submit` ? <Loader2 size={12} className="animate-spin" /> : 'Submit'}
                     </button>
                   )}
-
                   {request.status === 'pending_approval' && canApprove && (
                     <>
                       <button
                         onClick={() => handleAction(request.id, 'approve')}
                         disabled={!!actionLoading}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:opacity-50"
+                        className="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 disabled:opacity-50"
                       >
-                        {actionLoading === `${request.id}-approve` ? (
-                          <Loader2 size={14} className="animate-spin" />
-                        ) : (
-                          <CheckCircle size={14} />
-                        )}
-                        Approve
+                        {actionLoading === `${request.id}-approve` ? <Loader2 size={12} className="animate-spin" /> : 'Approve'}
                       </button>
                       <button
                         onClick={() => handleAction(request.id, 'reject')}
                         disabled={!!actionLoading}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 disabled:opacity-50"
+                        className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 disabled:opacity-50"
                       >
-                        {actionLoading === `${request.id}-reject` ? (
-                          <Loader2 size={14} className="animate-spin" />
-                        ) : (
-                          <XCircle size={14} />
-                        )}
-                        Reject
+                        {actionLoading === `${request.id}-reject` ? <Loader2 size={12} className="animate-spin" /> : 'Reject'}
                       </button>
                     </>
                   )}
-
                   {request.status === 'approved' && canProcess && (
                     <button
                       onClick={() => handleAction(request.id, 'pay')}
                       disabled={!!actionLoading}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                      className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50"
                     >
-                      {actionLoading === `${request.id}-pay` ? (
-                        <Loader2 size={14} className="animate-spin" />
-                      ) : (
-                        <CheckCircle size={14} />
-                      )}
-                      Mark as Paid
+                      {actionLoading === `${request.id}-pay` ? <Loader2 size={12} className="animate-spin" /> : 'Mark Paid'}
                     </button>
                   )}
                 </div>
@@ -406,180 +348,158 @@ export default function PaymentRequestsSection({
         </div>
       )}
 
-      {/* Create Payment Request Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Create {createType === 'advance' ? 'Advance' : 'Wage'} Payment Request
-                </h3>
-                <p className="text-sm text-gray-500 mt-1">
-                  {getMonthName(month, year)}
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  setShowCreateModal(false);
-                  setSelectedEmployees(new Map());
-                  setNotes('');
-                }}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X size={24} />
-              </button>
+      {/* Main Payment Table */}
+      {canProcess && (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+            <h3 className="font-semibold text-gray-900">Create Payment Request</h3>
+            <div className="relative">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search employees..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-4 py-1.5 border border-gray-300 rounded-lg text-sm w-64"
+              />
             </div>
+          </div>
 
-            <div className="p-6 overflow-y-auto flex-1">
-              {/* Type toggle */}
-              <div className="flex gap-2 mb-4">
-                <button
-                  onClick={() => {
-                    setCreateType('advance');
-                    setSelectedEmployees(new Map());
-                  }}
-                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
-                    createType === 'advance'
-                      ? 'bg-orange-100 text-orange-700 border-2 border-orange-300'
-                      : 'bg-gray-100 text-gray-600 border-2 border-transparent'
-                  }`}
-                >
-                  <Banknote size={18} className="inline mr-2" />
-                  Advance Payment
-                </button>
-                <button
-                  onClick={() => {
-                    setCreateType('wage');
-                    setSelectedEmployees(new Map());
-                  }}
-                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
-                    createType === 'wage'
-                      ? 'bg-green-100 text-green-700 border-2 border-green-300'
-                      : 'bg-gray-100 text-gray-600 border-2 border-transparent'
-                  }`}
-                >
-                  <Wallet size={18} className="inline mr-2" />
-                  Wage Payment
-                </button>
-              </div>
+          {/* Quick Actions */}
+          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex flex-wrap gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Advance:</span>
+              <button onClick={() => fillAllAdvance(0.3)} className="px-2 py-1 text-xs bg-orange-100 text-orange-700 rounded hover:bg-orange-200">30%</button>
+              <button onClick={() => fillAllAdvance(0.5)} className="px-2 py-1 text-xs bg-orange-100 text-orange-700 rounded hover:bg-orange-200">50%</button>
+              <button onClick={clearAdvance} className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded hover:bg-gray-200">Clear</button>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Wage:</span>
+              <button onClick={fillAllWage} className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200">Fill Remaining</button>
+              <button onClick={clearWage} className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded hover:bg-gray-200">Clear</button>
+            </div>
+          </div>
 
-              {/* Select all */}
-              <div className="flex items-center justify-between mb-3">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={selectedEmployees.size === payroll.length}
-                    onChange={handleSelectAll}
-                    className="w-4 h-4 text-purple-600 rounded border-gray-300"
-                  />
-                  <span className="text-sm font-medium text-gray-700">Select All Employees</span>
-                </label>
-                <span className="text-sm text-gray-500">
-                  {selectedEmployees.size} selected
-                </span>
-              </div>
-
-              {/* Employee list */}
-              <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 max-h-[300px] overflow-y-auto">
-                {payroll.map(employee => {
-                  const isSelected = selectedEmployees.has(employee.employee_id);
-                  const amount = selectedEmployees.get(employee.employee_id) || 0;
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-50">
+                  <th className="text-left px-4 py-2 text-xs font-medium text-gray-500 uppercase">Employee</th>
+                  <th className="text-left px-4 py-2 text-xs font-medium text-gray-500 uppercase">Legal Entity</th>
+                  <th className="text-right px-4 py-2 text-xs font-medium text-gray-500 uppercase">Net Salary</th>
+                  <th className="text-right px-4 py-2 text-xs font-medium text-gray-500 uppercase w-40">
+                    <span className="inline-flex items-center gap-1">
+                      <Banknote size={14} className="text-orange-500" />
+                      Advance
+                    </span>
+                  </th>
+                  <th className="text-right px-4 py-2 text-xs font-medium text-gray-500 uppercase w-40">
+                    <span className="inline-flex items-center gap-1">
+                      <Wallet size={14} className="text-green-500" />
+                      Wage
+                    </span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filteredPayroll.map(employee => {
+                  const advance = advanceAmounts[employee.employee_id] || 0;
+                  const wage = wageAmounts[employee.employee_id] || 0;
+                  const remaining = employee.net_salary - advance - wage;
 
                   return (
-                    <div
-                      key={employee.employee_id}
-                      className={`p-3 flex items-center gap-4 ${isSelected ? 'bg-purple-50' : ''}`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => handleToggleEmployee(employee.employee_id, employee.net_salary)}
-                        className="w-4 h-4 text-purple-600 rounded border-gray-300"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 truncate">{employee.employee_name}</p>
+                    <tr key={employee.employee_id} className="hover:bg-gray-50">
+                      <td className="px-4 py-2">
+                        <p className="font-medium text-gray-900 text-sm">{employee.employee_name}</p>
                         <p className="text-xs text-gray-500">{employee.employee_position}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-gray-500">Net: {formatCurrency(employee.net_salary)}</p>
-                      </div>
-                      {isSelected && (
-                        <div className="w-36">
-                          <input
-                            type="number"
-                            value={amount}
-                            onChange={(e) => handleAmountChange(employee.employee_id, parseInt(e.target.value) || 0)}
-                            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-right"
-                            min={0}
-                            max={employee.net_salary}
-                          />
-                        </div>
-                      )}
-                    </div>
+                      </td>
+                      <td className="px-4 py-2 text-sm text-gray-600">{employee.legal_entity}</td>
+                      <td className="px-4 py-2 text-sm text-gray-900 text-right font-medium">
+                        {formatCurrency(employee.net_salary)}
+                      </td>
+                      <td className="px-4 py-2">
+                        <input
+                          type="text"
+                          value={advance > 0 ? formatNumber(advance) : ''}
+                          onChange={(e) => handleAdvanceChange(employee.employee_id, e.target.value)}
+                          placeholder="0"
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm text-right focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                        />
+                      </td>
+                      <td className="px-4 py-2">
+                        <input
+                          type="text"
+                          value={wage > 0 ? formatNumber(wage) : ''}
+                          onChange={(e) => handleWageChange(employee.employee_id, e.target.value)}
+                          placeholder="0"
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm text-right focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        />
+                      </td>
+                    </tr>
                   );
                 })}
-              </div>
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-gray-300 bg-gray-50 font-semibold">
+                  <td className="px-4 py-3 text-sm text-gray-700" colSpan={2}>
+                    Total ({payroll.length} employees)
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-900 text-right">
+                    {formatCurrency(totalNetSalary)}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-orange-600 text-right">
+                    {formatCurrency(totalAdvanceInput)}
+                    {advanceCount > 0 && <span className="text-xs text-gray-500 ml-1">({advanceCount})</span>}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-green-600 text-right">
+                    {formatCurrency(totalWageInput)}
+                    {wageCount > 0 && <span className="text-xs text-gray-500 ml-1">({wageCount})</span>}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
 
-              {/* Notes */}
-              <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Add any notes for this payment request..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  rows={2}
-                />
-              </div>
-
-              {/* Summary */}
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Total Amount:</span>
-                  <span className="text-lg font-semibold text-gray-900">{formatCurrency(totalSelected)}</span>
-                </div>
-                <div className="flex justify-between items-center mt-1">
-                  <span className="text-sm text-gray-600">Employees:</span>
-                  <span className="text-sm font-medium text-gray-700">{selectedEmployees.size}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3 p-6 border-t border-gray-200">
-              <button
-                onClick={() => {
-                  setShowCreateModal(false);
-                  setSelectedEmployees(new Map());
-                  setNotes('');
-                }}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreateRequest}
-                disabled={creating || selectedEmployees.size === 0}
-                className={`flex-1 px-4 py-2 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2 ${
-                  createType === 'advance' ? 'bg-orange-600 hover:bg-orange-700' : 'bg-green-600 hover:bg-green-700'
-                }`}
-              >
-                {creating ? (
-                  <>
-                    <Loader2 size={18} className="animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <Plus size={18} />
-                    Create Request
-                  </>
-                )}
-              </button>
-            </div>
+          {/* Submit Buttons */}
+          <div className="px-4 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
+            <button
+              onClick={() => handleCreateRequest('advance')}
+              disabled={creating !== null || totalAdvanceInput === 0}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {creating === 'advance' ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <Banknote size={18} />
+              )}
+              Create Advance Request
+              {totalAdvanceInput > 0 && (
+                <span className="bg-orange-500 px-2 py-0.5 rounded text-xs">
+                  {formatCurrency(totalAdvanceInput)}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => handleCreateRequest('wage')}
+              disabled={creating !== null || totalWageInput === 0}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {creating === 'wage' ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <Wallet size={18} />
+              )}
+              Create Wage Request
+              {totalWageInput > 0 && (
+                <span className="bg-green-500 px-2 py-0.5 rounded text-xs">
+                  {formatCurrency(totalWageInput)}
+                </span>
+              )}
+            </button>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
