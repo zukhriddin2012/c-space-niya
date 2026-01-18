@@ -33,8 +33,8 @@ export async function POST(request: NextRequest) {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-    } else {
-      // Fallback to DEMO_USERS for development/testing
+    } else if (process.env.ENABLE_DEMO_USERS === 'true') {
+      // Fallback to DEMO_USERS only in test/development environments
       user = validateCredentials(email, password);
     }
 
