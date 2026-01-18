@@ -14,15 +14,18 @@ interface AttendanceFiltersProps {
   isEmployee: boolean;
 }
 
-// Helper to format date for display
+// Helper to format date for display (using Tashkent timezone for comparison)
 function formatDateDisplay(dateStr: string): string {
   const date = new Date(dateStr + 'T00:00:00');
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const yesterday = new Date(today);
+  // Get today in Tashkent timezone
+  const now = new Date();
+  const tashkentToday = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Tashkent' }));
+  tashkentToday.setHours(0, 0, 0, 0);
+
+  const yesterday = new Date(tashkentToday);
   yesterday.setDate(yesterday.getDate() - 1);
 
-  if (date.toDateString() === today.toDateString()) {
+  if (date.toDateString() === tashkentToday.toDateString()) {
     return 'Today';
   } else if (date.toDateString() === yesterday.toDateString()) {
     return 'Yesterday';
@@ -32,13 +35,29 @@ function formatDateDisplay(dateStr: string): string {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
-    year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined,
+    year: date.getFullYear() !== tashkentToday.getFullYear() ? 'numeric' : undefined,
   });
 }
 
-// Get quick date options
+// Get current date in Tashkent timezone
+function getTashkentDate(): Date {
+  const now = new Date();
+  // Convert to Tashkent time (UTC+5)
+  const tashkentTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Tashkent' }));
+  return tashkentTime;
+}
+
+// Format date as YYYY-MM-DD
+function formatDateString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// Get quick date options (using Tashkent timezone)
 function getQuickDates() {
-  const today = new Date();
+  const today = getTashkentDate();
   today.setHours(0, 0, 0, 0);
 
   const yesterday = new Date(today);
@@ -50,10 +69,10 @@ function getQuickDates() {
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
 
   return {
-    today: today.toISOString().split('T')[0],
-    yesterday: yesterday.toISOString().split('T')[0],
-    weekAgo: weekAgo.toISOString().split('T')[0],
-    monthStart: monthStart.toISOString().split('T')[0],
+    today: formatDateString(today),
+    yesterday: formatDateString(yesterday),
+    weekAgo: formatDateString(weekAgo),
+    monthStart: formatDateString(monthStart),
   };
 }
 
@@ -112,8 +131,8 @@ export default function AttendanceFilters({ branches, isEmployee }: AttendanceFi
     router.push(`/attendance?${params.toString()}`);
   };
 
-  // Check if selected date is in the future
-  const isFutureDate = new Date(date + 'T00:00:00') > new Date();
+  // Check if selected date is in the future (using Tashkent timezone)
+  const isFutureDate = new Date(date + 'T00:00:00') > getTashkentDate();
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-3 lg:p-4 mb-4 lg:mb-6">
