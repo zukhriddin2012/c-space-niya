@@ -40,20 +40,6 @@ export default function LoginPage() {
     }
   };
 
-  const demoAccounts = [
-    { role: 'General Manager', email: 'gm@cspace.uz', password: 'admin123' },
-    { role: 'CEO', email: 'ceo@cspace.uz', password: 'ceo123' },
-    { role: 'HR Staff', email: 'hr@cspace.uz', password: 'hr123' },
-    { role: 'Recruiter', email: 'recruiter@cspace.uz', password: 'recruiter123' },
-    { role: 'Employee', email: 'employee@cspace.uz', password: 'employee123' },
-  ];
-
-  const fillDemoCredentials = (email: string, password: string) => {
-    setEmail(email);
-    setPassword(password);
-    setError('');
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
       {/* Logo */}
@@ -143,25 +129,6 @@ export default function LoginPage() {
             )}
           </button>
         </form>
-      </div>
-
-      {/* Demo Accounts */}
-      <div className="w-full max-w-md mt-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Demo Accounts</h3>
-          <div className="space-y-2">
-            {demoAccounts.map((account) => (
-              <button
-                key={account.email}
-                onClick={() => fillDemoCredentials(account.email, account.password)}
-                className="w-full flex items-center justify-between px-4 py-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-purple-300 transition-colors text-left"
-              >
-                <span className="text-sm font-medium text-gray-900">{account.role}</span>
-                <span className="text-xs text-gray-500">{account.email}</span>
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
 
       {/* Footer */}
