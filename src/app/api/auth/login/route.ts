@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
 
     // Try database authentication first
     const employee = await authenticateEmployee(email, password);
+
     if (employee) {
       // Create user from database employee
       user = {
