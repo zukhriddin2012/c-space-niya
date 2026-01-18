@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth-server';
-import { getBranches } from '@/lib/db';
-import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase';
+import { getBranches, getEmployees } from '@/lib/db';
 import { DEMO_USERS } from '@/lib/auth';
 import type { UserRole } from '@/types';
 
@@ -30,48 +29,44 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const branches = await getBranches();
+    // Get employees and branches from database
+    const [employees, branches] = await Promise.all([
+      getEmployees(),
+      getBranches()
+    ]);
+
     const branchMap = new Map(branches.map(b => [b.id, b.name]));
 
-    // Try to get employees from database with system_role
-    if (isSupabaseAdminConfigured()) {
-      const { data: employees, error } = await supabaseAdmin!
-        .from('employees')
-        .select('*')
-        .order('name');
+    // Map employees to users with roles
+    const users: UserWithRole[] = employees.map(emp => {
+      // Use database system_role if available, otherwise fall back to DEMO_USERS or 'employee'
+      let role: UserRole = (emp as any).system_role || 'employee';
 
-      if (!error && employees) {
-        const users: UserWithRole[] = employees.map(emp => {
-          // Use database role if available, otherwise fall back to DEMO_USERS or 'employee'
-          let role: UserRole = emp.system_role || 'employee';
-
-          // Fall back to DEMO_USERS if no database role set
-          if (!emp.system_role) {
-            const demoUser = DEMO_USERS.find(u => u.email.toLowerCase() === emp.email?.toLowerCase());
-            if (demoUser) {
-              role = demoUser.role;
-            }
-          }
-
-          return {
-            id: emp.id,
-            email: emp.email || '',
-            name: emp.name,
-            role,
-            branchId: emp.branch_id || undefined,
-            branchName: emp.branch_id ? branchMap.get(emp.branch_id) : undefined,
-            position: emp.position,
-            department: emp.department,
-            employeeId: emp.employee_id,
-          };
-        });
-
-        return NextResponse.json({ users, branches });
+      // Fall back to DEMO_USERS if no database role set
+      if (!(emp as any).system_role) {
+        const demoUser = DEMO_USERS.find(u => u.email.toLowerCase() === emp.email?.toLowerCase());
+        if (demoUser) {
+          role = demoUser.role;
+        }
       }
-    }
 
-    // Fallback: Return empty if database not available
-    return NextResponse.json({ users: [], branches });
+      return {
+        id: emp.id,
+        email: emp.email || '',
+        name: emp.full_name,
+        role,
+        branchId: emp.branch_id || undefined,
+        branchName: emp.branch_id ? branchMap.get(emp.branch_id) : undefined,
+        position: emp.position,
+        department: (emp as any).department,
+        employeeId: emp.employee_id,
+      };
+    });
+
+    // Sort by name
+    users.sort((a, b) => a.name.localeCompare(b.name));
+
+    return NextResponse.json({ users, branches });
   } catch (error) {
     console.error('Error fetching users:', error);
     return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
