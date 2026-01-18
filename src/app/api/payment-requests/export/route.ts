@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { getPaymentRequests, getPaymentRequestById } from '@/lib/db';
 import { withAuth } from '@/lib/api-auth';
 import { PERMISSIONS } from '@/lib/permissions';
+
+interface ExportRow {
+  [key: string]: string | number;
+}
 
 export const GET = withAuth(async (request: NextRequest) => {
   const searchParams = request.nextUrl.searchParams;
@@ -11,28 +15,28 @@ export const GET = withAuth(async (request: NextRequest) => {
   const requestId = searchParams.get('requestId');
 
   try {
-    let data: any[] = [];
+    let data: ExportRow[] = [];
     let filename = '';
 
     if (requestId) {
       // Export single request with all items
-      const request = await getPaymentRequestById(requestId);
-      if (!request) {
+      const paymentRequest = await getPaymentRequestById(requestId);
+      if (!paymentRequest) {
         return NextResponse.json({ error: 'Request not found' }, { status: 404 });
       }
 
-      filename = `payment_request_${request.request_type}_${year}_${month}.xlsx`;
+      filename = `payment_request_${paymentRequest.request_type}_${year}_${month}.xlsx`;
 
-      data = (request.items || []).map((item: any) => ({
+      data = (paymentRequest.items || []).map((item) => ({
         'Employee Name': item.employees?.full_name || 'Unknown',
         'Employee ID': item.employees?.employee_id || '',
         'Position': item.employees?.position || '',
         'Legal Entity': item.legal_entities?.name || '',
         'Net Salary': item.net_salary || 0,
         'Amount': item.amount || 0,
-        'Type': request.request_type === 'advance' ? 'Advance' : 'Wage',
-        'Status': request.status,
-        'Created At': new Date(request.created_at).toLocaleDateString(),
+        'Type': paymentRequest.request_type === 'advance' ? 'Advance' : 'Wage',
+        'Status': paymentRequest.status,
+        'Created At': new Date(paymentRequest.created_at).toLocaleDateString(),
       }));
     } else {
       // Export all requests for the month
@@ -53,20 +57,31 @@ export const GET = withAuth(async (request: NextRequest) => {
       }));
     }
 
-    // Create workbook
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(data);
+    // Create workbook with ExcelJS
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Payment Requests');
 
-    // Auto-size columns
-    const colWidths = Object.keys(data[0] || {}).map(key => ({
-      wch: Math.max(key.length, 15)
-    }));
-    ws['!cols'] = colWidths;
+    // Add headers
+    if (data.length > 0) {
+      const headers = Object.keys(data[0]);
+      worksheet.addRow(headers);
 
-    XLSX.utils.book_append_sheet(wb, ws, 'Payment Requests');
+      // Style header row
+      worksheet.getRow(1).font = { bold: true };
+
+      // Add data rows
+      data.forEach(row => {
+        worksheet.addRow(Object.values(row));
+      });
+
+      // Auto-size columns
+      worksheet.columns.forEach((column, index) => {
+        column.width = Math.max(headers[index]?.length || 10, 15);
+      });
+    }
 
     // Generate buffer
-    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    const buffer = await workbook.xlsx.writeBuffer();
 
     // Return as file download
     return new NextResponse(buffer, {
