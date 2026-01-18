@@ -14,6 +14,16 @@ import { getBranches, getEmployees, getAttendanceByDate, getWeeklyAttendanceSumm
 import AttendanceFilters from './AttendanceFilters';
 import AttendanceMap from '@/components/AttendanceMap';
 
+// Get current date in Tashkent timezone (UTC+5) - consistent with bot
+function getTashkentDateString(): string {
+  const now = new Date();
+  const tashkentTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Tashkent' }));
+  const year = tashkentTime.getFullYear();
+  const month = String(tashkentTime.getMonth() + 1).padStart(2, '0');
+  const day = String(tashkentTime.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 interface AttendanceRecord {
   id: string;
   employeeId: string;
@@ -213,7 +223,8 @@ export default async function AttendancePage({
 
   // Get filter params
   const params = await searchParams;
-  const selectedDate = params.date || new Date().toISOString().split('T')[0];
+  // Use Tashkent timezone for default date - consistent with bot's getTodayKey()
+  const selectedDate = params.date || getTashkentDateString();
   const selectedBranch = params.branch || '';
   const selectedStatus = params.status || '';
 

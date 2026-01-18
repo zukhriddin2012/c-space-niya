@@ -1,6 +1,16 @@
 // Database access layer - uses Supabase when configured, falls back to static data
 import { supabaseAdmin, isSupabaseAdminConfigured, Employee, Attendance, Branch, LeaveRequest } from './supabase';
 
+// Get current date string in Tashkent timezone (UTC+5) - consistent with bot
+function getTashkentDateString(): string {
+  const now = new Date();
+  const tashkentTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Tashkent' }));
+  const year = tashkentTime.getFullYear();
+  const month = String(tashkentTime.getMonth() + 1).padStart(2, '0');
+  const day = String(tashkentTime.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 // ============================================
 // EMPLOYEES
 // ============================================
@@ -408,7 +418,8 @@ export async function getTodayAttendance(): Promise<Attendance[]> {
     return [];
   }
 
-  const today = new Date().toISOString().split('T')[0];
+  // Use Tashkent timezone for "today" - consistent with bot
+  const today = getTashkentDateString();
 
   const { data, error } = await supabaseAdmin!
     .from('attendance')
@@ -478,7 +489,8 @@ export async function getAttendanceByEmployee(employeeId: string, days: number =
 }
 
 export async function getAttendanceStats(date?: string) {
-  const targetDate = date || new Date().toISOString().split('T')[0];
+  // Use Tashkent timezone for default "today" - consistent with bot
+  const targetDate = date || getTashkentDateString();
   const attendance = await getAttendanceByDate(targetDate);
   const employees = await getEmployees();
 
@@ -971,9 +983,13 @@ function getWorkingDaysInMonth(year: number, month: number): number {
 // Get weekly attendance summary for the current week from database
 export async function getWeeklyAttendanceSummary(totalEmployees: number) {
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  const today = new Date();
 
-  // Get start of week (Monday)
+  // Use Tashkent timezone for "today" - consistent with bot
+  const now = new Date();
+  const tashkentNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Tashkent' }));
+  const today = tashkentNow;
+
+  // Get start of week (Monday) in Tashkent timezone
   const dayOfWeek = today.getDay();
   const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Adjust for Sunday = 0
   const startOfWeek = new Date(today);
@@ -988,7 +1004,11 @@ export async function getWeeklyAttendanceSummary(totalEmployees: number) {
   for (let i = 0; i < 7; i++) {
     const currentDate = new Date(startOfWeek);
     currentDate.setDate(startOfWeek.getDate() + i);
-    const dateStr = currentDate.toISOString().split('T')[0];
+    // Format date as YYYY-MM-DD without timezone conversion issues
+    const year = currentDate.getFullYear();
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const day = String(currentDate.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
 
     // Only fetch data for dates up to today (and skip weekends for work attendance)
     const isWeekend = currentDate.getDay() === 0 || currentDate.getDay() === 6;
