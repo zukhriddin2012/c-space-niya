@@ -1,7 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Building2, Plus, Trash2 } from 'lucide-react';
+import { X, Building2, Plus, Trash2, Shield } from 'lucide-react';
+import type { UserRole } from '@/types';
+
+const SYSTEM_ROLES: { value: UserRole; label: string; description: string }[] = [
+  { value: 'employee', label: 'Employee', description: 'Regular employee with basic access' },
+  { value: 'branch_manager', label: 'Branch Manager', description: 'Can manage employees in their branch' },
+  { value: 'recruiter', label: 'Recruiter', description: 'Access to recruitment features' },
+  { value: 'hr', label: 'HR Manager', description: 'Full HR and employee management' },
+  { value: 'ceo', label: 'CEO', description: 'Executive access and approvals' },
+  { value: 'general_manager', label: 'General Manager', description: 'Full system access' },
+];
 
 interface Branch {
   id: string;
@@ -41,6 +51,7 @@ interface Employee {
   employment_type?: string;
   hire_date: string;
   branches?: { name: string };
+  system_role?: UserRole;
 }
 
 interface EditEmployeeModalProps {
@@ -49,6 +60,7 @@ interface EditEmployeeModalProps {
   onClose: () => void;
   onSave: (employee: Employee) => void;
   canEditSalary: boolean;
+  canAssignRoles?: boolean;
 }
 
 function formatSalary(amount: number): string {
@@ -62,6 +74,7 @@ export default function EditEmployeeModal({
   onClose,
   onSave,
   canEditSalary,
+  canAssignRoles = false,
 }: EditEmployeeModalProps) {
   const [formData, setFormData] = useState({
     full_name: employee.full_name,
@@ -72,6 +85,7 @@ export default function EditEmployeeModal({
     email: employee.email || '',
     status: employee.status,
     employment_type: employee.employment_type || 'full-time',
+    system_role: (employee.system_role || 'employee') as UserRole,
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -128,6 +142,7 @@ export default function EditEmployeeModal({
           ...formData,
           branch_id: formData.branch_id || null,
           salary: totalSalary, // Update salary to match total wages
+          system_role: canAssignRoles ? formData.system_role : undefined,
         }),
       });
 
@@ -137,8 +152,8 @@ export default function EditEmployeeModal({
       }
 
       const data = await response.json();
-      // Update employee with new total salary
-      onSave({ ...data.employee, salary: totalSalary });
+      // Update employee with new total salary and role
+      onSave({ ...data.employee, salary: totalSalary, system_role: formData.system_role });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update employee');
     } finally {
@@ -343,6 +358,50 @@ export default function EditEmployeeModal({
               </div>
             </div>
           </div>
+
+          {/* System Role Section - only for users who can assign roles */}
+          {canAssignRoles && (
+            <div className="space-y-4 pt-4 border-t border-gray-200">
+              <div className="flex items-center gap-2">
+                <Shield size={18} className="text-purple-600" />
+                <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">System Access Role</h3>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {SYSTEM_ROLES.map((role) => (
+                  <label
+                    key={role.value}
+                    className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                      formData.system_role === role.value
+                        ? 'border-purple-500 bg-purple-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="system_role"
+                      value={role.value}
+                      checked={formData.system_role === role.value}
+                      onChange={(e) => setFormData({ ...formData, system_role: e.target.value as UserRole })}
+                      className="mt-1 text-purple-600 focus:ring-purple-500"
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{role.label}</p>
+                      <p className="text-xs text-gray-500">{role.description}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+
+              {formData.system_role === 'branch_manager' && (
+                <div className="p-3 bg-teal-50 border border-teal-200 rounded-lg">
+                  <p className="text-sm text-teal-700">
+                    <strong>Note:</strong> Branch Manager will have access to manage employees in the branch selected above ({branches.find(b => b.id === formData.branch_id)?.name || 'No branch selected'}).
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Wage Distribution Section */}
           {canEditSalary && (

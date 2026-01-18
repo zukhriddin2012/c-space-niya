@@ -163,6 +163,7 @@ export async function createEmployee(employeeData: {
   status?: string;
   employment_type?: string;
   hire_date?: string;
+  system_role?: string;
 }): Promise<{ success: boolean; employee?: Employee; error?: string }> {
   if (!isSupabaseAdminConfigured()) {
     return { success: false, error: 'Database not configured' };
@@ -194,6 +195,7 @@ export async function createEmployee(employeeData: {
       status: employeeData.status || 'active',
       employment_type: employeeData.employment_type || 'full-time',
       hire_date: employeeData.hire_date || new Date().toISOString().split('T')[0],
+      system_role: employeeData.system_role || 'employee',
     })
     .select('*, branches(name)')
     .single();

@@ -18,7 +18,7 @@ export const GET = withAuth(async () => {
 export const POST = withAuth(async (request: NextRequest) => {
   try {
     const body = await request.json();
-    const { full_name, position, level, branch_id, salary, phone, email, status, employment_type, hire_date } = body;
+    const { full_name, position, level, branch_id, salary, phone, email, status, employment_type, hire_date, system_role } = body;
 
     if (!full_name || !position) {
       return NextResponse.json({ error: 'Full name and position are required' }, { status: 400 });
@@ -35,6 +35,7 @@ export const POST = withAuth(async (request: NextRequest) => {
       status: status || 'active',
       employment_type: employment_type || 'full-time',
       hire_date: hire_date || new Date().toISOString().split('T')[0],
+      system_role: system_role || 'employee',
     });
 
     if (!result.success) {

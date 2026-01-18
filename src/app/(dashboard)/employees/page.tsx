@@ -47,6 +47,7 @@ export default async function EmployeesPage({
   const canViewSalary = hasPermission(user.role, PERMISSIONS.EMPLOYEES_VIEW_SALARY);
   const canEditEmployee = hasPermission(user.role, PERMISSIONS.EMPLOYEES_EDIT);
   const canEditSalary = hasPermission(user.role, PERMISSIONS.EMPLOYEES_EDIT_SALARY);
+  const canAssignRoles = hasPermission(user.role, PERMISSIONS.USERS_ASSIGN_ROLES);
 
   // Get filter params
   const params = await searchParams;
@@ -201,6 +202,7 @@ export default async function EmployeesPage({
         canEditEmployee={canEditEmployee}
         canEditSalary={canEditSalary}
         canCreateEmployee={canCreateEmployee}
+        canAssignRoles={canAssignRoles}
       />
     </div>
   );

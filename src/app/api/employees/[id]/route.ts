@@ -39,7 +39,7 @@ export const PUT = withAuth(async (
     }
 
     const body = await request.json();
-    const { full_name, position, level, branch_id, salary, phone, email, status, employment_type } = body;
+    const { full_name, position, level, branch_id, salary, phone, email, status, employment_type, system_role } = body;
 
     const updates: {
       full_name?: string;
@@ -51,6 +51,7 @@ export const PUT = withAuth(async (
       email?: string | null;
       status?: string;
       employment_type?: string;
+      system_role?: string;
     } = {};
 
     if (full_name !== undefined) updates.full_name = full_name;
@@ -62,6 +63,7 @@ export const PUT = withAuth(async (
     if (email !== undefined) updates.email = email || null;
     if (status !== undefined) updates.status = status;
     if (employment_type !== undefined) updates.employment_type = employment_type;
+    if (system_role !== undefined) updates.system_role = system_role;
 
     const result = await updateEmployee(id, updates);
 

@@ -1,7 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { X, UserPlus } from 'lucide-react';
+import { X, UserPlus, Shield } from 'lucide-react';
+import type { UserRole } from '@/types';
+
+const SYSTEM_ROLES: { value: UserRole; label: string; description: string }[] = [
+  { value: 'employee', label: 'Employee', description: 'Regular employee with basic access' },
+  { value: 'branch_manager', label: 'Branch Manager', description: 'Can manage employees in their branch' },
+  { value: 'recruiter', label: 'Recruiter', description: 'Access to recruitment features' },
+  { value: 'hr', label: 'HR Manager', description: 'Full HR and employee management' },
+  { value: 'ceo', label: 'CEO', description: 'Executive access and approvals' },
+  { value: 'general_manager', label: 'General Manager', description: 'Full system access' },
+];
 
 interface Branch {
   id: string;
@@ -22,18 +32,21 @@ interface Employee {
   employment_type?: string;
   hire_date: string;
   branches?: { name: string };
+  system_role?: UserRole;
 }
 
 interface AddEmployeeModalProps {
   branches: Branch[];
   onClose: () => void;
   onAdd: (employee: Employee) => void;
+  canAssignRoles?: boolean;
 }
 
 export default function AddEmployeeModal({
   branches,
   onClose,
   onAdd,
+  canAssignRoles = false,
 }: AddEmployeeModalProps) {
   const [formData, setFormData] = useState({
     full_name: '',
@@ -45,6 +58,7 @@ export default function AddEmployeeModal({
     status: 'active',
     employment_type: 'full-time',
     hire_date: new Date().toISOString().split('T')[0],
+    system_role: 'employee' as UserRole,
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,6 +77,7 @@ export default function AddEmployeeModal({
         body: JSON.stringify({
           ...formData,
           branch_id: formData.branch_id || null,
+          system_role: canAssignRoles ? formData.system_role : 'employee',
         }),
       });
 
@@ -244,6 +259,34 @@ export default function AddEmployeeModal({
               />
             </div>
           </div>
+
+          {/* System Role Section - only for users who can assign roles */}
+          {canAssignRoles && (
+            <div className="space-y-3 pt-4 border-t border-gray-200">
+              <div className="flex items-center gap-2">
+                <Shield size={16} className="text-purple-600" />
+                <label className="text-sm font-medium text-gray-700">System Access Role</label>
+              </div>
+              <select
+                value={formData.system_role}
+                onChange={(e) => setFormData({ ...formData, system_role: e.target.value as UserRole })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+              >
+                {SYSTEM_ROLES.map((role) => (
+                  <option key={role.value} value={role.value}>
+                    {role.label} - {role.description}
+                  </option>
+                ))}
+              </select>
+              {formData.system_role === 'branch_manager' && formData.branch_id && (
+                <div className="p-3 bg-teal-50 border border-teal-200 rounded-lg">
+                  <p className="text-sm text-teal-700">
+                    <strong>Note:</strong> This Branch Manager will have access to manage employees in {branches.find(b => b.id === formData.branch_id)?.name || 'the selected branch'}.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="bg-blue-50 rounded-lg p-4 text-sm text-blue-700">
             <p><strong>Note:</strong> Salary/wages can be configured after creating the employee by editing their profile and adding wage distribution from legal entities.</p>

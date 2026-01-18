@@ -34,6 +34,7 @@ interface EmployeesTableProps {
   canEditEmployee: boolean;
   canEditSalary: boolean;
   canCreateEmployee?: boolean;
+  canAssignRoles?: boolean;
 }
 
 function EmployeeStatusBadge({ status }: { status: string }) {
@@ -180,6 +181,7 @@ export default function EmployeesTable({
   canEditEmployee,
   canEditSalary,
   canCreateEmployee = false,
+  canAssignRoles = false,
 }: EmployeesTableProps) {
   const [employees, setEmployees] = useState(initialEmployees);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
@@ -393,6 +395,7 @@ export default function EmployeesTable({
           branches={branches}
           onClose={() => setShowAddModal(false)}
           onAdd={handleAdd}
+          canAssignRoles={canAssignRoles}
         />
       )}
 
@@ -404,6 +407,7 @@ export default function EmployeesTable({
           onClose={() => setEditingEmployee(null)}
           onSave={handleSave}
           canEditSalary={canEditSalary}
+          canAssignRoles={canAssignRoles}
         />
       )}
 
