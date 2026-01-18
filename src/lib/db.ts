@@ -584,6 +584,55 @@ export async function updateLeaveRequest(
   return true;
 }
 
+// Get leave request by ID with employee telegram info (for notifications)
+export async function getLeaveRequestWithTelegram(id: number): Promise<{
+  id: number;
+  employee_id: string;
+  employee_name: string;
+  telegram_id: string | null;
+  start_date: string;
+  end_date: string;
+  reason: string | null;
+  status: string;
+  review_note: string | null;
+} | null> {
+  if (!isSupabaseAdminConfigured()) {
+    return null;
+  }
+
+  const { data, error } = await supabaseAdmin!
+    .from('leave_requests')
+    .select(`
+      id,
+      employee_id,
+      start_date,
+      end_date,
+      reason,
+      status,
+      review_note,
+      employees(full_name, telegram_id)
+    `)
+    .eq('id', id)
+    .single();
+
+  if (error || !data) {
+    console.error('Error fetching leave request:', error);
+    return null;
+  }
+
+  return {
+    id: data.id,
+    employee_id: data.employee_id,
+    employee_name: (data.employees as any)?.full_name || 'Unknown',
+    telegram_id: (data.employees as any)?.telegram_id || null,
+    start_date: data.start_date,
+    end_date: data.end_date,
+    reason: data.reason,
+    status: data.status,
+    review_note: data.review_note,
+  };
+}
+
 // Get leave requests for a specific employee
 export async function getLeaveRequestsByEmployee(employeeId: string): Promise<LeaveRequest[]> {
   if (!isSupabaseAdminConfigured()) {
@@ -1691,4 +1740,69 @@ export async function getEmployeePaymentHistory(employeeId: string) {
     }));
 
   return { payments, pending };
+}
+
+// Get payment request items with employee telegram IDs for notifications
+export async function getPaymentRequestItemsWithTelegram(requestId: string): Promise<{
+  request: {
+    id: string;
+    request_type: 'advance' | 'wage';
+    year: number;
+    month: number;
+    status: string;
+    rejection_reason?: string;
+    payment_reference?: string;
+  } | null;
+  items: Array<{
+    id: string;
+    employee_id: string;
+    employee_name: string;
+    telegram_id: string | null;
+    amount: number;
+    net_salary: number;
+  }>;
+}> {
+  if (!isSupabaseAdminConfigured()) {
+    return { request: null, items: [] };
+  }
+
+  // First get the payment request
+  const { data: request, error: requestError } = await supabaseAdmin!
+    .from('payment_requests')
+    .select('id, request_type, year, month, status, rejection_reason, payment_reference')
+    .eq('id', requestId)
+    .single();
+
+  if (requestError || !request) {
+    console.error('Error fetching payment request:', requestError);
+    return { request: null, items: [] };
+  }
+
+  // Get items with employee telegram IDs
+  const { data: items, error: itemsError } = await supabaseAdmin!
+    .from('payment_request_items')
+    .select(`
+      id,
+      employee_id,
+      amount,
+      net_salary,
+      employees(id, full_name, telegram_id)
+    `)
+    .eq('payment_request_id', requestId);
+
+  if (itemsError) {
+    console.error('Error fetching payment request items:', itemsError);
+    return { request, items: [] };
+  }
+
+  const formattedItems = (items || []).map((item: any) => ({
+    id: item.id,
+    employee_id: item.employee_id,
+    employee_name: item.employees?.full_name || 'Unknown',
+    telegram_id: item.employees?.telegram_id || null,
+    amount: item.amount,
+    net_salary: item.net_salary || 0,
+  }));
+
+  return { request, items: formattedItems };
 }
