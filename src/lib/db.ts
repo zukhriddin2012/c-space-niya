@@ -1625,3 +1625,70 @@ export async function getPaidAdvancesByEmployee(year: number, month: number): Pr
 
   return paidAdvances;
 }
+
+// Get employee's payment history
+export async function getEmployeePaymentHistory(employeeId: string) {
+  if (!isSupabaseAdminConfigured()) {
+    return { payments: [], pending: [] };
+  }
+
+  // Get all payment request items for this employee
+  const { data: items, error } = await supabaseAdmin!
+    .from('payment_request_items')
+    .select(`
+      id,
+      amount,
+      net_salary,
+      created_at,
+      payment_request_id,
+      payment_requests (
+        id,
+        request_type,
+        year,
+        month,
+        status,
+        submitted_at,
+        approved_at,
+        paid_at,
+        payment_reference
+      )
+    `)
+    .eq('employee_id', employeeId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching employee payments:', error);
+    return { payments: [], pending: [] };
+  }
+
+  // Filter to only paid items
+  const payments = (items || [])
+    .filter((p: any) => p.payment_requests?.status === 'paid')
+    .map((p: any) => ({
+      id: p.id,
+      amount: p.amount,
+      net_salary: p.net_salary,
+      type: p.payment_requests?.request_type,
+      year: p.payment_requests?.year,
+      month: p.payment_requests?.month,
+      paid_at: p.payment_requests?.paid_at,
+      payment_reference: p.payment_requests?.payment_reference,
+    }));
+
+  // Get pending payments (approved but not paid yet)
+  const pending = (items || [])
+    .filter((p: any) => ['approved', 'pending_approval'].includes(p.payment_requests?.status))
+    .map((p: any) => ({
+      id: p.id,
+      amount: p.amount,
+      net_salary: p.net_salary,
+      type: p.payment_requests?.request_type,
+      year: p.payment_requests?.year,
+      month: p.payment_requests?.month,
+      status: p.payment_requests?.status,
+      submitted_at: p.payment_requests?.submitted_at,
+      approved_at: p.payment_requests?.approved_at,
+    }));
+
+  return { payments, pending };
+}

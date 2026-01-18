@@ -18,6 +18,7 @@ import {
   AlertCircle,
   ArrowRight,
   FileText,
+  Banknote,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -276,6 +277,32 @@ export default async function MyPortalPage() {
               ))
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Payment History Quick Access */}
+      <div className="bg-gradient-to-r from-orange-50 to-green-50 rounded-xl border border-orange-200 p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex -space-x-2">
+              <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center border-2 border-white">
+                <Banknote size={18} className="text-orange-600" />
+              </div>
+              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center border-2 border-white">
+                <Wallet size={18} className="text-green-600" />
+              </div>
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">Payment History</h3>
+              <p className="text-sm text-gray-600">View your advance and wage payments</p>
+            </div>
+          </div>
+          <Link
+            href="/my-portal/payments"
+            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+          >
+            View Payments <ArrowRight size={14} />
+          </Link>
         </div>
       </div>
 

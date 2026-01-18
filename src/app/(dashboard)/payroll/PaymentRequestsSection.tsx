@@ -14,6 +14,8 @@ import {
   ChevronUp,
   ChevronDown,
   ChevronsUpDown,
+  Download,
+  FileSpreadsheet,
 } from 'lucide-react';
 
 interface PayrollRecord {
@@ -396,8 +398,15 @@ export default function PaymentRequestsSection({
       {/* Payment Requests List */}
       {summary.requests.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+          <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
             <h3 className="font-semibold text-gray-900">Payment Requests for {getMonthName(month, year)}</h3>
+            <a
+              href={`/api/payment-requests/export?year=${year}&month=${month}`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
+            >
+              <FileSpreadsheet size={14} />
+              Export Excel
+            </a>
           </div>
           <div className="divide-y divide-gray-100">
             {summary.requests.map(request => (
