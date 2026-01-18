@@ -184,13 +184,14 @@ function StatCard({
 
   const content = (
     <div className="flex items-start justify-between">
-      <div>
-        <p className="text-sm text-gray-500">{title}</p>
-        <p className="text-2xl font-semibold text-gray-900 mt-1">{value}</p>
-        {trend && <p className="text-xs text-green-600 mt-1">{trend}</p>}
+      <div className="min-w-0 flex-1">
+        <p className="text-xs lg:text-sm text-gray-500 truncate">{title}</p>
+        <p className="text-lg lg:text-2xl font-semibold text-gray-900 mt-0.5 lg:mt-1">{value}</p>
+        {trend && <p className="text-xs text-green-600 mt-0.5 lg:mt-1 hidden sm:block">{trend}</p>}
       </div>
-      <div className={`p-2.5 rounded-lg ${colorClasses[color]}`}>
-        <Icon size={20} />
+      <div className={`p-1.5 lg:p-2.5 rounded-lg ${colorClasses[color]} flex-shrink-0 ml-2`}>
+        <Icon size={16} className="lg:hidden" />
+        <Icon size={20} className="hidden lg:block" />
       </div>
     </div>
   );
@@ -199,7 +200,7 @@ function StatCard({
     return (
       <Link
         href={href}
-        className="bg-white rounded-xl border border-gray-200 p-5 hover:border-purple-300 hover:shadow-md transition-all block"
+        className="bg-white rounded-xl border border-gray-200 p-3 lg:p-5 hover:border-purple-300 hover:shadow-md transition-all block"
       >
         {content}
       </Link>
@@ -207,7 +208,7 @@ function StatCard({
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5">
+    <div className="bg-white rounded-xl border border-gray-200 p-3 lg:p-5">
       {content}
     </div>
   );
@@ -608,10 +609,11 @@ export default async function DashboardPage() {
   return (
     <div>
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-        <p className="text-gray-500 mt-1">
-          Welcome back, {user.name}! Here&apos;s your overview as {getRoleLabel(user.role)}.
+      <div className="mb-4 lg:mb-6">
+        <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">Dashboard</h1>
+        <p className="text-sm lg:text-base text-gray-500 mt-1">
+          Welcome back, {user.name}!
+          <span className="hidden sm:inline"> Here&apos;s your overview as {getRoleLabel(user.role)}.</span>
           {user.role === 'branch_manager' && user.branchId && (
             <span className="text-purple-600"> (Branch View)</span>
           )}
@@ -619,7 +621,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-4 lg:mb-6">
         <StatCard
           title={user.role === 'branch_manager' ? 'Branch Employees' : 'Total Employees'}
           value={stats.totalEmployees}
@@ -664,7 +666,7 @@ export default async function DashboardPage() {
 
       {/* Additional Stats for GM/CEO */}
       {(user.role === 'general_manager' || user.role === 'ceo') && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 lg:gap-4 mb-4 lg:mb-6">
           <StatCard
             title="Active Branches"
             value={stats.totalBranches}

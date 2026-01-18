@@ -424,79 +424,81 @@ export default async function AttendancePage({
         isEmployee={isEmployee}
       />
 
-      {/* Attendance Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-200 bg-gray-50">
-              <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Employee
-              </th>
-              <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Branch
-              </th>
-              <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Check In
-              </th>
-              <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Check Out
-              </th>
-              <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Hours
-              </th>
-              <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Source
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {filteredAttendance.map((record) => (
-              <tr key={record.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                      <span className="text-purple-700 text-sm font-medium">
-                        {record.employeeName.charAt(0)}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{record.employeeName}</p>
-                      <p className="text-xs text-gray-500">{record.position}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <MapPin size={14} className="text-gray-400" />
-                    <span className="text-sm text-gray-900">{record.branchName}</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <span className={`text-sm ${record.status === 'late' ? 'text-orange-600 font-medium' : 'text-gray-900'}`}>
-                    {formatTime(record.checkInTime)}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <span className={`text-sm ${record.status === 'early_leave' ? 'text-yellow-600 font-medium' : 'text-gray-900'}`}>
-                    {formatTime(record.checkOutTime)}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-900">
-                  {record.totalHours ? `${record.totalHours}h` : calculateHours(record.checkInTime, record.checkOutTime)}
-                </td>
-                <td className="px-6 py-4">
-                  <StatusBadge status={record.status} />
-                </td>
-                <td className="px-6 py-4">
-                  <SourceBadge source={record.source} />
-                </td>
+      {/* Attendance Table - Desktop */}
+      <div className="hidden md:block bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="text-left px-4 lg:px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Employee
+                </th>
+                <th className="text-left px-4 lg:px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Branch
+                </th>
+                <th className="text-left px-4 lg:px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Check In
+                </th>
+                <th className="text-left px-4 lg:px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Check Out
+                </th>
+                <th className="text-left px-4 lg:px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Hours
+                </th>
+                <th className="text-left px-4 lg:px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="text-left px-4 lg:px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Source
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredAttendance.map((record) => (
+                <tr key={record.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-4 lg:px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-purple-700 text-sm font-medium">
+                          {record.employeeName.charAt(0)}
+                        </span>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 truncate">{record.employeeName}</p>
+                        <p className="text-xs text-gray-500 truncate">{record.position}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 lg:px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <MapPin size={14} className="text-gray-400 flex-shrink-0" />
+                      <span className="text-sm text-gray-900 truncate">{record.branchName}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 lg:px-6 py-4">
+                    <span className={`text-sm ${record.status === 'late' ? 'text-orange-600 font-medium' : 'text-gray-900'}`}>
+                      {formatTime(record.checkInTime)}
+                    </span>
+                  </td>
+                  <td className="px-4 lg:px-6 py-4">
+                    <span className={`text-sm ${record.status === 'early_leave' ? 'text-yellow-600 font-medium' : 'text-gray-900'}`}>
+                      {formatTime(record.checkOutTime)}
+                    </span>
+                  </td>
+                  <td className="px-4 lg:px-6 py-4 text-sm text-gray-900">
+                    {record.totalHours ? `${record.totalHours}h` : calculateHours(record.checkInTime, record.checkOutTime)}
+                  </td>
+                  <td className="px-4 lg:px-6 py-4">
+                    <StatusBadge status={record.status} />
+                  </td>
+                  <td className="px-4 lg:px-6 py-4">
+                    <SourceBadge source={record.source} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
         {filteredAttendance.length === 0 && (
           <div className="text-center py-12">
@@ -505,7 +507,7 @@ export default async function AttendancePage({
         )}
 
         {/* Pagination */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50">
+        <div className="flex items-center justify-between px-4 lg:px-6 py-4 border-t border-gray-200 bg-gray-50">
           <p className="text-sm text-gray-500">
             Showing <span className="font-medium">1</span> to{' '}
             <span className="font-medium">{filteredAttendance.length}</span> of{' '}
@@ -526,6 +528,69 @@ export default async function AttendancePage({
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Attendance Cards - Mobile */}
+      <div className="md:hidden space-y-3">
+        {filteredAttendance.length === 0 ? (
+          <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+            <p className="text-gray-500">No attendance records found for the selected filters.</p>
+          </div>
+        ) : (
+          filteredAttendance.map((record) => (
+            <div key={record.id} className="bg-white rounded-xl border border-gray-200 p-4">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-purple-700 font-medium">
+                      {record.employeeName.charAt(0)}
+                    </span>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-medium text-gray-900">{record.employeeName}</p>
+                    <p className="text-xs text-gray-500">{record.position}</p>
+                  </div>
+                </div>
+                <StatusBadge status={record.status} />
+              </div>
+
+              <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
+                <MapPin size={14} />
+                <span>{record.branchName}</span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3 text-center bg-gray-50 rounded-lg p-3">
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Check In</p>
+                  <p className={`text-sm font-medium ${record.status === 'late' ? 'text-orange-600' : 'text-gray-900'}`}>
+                    {formatTime(record.checkInTime)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Check Out</p>
+                  <p className={`text-sm font-medium ${record.status === 'early_leave' ? 'text-yellow-600' : 'text-gray-900'}`}>
+                    {formatTime(record.checkOutTime)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Hours</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {record.totalHours ? `${record.totalHours}h` : calculateHours(record.checkInTime, record.checkOutTime)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+
+        {/* Mobile Pagination */}
+        {filteredAttendance.length > 0 && (
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-sm text-gray-500 text-center">
+              Showing {filteredAttendance.length} records
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
