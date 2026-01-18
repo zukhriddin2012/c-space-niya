@@ -152,72 +152,77 @@ export default function MyLeavesPage() {
   const today = new Date().toISOString().split('T')[0];
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-4 lg:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link href="/my-portal" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 lg:gap-4 min-w-0">
+          <Link href="/my-portal" className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0">
             <ArrowLeft size={20} className="text-gray-600" />
           </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">My Leave Requests</h1>
-            <p className="text-gray-600">Request and manage your time off</p>
+          <div className="min-w-0">
+            <h1 className="text-xl lg:text-2xl font-bold text-gray-900">My Leave Requests</h1>
+            <p className="text-sm lg:text-base text-gray-600 truncate">Request and manage your time off</p>
           </div>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex-shrink-0 text-sm lg:text-base"
         >
           <Plus size={18} />
-          Request Leave
+          <span className="hidden sm:inline">Request Leave</span>
+          <span className="sm:hidden">Request</span>
         </button>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-4">
-          <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-            <Clock size={20} className="text-yellow-600" />
+      <div className="grid grid-cols-3 gap-2 lg:gap-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-3 lg:p-4 flex items-center gap-2 lg:gap-4">
+          <div className="w-8 h-8 lg:w-10 lg:h-10 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0">
+            <Clock size={16} className="lg:hidden text-yellow-600" />
+            <Clock size={20} className="hidden lg:block text-yellow-600" />
           </div>
-          <div>
-            <p className="text-2xl font-bold text-gray-900">{pendingCount}</p>
-            <p className="text-sm text-gray-500">Pending</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-4">
-          <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-            <CheckCircle2 size={20} className="text-green-600" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-gray-900">{approvedCount}</p>
-            <p className="text-sm text-gray-500">Approved</p>
+          <div className="min-w-0">
+            <p className="text-xl lg:text-2xl font-bold text-gray-900">{pendingCount}</p>
+            <p className="text-xs lg:text-sm text-gray-500">Pending</p>
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-4">
-          <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-            <XCircle size={20} className="text-red-600" />
+        <div className="bg-white rounded-xl border border-gray-200 p-3 lg:p-4 flex items-center gap-2 lg:gap-4">
+          <div className="w-8 h-8 lg:w-10 lg:h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+            <CheckCircle2 size={16} className="lg:hidden text-green-600" />
+            <CheckCircle2 size={20} className="hidden lg:block text-green-600" />
           </div>
-          <div>
-            <p className="text-2xl font-bold text-gray-900">{rejectedCount}</p>
-            <p className="text-sm text-gray-500">Rejected</p>
+          <div className="min-w-0">
+            <p className="text-xl lg:text-2xl font-bold text-gray-900">{approvedCount}</p>
+            <p className="text-xs lg:text-sm text-gray-500">Approved</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-3 lg:p-4 flex items-center gap-2 lg:gap-4">
+          <div className="w-8 h-8 lg:w-10 lg:h-10 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+            <XCircle size={16} className="lg:hidden text-red-600" />
+            <XCircle size={20} className="hidden lg:block text-red-600" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xl lg:text-2xl font-bold text-gray-900">{rejectedCount}</p>
+            <p className="text-xs lg:text-sm text-gray-500">Rejected</p>
           </div>
         </div>
       </div>
 
       {/* Leave Requests List */}
       <div className="bg-white rounded-xl border border-gray-200">
-        <div className="p-4 border-b border-gray-200">
-          <h3 className="font-semibold text-gray-900">All Requests</h3>
+        <div className="p-3 lg:p-4 border-b border-gray-200">
+          <h3 className="font-semibold text-gray-900 text-sm lg:text-base">All Requests</h3>
         </div>
         {loading ? (
-          <div className="p-8 text-center text-gray-500">Loading...</div>
+          <div className="p-6 lg:p-8 text-center text-gray-500 text-sm">Loading...</div>
         ) : leaves.length === 0 ? (
-          <div className="p-8 text-center">
-            <Calendar size={48} className="mx-auto text-gray-300 mb-4" />
-            <p className="text-gray-500">No leave requests yet</p>
+          <div className="p-6 lg:p-8 text-center">
+            <Calendar size={40} className="lg:hidden mx-auto text-gray-300 mb-4" />
+            <Calendar size={48} className="hidden lg:block mx-auto text-gray-300 mb-4" />
+            <p className="text-gray-500 text-sm">No leave requests yet</p>
             <button
               onClick={() => setShowModal(true)}
-              className="mt-4 text-purple-600 hover:text-purple-700 font-medium"
+              className="mt-4 text-purple-600 hover:text-purple-700 font-medium text-sm"
             >
               Request your first leave
             </button>
@@ -225,13 +230,15 @@ export default function MyLeavesPage() {
         ) : (
           <div className="divide-y divide-gray-100">
             {leaves.map((leave) => (
-              <div key={leave.id} className="p-4 hover:bg-gray-50">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-3">
-                    {getStatusIcon(leave.status)}
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium text-gray-900 capitalize">
+              <div key={leave.id} className="p-3 lg:p-4 hover:bg-gray-50">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+                  <div className="flex items-start gap-2 lg:gap-3 min-w-0">
+                    <div className="flex-shrink-0 mt-0.5">
+                      {getStatusIcon(leave.status)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-medium text-gray-900 capitalize text-sm lg:text-base">
                           {leave.leave_type.replace('_', ' ')} Leave
                         </p>
                         <span
@@ -242,24 +249,27 @@ export default function MyLeavesPage() {
                           {leave.status}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {formatDate(leave.start_date)} — {formatDate(leave.end_date)}
+                      <p className="text-xs lg:text-sm text-gray-600 mt-1">
+                        <span className="hidden sm:inline">{formatDate(leave.start_date)} — {formatDate(leave.end_date)}</span>
+                        <span className="sm:hidden">
+                          {new Date(leave.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(leave.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </span>
                         <span className="text-gray-400 ml-2">
                           ({calculateDays(leave.start_date, leave.end_date)} days)
                         </span>
                       </p>
                       {leave.reason && (
-                        <p className="text-sm text-gray-500 mt-1">"{leave.reason}"</p>
+                        <p className="text-xs lg:text-sm text-gray-500 mt-1 truncate">"{leave.reason}"</p>
                       )}
                       {leave.review_note && leave.status !== 'pending' && (
-                        <p className="text-sm text-gray-500 mt-2 italic">
+                        <p className="text-xs lg:text-sm text-gray-500 mt-2 italic truncate">
                           Review note: {leave.review_note}
                         </p>
                       )}
                     </div>
                   </div>
-                  <p className="text-xs text-gray-400">
-                    Requested {formatDate(leave.created_at)}
+                  <p className="text-xs text-gray-400 flex-shrink-0 ml-6 sm:ml-0">
+                    <span className="hidden sm:inline">Requested </span>{new Date(leave.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </p>
                 </div>
               </div>
@@ -270,10 +280,10 @@ export default function MyLeavesPage() {
 
       {/* Request Leave Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Request Leave</h3>
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+          <div className="bg-white rounded-t-xl sm:rounded-xl p-4 lg:p-6 w-full sm:max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4 lg:mb-6">
+              <h3 className="text-base lg:text-lg font-semibold text-gray-900">Request Leave</h3>
               <button
                 onClick={() => setShowModal(false)}
                 className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
@@ -291,11 +301,11 @@ export default function MyLeavesPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Leave Type
                 </label>
-                <div className="space-y-2">
+                <div className="space-y-2 max-h-48 overflow-y-auto">
                   {LEAVE_TYPES.map((type) => (
                     <label
                       key={type.value}
-                      className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                      className={`flex items-start gap-2 lg:gap-3 p-2 lg:p-3 border rounded-lg cursor-pointer transition-colors ${
                         leaveType === type.value
                           ? 'border-purple-500 bg-purple-50'
                           : 'border-gray-200 hover:border-gray-300'
@@ -307,20 +317,20 @@ export default function MyLeavesPage() {
                         value={type.value}
                         checked={leaveType === type.value}
                         onChange={(e) => setLeaveType(e.target.value)}
-                        className="mt-0.5"
+                        className="mt-0.5 flex-shrink-0"
                       />
-                      <div>
-                        <p className="font-medium text-gray-900">{type.label}</p>
-                        <p className="text-sm text-gray-500">{type.description}</p>
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 text-sm lg:text-base">{type.label}</p>
+                        <p className="text-xs lg:text-sm text-gray-500 truncate">{type.description}</p>
                       </div>
                     </label>
                   ))}
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 lg:gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-xs lg:text-sm font-medium text-gray-700 mb-1">
                     Start Date
                   </label>
                   <input
@@ -329,11 +339,11 @@ export default function MyLeavesPage() {
                     onChange={(e) => setStartDate(e.target.value)}
                     min={today}
                     required
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-2 lg:px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-xs lg:text-sm font-medium text-gray-700 mb-1">
                     End Date
                   </label>
                   <input
@@ -342,27 +352,27 @@ export default function MyLeavesPage() {
                     onChange={(e) => setEndDate(e.target.value)}
                     min={startDate || today}
                     required
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-2 lg:px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
                   />
                 </div>
               </div>
 
               {startDate && endDate && (
-                <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                <div className="text-sm text-gray-600 bg-gray-50 p-2 lg:p-3 rounded-lg">
                   Duration: <strong>{calculateDays(startDate, endDate)} days</strong>
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-xs lg:text-sm font-medium text-gray-700 mb-1">
                   Reason (optional)
                 </label>
                 <textarea
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  rows={3}
+                  rows={2}
                   placeholder="Briefly describe your reason..."
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                  className="w-full px-2 lg:px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-sm"
                 />
               </div>
 
@@ -370,16 +380,16 @@ export default function MyLeavesPage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-3 lg:px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm lg:text-base"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting || !startDate || !endDate}
-                  className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-3 lg:px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm lg:text-base"
                 >
-                  {submitting ? 'Submitting...' : 'Submit Request'}
+                  {submitting ? 'Submitting...' : 'Submit'}
                 </button>
               </div>
             </form>

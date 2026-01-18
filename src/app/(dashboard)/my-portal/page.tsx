@@ -113,26 +113,32 @@ export default async function MyPortalPage() {
   const latestPayslip = payslips[0];
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-4 lg:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Portal</h1>
-          <p className="text-gray-600">Welcome back, {employee.full_name}</p>
+          <h1 className="text-xl lg:text-2xl font-bold text-gray-900">My Portal</h1>
+          <p className="text-sm lg:text-base text-gray-600">Welcome back, {employee.full_name}</p>
         </div>
-        <div className="text-right">
-          <p className="text-sm text-gray-500">Employee ID</p>
-          <p className="font-mono font-medium text-gray-900">{employee.employee_id}</p>
+        <div className="text-left sm:text-right">
+          <p className="text-xs lg:text-sm text-gray-500">Employee ID</p>
+          <p className="font-mono font-medium text-gray-900 text-sm lg:text-base">{employee.employee_id}</p>
         </div>
       </div>
 
       {/* Profile Card */}
-      <div className="bg-gradient-to-r from-purple-600 to-purple-700 rounded-xl p-6 text-white">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center text-2xl font-bold">
-            {employee.full_name.charAt(0)}
+      <div className="bg-gradient-to-r from-purple-600 to-purple-700 rounded-xl p-4 lg:p-6 text-white">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="w-12 h-12 lg:w-16 lg:h-16 bg-white/20 rounded-full flex items-center justify-center text-xl lg:text-2xl font-bold flex-shrink-0">
+              {employee.full_name.charAt(0)}
+            </div>
+            <div className="flex-1 min-w-0 sm:hidden">
+              <h2 className="text-lg font-semibold truncate">{employee.full_name}</h2>
+              <p className="text-purple-200 text-sm">{employee.position}</p>
+            </div>
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0 hidden sm:block">
             <h2 className="text-xl font-semibold">{employee.full_name}</h2>
             <p className="text-purple-200">{employee.position}</p>
             <div className="flex items-center gap-4 mt-2 text-sm text-purple-200">
@@ -141,9 +147,14 @@ export default async function MyPortalPage() {
               <span>{employee.branches?.name || 'No Branch'}</span>
             </div>
           </div>
+          <div className="flex flex-wrap items-center gap-2 sm:hidden text-xs text-purple-200">
+            <span className="capitalize">{employee.level} Level</span>
+            <span>•</span>
+            <span>{employee.branches?.name || 'No Branch'}</span>
+          </div>
           <Link
             href="/my-portal/profile"
-            className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium transition-colors"
+            className="w-full sm:w-auto text-center px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium transition-colors"
           >
             View Profile
           </Link>
@@ -151,82 +162,86 @@ export default async function MyPortalPage() {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-              <CheckCircle2 size={20} className="text-green-600" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-3 lg:p-4">
+          <div className="flex items-center gap-2 lg:gap-3">
+            <div className="w-8 h-8 lg:w-10 lg:h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <CheckCircle2 size={16} className="lg:hidden text-green-600" />
+              <CheckCircle2 size={20} className="hidden lg:block text-green-600" />
             </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{monthlySummary.presentDays}</p>
-              <p className="text-sm text-gray-500">Days Present</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-              <AlertCircle size={20} className="text-yellow-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{monthlySummary.lateDays}</p>
-              <p className="text-sm text-gray-500">Late Arrivals</p>
+            <div className="min-w-0">
+              <p className="text-xl lg:text-2xl font-bold text-gray-900">{monthlySummary.presentDays}</p>
+              <p className="text-xs lg:text-sm text-gray-500 truncate">Days Present</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Clock size={20} className="text-blue-600" />
+        <div className="bg-white rounded-xl border border-gray-200 p-3 lg:p-4">
+          <div className="flex items-center gap-2 lg:gap-3">
+            <div className="w-8 h-8 lg:w-10 lg:h-10 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <AlertCircle size={16} className="lg:hidden text-yellow-600" />
+              <AlertCircle size={20} className="hidden lg:block text-yellow-600" />
             </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{monthlySummary.totalHours}h</p>
-              <p className="text-sm text-gray-500">Hours Worked</p>
+            <div className="min-w-0">
+              <p className="text-xl lg:text-2xl font-bold text-gray-900">{monthlySummary.lateDays}</p>
+              <p className="text-xs lg:text-sm text-gray-500 truncate">Late Arrivals</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-              <Calendar size={20} className="text-purple-600" />
+        <div className="bg-white rounded-xl border border-gray-200 p-3 lg:p-4">
+          <div className="flex items-center gap-2 lg:gap-3">
+            <div className="w-8 h-8 lg:w-10 lg:h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Clock size={16} className="lg:hidden text-blue-600" />
+              <Clock size={20} className="hidden lg:block text-blue-600" />
             </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{pendingLeaves}</p>
-              <p className="text-sm text-gray-500">Pending Leaves</p>
+            <div className="min-w-0">
+              <p className="text-xl lg:text-2xl font-bold text-gray-900">{monthlySummary.totalHours}h</p>
+              <p className="text-xs lg:text-sm text-gray-500 truncate">Hours Worked</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl border border-gray-200 p-3 lg:p-4">
+          <div className="flex items-center gap-2 lg:gap-3">
+            <div className="w-8 h-8 lg:w-10 lg:h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Calendar size={16} className="lg:hidden text-purple-600" />
+              <Calendar size={20} className="hidden lg:block text-purple-600" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xl lg:text-2xl font-bold text-gray-900">{pendingLeaves}</p>
+              <p className="text-xs lg:text-sm text-gray-500 truncate">Pending Leaves</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
         {/* Recent Attendance */}
         <div className="bg-white rounded-xl border border-gray-200">
-          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-            <h3 className="font-semibold text-gray-900">Recent Attendance</h3>
+          <div className="p-3 lg:p-4 border-b border-gray-200 flex items-center justify-between">
+            <h3 className="font-semibold text-gray-900 text-sm lg:text-base">Recent Attendance</h3>
             <Link
               href="/my-portal/attendance"
-              className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
+              className="text-xs lg:text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
             >
               View All <ArrowRight size={14} />
             </Link>
           </div>
           <div className="divide-y divide-gray-100">
             {recentAttendance.length === 0 ? (
-              <div className="p-6 text-center text-gray-500">No attendance records found</div>
+              <div className="p-4 lg:p-6 text-center text-gray-500 text-sm">No attendance records found</div>
             ) : (
               recentAttendance.slice(0, 5).map((record) => (
-                <div key={record.id} className="p-4 flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-gray-900">{formatDate(record.date)}</p>
-                    <p className="text-sm text-gray-500">
+                <div key={record.id} className="p-3 lg:p-4 flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-medium text-gray-900 text-sm lg:text-base">{formatDate(record.date)}</p>
+                    <p className="text-xs lg:text-sm text-gray-500">
                       {formatTime(record.check_in)} - {formatTime(record.check_out)}
                     </p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-gray-600">
+                  <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0">
+                    <span className="text-xs lg:text-sm text-gray-600 hidden sm:inline">
                       {record.total_hours ? `${record.total_hours.toFixed(1)}h` : '-'}
                     </span>
                     <span
@@ -245,29 +260,31 @@ export default async function MyPortalPage() {
 
         {/* Leave Requests */}
         <div className="bg-white rounded-xl border border-gray-200">
-          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-            <h3 className="font-semibold text-gray-900">Leave Requests</h3>
+          <div className="p-3 lg:p-4 border-b border-gray-200 flex items-center justify-between">
+            <h3 className="font-semibold text-gray-900 text-sm lg:text-base">Leave Requests</h3>
             <Link
               href="/my-portal/leaves"
-              className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
+              className="text-xs lg:text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
             >
-              Request Leave <ArrowRight size={14} />
+              <span className="hidden sm:inline">Request Leave</span>
+              <span className="sm:hidden">Request</span>
+              <ArrowRight size={14} />
             </Link>
           </div>
           <div className="divide-y divide-gray-100">
             {leaveRequests.length === 0 ? (
-              <div className="p-6 text-center text-gray-500">No leave requests</div>
+              <div className="p-4 lg:p-6 text-center text-gray-500 text-sm">No leave requests</div>
             ) : (
               leaveRequests.slice(0, 4).map((leave) => (
-                <div key={leave.id} className="p-4 flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-gray-900">
+                <div key={leave.id} className="p-3 lg:p-4 flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-gray-900 text-sm lg:text-base truncate">
                       {formatDate(leave.start_date)} - {formatDate(leave.end_date)}
                     </p>
-                    <p className="text-sm text-gray-500">{leave.reason || 'No reason provided'}</p>
+                    <p className="text-xs lg:text-sm text-gray-500 truncate">{leave.reason || 'No reason provided'}</p>
                   </div>
                   <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${getLeaveStatusColor(
+                    className={`px-2 py-1 rounded-full text-xs font-medium capitalize flex-shrink-0 ${getLeaveStatusColor(
                       leave.status
                     )}`}
                   >
@@ -281,25 +298,27 @@ export default async function MyPortalPage() {
       </div>
 
       {/* Payment History Quick Access */}
-      <div className="bg-gradient-to-r from-orange-50 to-green-50 rounded-xl border border-orange-200 p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex -space-x-2">
-              <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center border-2 border-white">
-                <Banknote size={18} className="text-orange-600" />
+      <div className="bg-gradient-to-r from-orange-50 to-green-50 rounded-xl border border-orange-200 p-3 lg:p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3 lg:gap-4">
+            <div className="flex -space-x-2 flex-shrink-0">
+              <div className="w-8 h-8 lg:w-10 lg:h-10 bg-orange-100 rounded-full flex items-center justify-center border-2 border-white">
+                <Banknote size={14} className="lg:hidden text-orange-600" />
+                <Banknote size={18} className="hidden lg:block text-orange-600" />
               </div>
-              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center border-2 border-white">
-                <Wallet size={18} className="text-green-600" />
+              <div className="w-8 h-8 lg:w-10 lg:h-10 bg-green-100 rounded-full flex items-center justify-center border-2 border-white">
+                <Wallet size={14} className="lg:hidden text-green-600" />
+                <Wallet size={18} className="hidden lg:block text-green-600" />
               </div>
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">Payment History</h3>
-              <p className="text-sm text-gray-600">View your advance and wage payments</p>
+              <h3 className="font-semibold text-gray-900 text-sm lg:text-base">Payment History</h3>
+              <p className="text-xs lg:text-sm text-gray-600">View your advance and wage payments</p>
             </div>
           </div>
           <Link
             href="/my-portal/payments"
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+            className="w-full sm:w-auto text-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
           >
             View Payments <ArrowRight size={14} />
           </Link>
@@ -308,31 +327,33 @@ export default async function MyPortalPage() {
 
       {/* Latest Payslip */}
       <div className="bg-white rounded-xl border border-gray-200">
-        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-          <h3 className="font-semibold text-gray-900">Latest Payslip</h3>
+        <div className="p-3 lg:p-4 border-b border-gray-200 flex items-center justify-between">
+          <h3 className="font-semibold text-gray-900 text-sm lg:text-base">Latest Payslip</h3>
           <Link
             href="/my-portal/payslips"
-            className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
+            className="text-xs lg:text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
           >
-            View All Payslips <ArrowRight size={14} />
+            <span className="hidden sm:inline">View All Payslips</span>
+            <span className="sm:hidden">View All</span>
+            <ArrowRight size={14} />
           </Link>
         </div>
         {latestPayslip ? (
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <p className="text-sm text-gray-500">
+          <div className="p-4 lg:p-6">
+            <div className="flex items-center justify-between mb-4 lg:mb-6 gap-2">
+              <div className="min-w-0">
+                <p className="text-xs lg:text-sm text-gray-500">
                   {new Date(latestPayslip.year, latestPayslip.month - 1).toLocaleDateString('en-US', {
                     month: 'long',
                     year: 'numeric',
                   })}
                 </p>
-                <p className="text-3xl font-bold text-gray-900">
+                <p className="text-2xl lg:text-3xl font-bold text-gray-900">
                   {formatCurrency(latestPayslip.net_salary)}
                 </p>
               </div>
               <span
-                className={`px-3 py-1 rounded-full text-sm font-medium ${
+                className={`px-2 lg:px-3 py-1 rounded-full text-xs lg:text-sm font-medium flex-shrink-0 ${
                   latestPayslip.status === 'paid'
                     ? 'bg-green-100 text-green-700'
                     : latestPayslip.status === 'approved'
@@ -344,21 +365,21 @@ export default async function MyPortalPage() {
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-500">Monthly Salary</p>
-                <p className="font-medium text-gray-900">{formatCurrency(latestPayslip.base_salary)}</p>
+            <div className="grid grid-cols-2 gap-3 lg:gap-4">
+              <div className="p-2 lg:p-3 bg-gray-50 rounded-lg">
+                <p className="text-xs lg:text-sm text-gray-500">Monthly Salary</p>
+                <p className="font-medium text-gray-900 text-sm lg:text-base">{formatCurrency(latestPayslip.base_salary)}</p>
               </div>
               {latestPayslip.bonuses > 0 && (
-                <div className="p-3 bg-green-50 rounded-lg">
-                  <p className="text-sm text-gray-500">Bonus</p>
-                  <p className="font-medium text-green-600">+{formatCurrency(latestPayslip.bonuses)}</p>
+                <div className="p-2 lg:p-3 bg-green-50 rounded-lg">
+                  <p className="text-xs lg:text-sm text-gray-500">Bonus</p>
+                  <p className="font-medium text-green-600 text-sm lg:text-base">+{formatCurrency(latestPayslip.bonuses)}</p>
                 </div>
               )}
             </div>
           </div>
         ) : (
-          <div className="p-6 text-center text-gray-500">No payslips available</div>
+          <div className="p-4 lg:p-6 text-center text-gray-500 text-sm">No payslips available</div>
         )}
       </div>
     </div>
