@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Briefcase, MapPin, Clock, Pencil, Trash2, Plus, AlertTriangle, MessageCircle } from 'lucide-react';
+import { Briefcase, MapPin, Clock, Pencil, Plus, MessageCircle } from 'lucide-react';
 import AddEmployeeModal from './AddEmployeeModal';
 
 interface Employee {
@@ -140,57 +140,6 @@ function formatDate(dateString: string | null): string {
   });
 }
 
-// Delete Confirmation Modal
-function DeleteConfirmModal({
-  employee,
-  onConfirm,
-  onCancel,
-  deleting,
-}: {
-  employee: Employee;
-  onConfirm: () => void;
-  onCancel: () => void;
-  deleting: boolean;
-}) {
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
-        <div className="flex items-center gap-4 mb-4">
-          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-            <AlertTriangle size={24} className="text-red-600" />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">Delete Employee</h3>
-            <p className="text-sm text-gray-500">This action cannot be undone</p>
-          </div>
-        </div>
-
-        <p className="text-gray-600 mb-6">
-          Are you sure you want to delete <strong>{employee.full_name}</strong> ({employee.employee_id})?
-          All associated wage entries will also be deleted.
-        </p>
-
-        <div className="flex gap-3">
-          <button
-            onClick={onCancel}
-            disabled={deleting}
-            className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={deleting}
-            className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50"
-          >
-            {deleting ? 'Deleting...' : 'Delete'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function EmployeesTable({
   employees: initialEmployees,
   branches,
@@ -203,36 +152,10 @@ export default function EmployeesTable({
 }: EmployeesTableProps) {
   const [employees, setEmployees] = useState(initialEmployees);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [deletingEmployee, setDeletingEmployee] = useState<Employee | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleAdd = (newEmployee: Employee) => {
     setEmployees([...employees, newEmployee]);
     setShowAddModal(false);
-  };
-
-  const handleDelete = async () => {
-    if (!deletingEmployee) return;
-
-    setIsDeleting(true);
-    try {
-      const response = await fetch(`/api/employees/${deletingEmployee.id}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        setEmployees(employees.filter(emp => emp.id !== deletingEmployee.id));
-        setDeletingEmployee(null);
-      } else {
-        const data = await response.json();
-        alert(data.error || 'Failed to delete employee');
-      }
-    } catch (error) {
-      console.error('Error deleting employee:', error);
-      alert('Failed to delete employee');
-    } finally {
-      setIsDeleting(false);
-    }
   };
 
   return (
@@ -343,25 +266,15 @@ export default function EmployeesTable({
                     <EmployeeStatusBadge status={employee.status} />
                   </td>
                   <td className="px-4 lg:px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {canEditEmployee && (
-                        <Link
-                          href={`/employees/${employee.id}/edit`}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
-                        >
-                          <Pencil size={14} />
-                          Edit
-                        </Link>
-                      )}
-                      {canEditEmployee && (
-                        <button
-                          onClick={() => setDeletingEmployee(employee)}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      )}
-                    </div>
+                    {canEditEmployee && (
+                      <Link
+                        href={`/employees/${employee.id}/edit`}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
+                      >
+                        <Pencil size={14} />
+                        Edit
+                      </Link>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -479,21 +392,13 @@ export default function EmployeesTable({
 
               {/* Actions */}
               {canEditEmployee && (
-                <div className="flex gap-2">
-                  <Link
-                    href={`/employees/${employee.id}/edit`}
-                    className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 text-sm text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
-                  >
-                    <Pencil size={14} />
-                    Edit
-                  </Link>
-                  <button
-                    onClick={() => setDeletingEmployee(employee)}
-                    className="px-3 py-2 text-sm text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
+                <Link
+                  href={`/employees/${employee.id}/edit`}
+                  className="w-full inline-flex items-center justify-center gap-1 px-3 py-2 text-sm text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
+                >
+                  <Pencil size={14} />
+                  Edit
+                </Link>
               )}
             </div>
           ))
@@ -516,16 +421,6 @@ export default function EmployeesTable({
           onClose={() => setShowAddModal(false)}
           onAdd={handleAdd}
           canAssignRoles={canAssignRoles}
-        />
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {deletingEmployee && (
-        <DeleteConfirmModal
-          employee={deletingEmployee}
-          onConfirm={handleDelete}
-          onCancel={() => setDeletingEmployee(null)}
-          deleting={isDeleting}
         />
       )}
     </>

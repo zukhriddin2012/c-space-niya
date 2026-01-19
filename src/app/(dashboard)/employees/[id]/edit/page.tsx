@@ -24,6 +24,9 @@ import {
   Download,
   File,
   X,
+  UserMinus,
+  AlertTriangle,
+  Clock,
 } from 'lucide-react';
 import type { UserRole } from '@/types';
 
@@ -196,6 +199,19 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
   const [uploadNotes, setUploadNotes] = useState('');
   const [dragActive, setDragActive] = useState(false);
 
+  // Termination request state
+  const [showTerminationModal, setShowTerminationModal] = useState(false);
+  const [pendingTermination, setPendingTermination] = useState<{
+    id: string;
+    status: string;
+    reason: string;
+    termination_date: string;
+    created_at: string;
+  } | null>(null);
+  const [terminationReason, setTerminationReason] = useState('');
+  const [terminationDate, setTerminationDate] = useState('');
+  const [submittingTermination, setSubmittingTermination] = useState(false);
+
   // Calculate totals
   const primaryTotal = wages.reduce((sum, w) => sum + (w.wage_amount || 0), 0);
   const additionalTotal = branchWages.reduce((sum, w) => sum + (w.wage_amount || 0), 0);
@@ -307,6 +323,68 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
 
     fetchDocuments();
   }, [employeeId]);
+
+  // Fetch pending termination request
+  useEffect(() => {
+    if (!employeeId) return;
+
+    async function fetchPendingTermination() {
+      try {
+        const response = await fetch(`/api/employees/${employeeId}/termination-status`);
+        if (response.ok) {
+          const data = await response.json();
+          setPendingTermination(data.pendingTermination || null);
+        }
+      } catch (err) {
+        console.error('Error fetching termination status:', err);
+      }
+    }
+
+    fetchPendingTermination();
+  }, [employeeId]);
+
+  // Termination request handler
+  const handleSubmitTermination = async () => {
+    if (!employeeId || !terminationReason || !terminationDate) return;
+
+    setSubmittingTermination(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/termination-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          employee_id: employeeId,
+          reason: terminationReason,
+          termination_date: terminationDate,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to submit termination request');
+      }
+
+      const data = await response.json();
+      setPendingTermination({
+        id: data.request.id,
+        status: 'pending',
+        reason: terminationReason,
+        termination_date: terminationDate,
+        created_at: new Date().toISOString(),
+      });
+      setShowTerminationModal(false);
+      setTerminationReason('');
+      setTerminationDate('');
+      setSuccess('Termination request submitted. Awaiting GM approval.');
+      setTimeout(() => setSuccess(null), 5000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to submit termination request');
+    } finally {
+      setSubmittingTermination(false);
+    }
+  };
 
   // Document handlers
   const handleFileUpload = async (file: File) => {
@@ -1338,6 +1416,51 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
           />
         </div>
 
+        {/* Termination Section - Only show for active/probation employees */}
+        {formData.status !== 'terminated' && (
+          <div className="bg-white rounded-xl border border-red-200 p-6 mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <UserMinus size={18} className="text-red-600" />
+              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">
+                Employee Termination
+              </h3>
+            </div>
+
+            {pendingTermination ? (
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <Clock size={20} className="text-yellow-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-yellow-800">Termination Request Pending</p>
+                    <p className="text-sm text-yellow-700 mt-1">
+                      A termination request has been submitted and is awaiting General Manager approval.
+                    </p>
+                    <div className="mt-2 text-sm text-yellow-600">
+                      <p><strong>Reason:</strong> {pendingTermination.reason}</p>
+                      <p><strong>Termination Date:</strong> {new Date(pendingTermination.termination_date).toLocaleDateString()}</p>
+                      <p><strong>Submitted:</strong> {new Date(pendingTermination.created_at).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <p className="text-sm text-gray-600 mb-4">
+                  Initiate employee termination process. This requires General Manager approval before the employee is terminated.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowTerminationModal(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors font-medium"
+                >
+                  <UserMinus size={18} />
+                  Request Termination
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="flex gap-3">
           <Link
@@ -1365,6 +1488,85 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
           </button>
         </div>
       </form>
+
+      {/* Termination Request Modal */}
+      {showTerminationModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                <AlertTriangle size={24} className="text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Request Employee Termination</h3>
+                <p className="text-sm text-gray-500">This requires GM approval</p>
+              </div>
+            </div>
+
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Reason for Termination *
+                </label>
+                <textarea
+                  value={terminationReason}
+                  onChange={(e) => setTerminationReason(e.target.value)}
+                  rows={3}
+                  placeholder="Provide a detailed reason for termination..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none resize-none"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Last Working Day *
+                </label>
+                <input
+                  type="date"
+                  value={terminationDate}
+                  onChange={(e) => setTerminationDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                  required
+                />
+              </div>
+
+              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
+                <strong>Note:</strong> Upon approval, the employee will be:
+                <ul className="list-disc list-inside mt-1 ml-2 space-y-1">
+                  <li>Marked as terminated in the system</li>
+                  <li>Disconnected from the Telegram bot</li>
+                  <li>Have all wage assignments deactivated</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowTerminationModal(false);
+                  setTerminationReason('');
+                  setTerminationDate('');
+                }}
+                disabled={submittingTermination}
+                className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmitTermination}
+                disabled={submittingTermination || !terminationReason || !terminationDate}
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submittingTermination ? 'Submitting...' : 'Submit Request'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
