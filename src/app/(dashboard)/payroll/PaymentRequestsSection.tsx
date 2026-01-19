@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Banknote,
   Wallet,
@@ -14,6 +14,7 @@ import {
   ChevronUp,
   ChevronDown,
   ChevronsUpDown,
+  ChevronRight,
   Download,
   FileSpreadsheet,
   Building2,
@@ -29,6 +30,15 @@ interface PayrollRecord {
   legal_entity: string;
   wage_category: 'primary' | 'additional';
   net_salary: number;
+}
+
+interface GroupedEmployee {
+  employee_id: string;
+  employee_name: string;
+  employee_position: string;
+  totalNet: number;
+  advancePaid: number;
+  wageRecords: PayrollRecord[];
 }
 
 interface PaymentRequest {
@@ -175,6 +185,30 @@ export default function PaymentRequestsSection({
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
 
+  // Expanded rows state for hybrid view
+  const [expandedEmployees, setExpandedEmployees] = useState<Set<string>>(new Set());
+
+  const toggleExpanded = (employeeId: string) => {
+    setExpandedEmployees(prev => {
+      const next = new Set(prev);
+      if (next.has(employeeId)) {
+        next.delete(employeeId);
+      } else {
+        next.add(employeeId);
+      }
+      return next;
+    });
+  };
+
+  const expandAll = () => {
+    const allIds = new Set(payroll.map(p => p.employee_id));
+    setExpandedEmployees(allIds);
+  };
+
+  const collapseAll = () => {
+    setExpandedEmployees(new Set());
+  };
+
   // Confirmation dialog state
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
@@ -266,19 +300,46 @@ export default function PaymentRequestsSection({
     return result;
   }, [payroll, searchQuery, sortField, sortDirection, advanceAmounts, wageAmounts, paidAdvances]);
 
-  // Split payroll into Primary and Additional
-  const primaryPayroll = useMemo(() =>
-    filteredAndSortedPayroll.filter(p => p.wage_category === 'primary'),
-    [filteredAndSortedPayroll]
-  );
-  const additionalPayroll = useMemo(() =>
-    filteredAndSortedPayroll.filter(p => p.wage_category === 'additional'),
-    [filteredAndSortedPayroll]
-  );
+  // Group payroll by employee for hybrid view
+  const groupedEmployees = useMemo(() => {
+    const map = new Map<string, GroupedEmployee>();
+
+    for (const record of filteredAndSortedPayroll) {
+      const existing = map.get(record.employee_id);
+      if (existing) {
+        existing.totalNet += record.net_salary;
+        existing.wageRecords.push(record);
+      } else {
+        map.set(record.employee_id, {
+          employee_id: record.employee_id,
+          employee_name: record.employee_name,
+          employee_position: record.employee_position,
+          totalNet: record.net_salary,
+          advancePaid: paidAdvances[record.employee_id] || 0,
+          wageRecords: [record],
+        });
+      }
+    }
+
+    // Sort wage records within each employee: Primary first, then Additional
+    for (const emp of map.values()) {
+      emp.wageRecords.sort((a, b) => {
+        if (a.wage_category === 'primary' && b.wage_category === 'additional') return -1;
+        if (a.wage_category === 'additional' && b.wage_category === 'primary') return 1;
+        return 0;
+      });
+    }
+
+    return Array.from(map.values());
+  }, [filteredAndSortedPayroll, paidAdvances]);
 
   // Calculate totals by category
-  const primaryNetTotal = primaryPayroll.reduce((sum, p) => sum + p.net_salary, 0);
-  const additionalNetTotal = additionalPayroll.reduce((sum, p) => sum + p.net_salary, 0);
+  const primaryNetTotal = filteredAndSortedPayroll
+    .filter(p => p.wage_category === 'primary')
+    .reduce((sum, p) => sum + p.net_salary, 0);
+  const additionalNetTotal = filteredAndSortedPayroll
+    .filter(p => p.wage_category === 'additional')
+    .reduce((sum, p) => sum + p.net_salary, 0);
 
   // Calculate totals for input amounts
   const totalAdvanceInput = Object.values(advanceAmounts).reduce((sum, amt) => sum + (amt || 0), 0);
@@ -659,175 +720,261 @@ export default function PaymentRequestsSection({
         </div>
       )}
 
-      {/* Primary Wages Table (Bank) */}
-      {canProcess && primaryPayroll.length > 0 && (
-        <div className="bg-white rounded-xl border border-indigo-200 overflow-hidden">
-          <div className="px-4 py-3 border-b border-indigo-200 bg-indigo-50 flex items-center gap-2">
-            <Building2 size={18} className="text-indigo-600" />
-            <h3 className="font-semibold text-indigo-900">Primary Wages (Bank)</h3>
-            <span className="text-xs text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full ml-auto">
-              12% tax applied
-            </span>
+      {/* Employee Wages Table (Hybrid View) */}
+      {canProcess && groupedEmployees.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h3 className="font-semibold text-gray-900">Employee Wages</h3>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+                  <Building2 size={12} /> Primary: {formatCurrency(primaryNetTotal)}
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                  <MapPin size={12} /> Additional: {formatCurrency(additionalNetTotal)}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={expandAll}
+                className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded hover:bg-gray-100"
+              >
+                Expand all
+              </button>
+              <button
+                onClick={collapseAll}
+                className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded hover:bg-gray-100"
+              >
+                Collapse all
+              </button>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-indigo-100 bg-indigo-50/50">
+                <tr className="border-b border-gray-200 bg-gray-50">
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase w-8"></th>
                   <SortableHeader label="Employee" field="name" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
                   <SortableHeader label="Position" field="position" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
-                  <SortableHeader label="Legal Entity" field="entity" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
-                  <SortableHeader label="Net Salary" field="salary" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} align="right" />
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Source</th>
+                  <SortableHeader label="Total Net" field="salary" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} align="right" />
                   <SortableHeader label="Paid" field="advancePaid" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} icon={<CheckCircle size={14} className="text-blue-500" />} align="right" />
-                  <SortableHeader label="Advance" field="advance" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} icon={<Banknote size={14} className="text-orange-500" />} align="right" />
-                  <SortableHeader label="Wage" field="wage" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} icon={<Wallet size={14} className="text-green-500" />} align="right" />
+                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">
+                    <span className="inline-flex items-center gap-1 justify-end">
+                      <Banknote size={14} className="text-orange-500" />
+                      Advance
+                    </span>
+                  </th>
+                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">
+                    <span className="inline-flex items-center gap-1 justify-end">
+                      <Wallet size={14} className="text-green-500" />
+                      Wage
+                    </span>
+                  </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-indigo-50">
-                {primaryPayroll.map(employee => {
-                  const recordKey = employee.id;
-                  const advance = advanceAmounts[recordKey] || 0;
-                  const wage = wageAmounts[recordKey] || 0;
-                  const employeeAdvancePaid = paidAdvances[employee.employee_id] || 0;
+              <tbody>
+                {groupedEmployees.map(employee => {
+                  const isExpanded = expandedEmployees.has(employee.employee_id);
+                  const hasMultipleRecords = employee.wageRecords.length > 1;
+
+                  // Calculate combined advance/wage totals for this employee
+                  const employeeTotalAdvance = employee.wageRecords.reduce(
+                    (sum, r) => sum + (advanceAmounts[r.id] || 0), 0
+                  );
+                  const employeeTotalWage = employee.wageRecords.reduce(
+                    (sum, r) => sum + (wageAmounts[r.id] || 0), 0
+                  );
 
                   return (
-                    <tr key={recordKey} className="hover:bg-indigo-50/30">
-                      <td className="px-4 py-2">
-                        <p className="font-medium text-gray-900 text-sm">{employee.employee_name}</p>
-                      </td>
-                      <td className="px-4 py-2 text-sm text-gray-500">{employee.employee_position}</td>
-                      <td className="px-4 py-2 text-sm text-gray-600">{employee.legal_entity}</td>
-                      <td className="px-4 py-2 text-sm text-gray-900 text-right font-medium">
-                        {formatCurrency(employee.net_salary)}
-                      </td>
-                      <td className="px-4 py-2 text-sm text-right">
-                        {employeeAdvancePaid > 0 ? (
-                          <span className="text-blue-600 font-medium">{formatNumber(employeeAdvancePaid)}</span>
+                    <React.Fragment key={employee.employee_id}>
+                      {/* Main Employee Row */}
+                      <tr
+                        className={`border-b border-gray-100 ${hasMultipleRecords ? 'cursor-pointer hover:bg-gray-50' : 'hover:bg-gray-50/50'} ${isExpanded ? 'bg-purple-50/30' : ''}`}
+                        onClick={hasMultipleRecords ? () => toggleExpanded(employee.employee_id) : undefined}
+                      >
+                        <td className="px-4 py-2.5 w-8">
+                          {hasMultipleRecords ? (
+                            <ChevronRight
+                              size={16}
+                              className={`text-gray-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                            />
+                          ) : (
+                            <span className="w-4" />
+                          )}
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <p className="font-medium text-gray-900 text-sm">{employee.employee_name}</p>
+                        </td>
+                        <td className="px-4 py-2.5 text-sm text-gray-500">{employee.employee_position}</td>
+                        <td className="px-4 py-2.5 text-sm">
+                          {hasMultipleRecords ? (
+                            <span className="text-gray-400 text-xs">{employee.wageRecords.length} sources</span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1">
+                              {employee.wageRecords[0].wage_category === 'primary' ? (
+                                <>
+                                  <Building2 size={14} className="text-indigo-500" />
+                                  <span className="text-gray-600">{employee.wageRecords[0].legal_entity}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <MapPin size={14} className="text-emerald-500" />
+                                  <span className="text-gray-600">{employee.wageRecords[0].legal_entity}</span>
+                                </>
+                              )}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2.5 text-sm text-right font-semibold text-gray-900">
+                          {formatCurrency(employee.totalNet)}
+                        </td>
+                        <td className="px-4 py-2.5 text-sm text-right">
+                          {employee.advancePaid > 0 ? (
+                            <span className="text-blue-600 font-medium">{formatNumber(employee.advancePaid)}</span>
+                          ) : (
+                            <span className="text-gray-300">-</span>
+                          )}
+                        </td>
+                        {/* Input fields in main row only if single record and not expanded */}
+                        {!hasMultipleRecords && !isExpanded ? (
+                          <>
+                            <td className="px-4 py-2 w-36" onClick={e => e.stopPropagation()}>
+                              <input
+                                type="text"
+                                value={advanceAmounts[employee.wageRecords[0].id] > 0 ? formatNumber(advanceAmounts[employee.wageRecords[0].id]) : ''}
+                                onChange={(e) => handleAdvanceChange(employee.wageRecords[0].id, e.target.value)}
+                                placeholder="0"
+                                className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm text-right focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                              />
+                            </td>
+                            <td className="px-4 py-2 w-36" onClick={e => e.stopPropagation()}>
+                              <input
+                                type="text"
+                                value={wageAmounts[employee.wageRecords[0].id] > 0 ? formatNumber(wageAmounts[employee.wageRecords[0].id]) : ''}
+                                onChange={(e) => handleWageChange(employee.wageRecords[0].id, e.target.value)}
+                                placeholder="0"
+                                className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm text-right focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                              />
+                            </td>
+                          </>
                         ) : (
-                          <span className="text-gray-300">-</span>
+                          <>
+                            <td className="px-4 py-2.5 text-sm text-right">
+                              {employeeTotalAdvance > 0 ? (
+                                <span className="text-orange-600 font-medium">{formatNumber(employeeTotalAdvance)}</span>
+                              ) : (
+                                <span className="text-gray-300">-</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-2.5 text-sm text-right">
+                              {employeeTotalWage > 0 ? (
+                                <span className="text-green-600 font-medium">{formatNumber(employeeTotalWage)}</span>
+                              ) : (
+                                <span className="text-gray-300">-</span>
+                              )}
+                            </td>
+                          </>
                         )}
-                      </td>
-                      <td className="px-4 py-2 w-36">
-                        <input
-                          type="text"
-                          value={advance > 0 ? formatNumber(advance) : ''}
-                          onChange={(e) => handleAdvanceChange(recordKey, e.target.value)}
-                          placeholder="0"
-                          className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm text-right focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                        />
-                      </td>
-                      <td className="px-4 py-2 w-36">
-                        <input
-                          type="text"
-                          value={wage > 0 ? formatNumber(wage) : ''}
-                          onChange={(e) => handleWageChange(recordKey, e.target.value)}
-                          placeholder="0"
-                          className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm text-right focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                        />
-                      </td>
-                    </tr>
+                      </tr>
+
+                      {/* Expanded Sub-rows for wage breakdown */}
+                      {isExpanded && employee.wageRecords.map((record, idx) => {
+                        const advance = advanceAmounts[record.id] || 0;
+                        const wage = wageAmounts[record.id] || 0;
+                        const isLast = idx === employee.wageRecords.length - 1;
+                        const isPrimary = record.wage_category === 'primary';
+
+                        return (
+                          <tr
+                            key={record.id}
+                            className={`${isLast ? 'border-b border-gray-200' : 'border-b border-gray-50'} ${isPrimary ? 'bg-indigo-50/30' : 'bg-emerald-50/30'}`}
+                          >
+                            <td className="px-4 py-2 w-8">
+                              <span className="text-gray-300 pl-1">{isLast ? '└' : '├'}</span>
+                            </td>
+                            <td className="px-4 py-2" colSpan={2}>
+                              <span className={`inline-flex items-center gap-1.5 text-sm ${isPrimary ? 'text-indigo-700' : 'text-emerald-700'}`}>
+                                {isPrimary ? (
+                                  <>
+                                    <Building2 size={14} />
+                                    <span className="font-medium">Primary</span>
+                                    <span className="text-xs text-gray-400">(12% tax)</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <MapPin size={14} />
+                                    <span className="font-medium">Additional</span>
+                                    <span className="text-xs text-gray-400">(No tax)</span>
+                                  </>
+                                )}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2 text-sm text-gray-600">
+                              {record.legal_entity}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-right font-medium text-gray-700">
+                              {formatCurrency(record.net_salary)}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-right">
+                              <span className="text-gray-300">-</span>
+                            </td>
+                            <td className="px-4 py-2 w-36">
+                              <input
+                                type="text"
+                                value={advance > 0 ? formatNumber(advance) : ''}
+                                onChange={(e) => handleAdvanceChange(record.id, e.target.value)}
+                                placeholder="0"
+                                className={`w-full px-2 py-1.5 border rounded text-sm text-right focus:ring-2 ${
+                                  isPrimary
+                                    ? 'border-indigo-200 focus:ring-indigo-500 focus:border-indigo-500'
+                                    : 'border-emerald-200 focus:ring-emerald-500 focus:border-emerald-500'
+                                }`}
+                              />
+                            </td>
+                            <td className="px-4 py-2 w-36">
+                              <input
+                                type="text"
+                                value={wage > 0 ? formatNumber(wage) : ''}
+                                onChange={(e) => handleWageChange(record.id, e.target.value)}
+                                placeholder="0"
+                                className={`w-full px-2 py-1.5 border rounded text-sm text-right focus:ring-2 ${
+                                  isPrimary
+                                    ? 'border-indigo-200 focus:ring-indigo-500 focus:border-indigo-500'
+                                    : 'border-emerald-200 focus:ring-emerald-500 focus:border-emerald-500'
+                                }`}
+                              />
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </React.Fragment>
                   );
                 })}
               </tbody>
               <tfoot>
-                <tr className="border-t-2 border-indigo-200 bg-indigo-50 font-semibold">
-                  <td className="px-4 py-3 text-sm text-indigo-700" colSpan={3}>
-                    Primary Total ({primaryPayroll.length} records)
+                <tr className="border-t-2 border-gray-200 bg-gray-50 font-semibold">
+                  <td className="px-4 py-3" colSpan={4}>
+                    <span className="text-sm text-gray-700">
+                      Total ({groupedEmployees.length} employees)
+                    </span>
                   </td>
-                  <td className="px-4 py-3 text-sm text-indigo-900 text-right">
-                    {formatCurrency(primaryNetTotal)}
+                  <td className="px-4 py-3 text-sm text-gray-900 text-right">
+                    {formatCurrency(totalNetSalary)}
                   </td>
-                  <td className="px-4 py-3 text-sm text-blue-600 text-right">-</td>
-                  <td className="px-4 py-3 text-sm text-orange-600 text-right">-</td>
-                  <td className="px-4 py-3 text-sm text-green-600 text-right">-</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Additional Wages Table (Cash) */}
-      {canProcess && additionalPayroll.length > 0 && (
-        <div className="bg-white rounded-xl border border-emerald-200 overflow-hidden">
-          <div className="px-4 py-3 border-b border-emerald-200 bg-emerald-50 flex items-center gap-2">
-            <MapPin size={18} className="text-emerald-600" />
-            <h3 className="font-semibold text-emerald-900">Additional Wages (Cash)</h3>
-            <span className="text-xs text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full ml-auto">
-              No tax
-            </span>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-emerald-100 bg-emerald-50/50">
-                  <SortableHeader label="Employee" field="name" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
-                  <SortableHeader label="Position" field="position" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
-                  <SortableHeader label="Branch" field="entity" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
-                  <SortableHeader label="Net Salary" field="salary" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} align="right" />
-                  <SortableHeader label="Paid" field="advancePaid" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} icon={<CheckCircle size={14} className="text-blue-500" />} align="right" />
-                  <SortableHeader label="Advance" field="advance" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} icon={<Banknote size={14} className="text-orange-500" />} align="right" />
-                  <SortableHeader label="Wage" field="wage" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} icon={<Wallet size={14} className="text-green-500" />} align="right" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-emerald-50">
-                {additionalPayroll.map(employee => {
-                  const recordKey = employee.id;
-                  const advance = advanceAmounts[recordKey] || 0;
-                  const wage = wageAmounts[recordKey] || 0;
-                  const employeeAdvancePaid = paidAdvances[employee.employee_id] || 0;
-
-                  return (
-                    <tr key={recordKey} className="hover:bg-emerald-50/30">
-                      <td className="px-4 py-2">
-                        <p className="font-medium text-gray-900 text-sm">{employee.employee_name}</p>
-                      </td>
-                      <td className="px-4 py-2 text-sm text-gray-500">{employee.employee_position}</td>
-                      <td className="px-4 py-2 text-sm text-gray-600">{employee.legal_entity}</td>
-                      <td className="px-4 py-2 text-sm text-gray-900 text-right font-medium">
-                        {formatCurrency(employee.net_salary)}
-                      </td>
-                      <td className="px-4 py-2 text-sm text-right">
-                        {employeeAdvancePaid > 0 ? (
-                          <span className="text-blue-600 font-medium">{formatNumber(employeeAdvancePaid)}</span>
-                        ) : (
-                          <span className="text-gray-300">-</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-2 w-36">
-                        <input
-                          type="text"
-                          value={advance > 0 ? formatNumber(advance) : ''}
-                          onChange={(e) => handleAdvanceChange(recordKey, e.target.value)}
-                          placeholder="0"
-                          className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm text-right focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                        />
-                      </td>
-                      <td className="px-4 py-2 w-36">
-                        <input
-                          type="text"
-                          value={wage > 0 ? formatNumber(wage) : ''}
-                          onChange={(e) => handleWageChange(recordKey, e.target.value)}
-                          placeholder="0"
-                          className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm text-right focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                        />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-              <tfoot>
-                <tr className="border-t-2 border-emerald-200 bg-emerald-50 font-semibold">
-                  <td className="px-4 py-3 text-sm text-emerald-700" colSpan={3}>
-                    Additional Total ({additionalPayroll.length} records)
+                  <td className="px-4 py-3 text-sm text-blue-600 text-right">
+                    {Object.values(paidAdvances).reduce((sum, v) => sum + v, 0) > 0
+                      ? formatNumber(Object.values(paidAdvances).reduce((sum, v) => sum + v, 0))
+                      : '-'}
                   </td>
-                  <td className="px-4 py-3 text-sm text-emerald-900 text-right">
-                    {formatCurrency(additionalNetTotal)}
+                  <td className="px-4 py-3 text-sm text-orange-600 text-right">
+                    {totalAdvanceInput > 0 ? formatNumber(totalAdvanceInput) : '-'}
                   </td>
-                  <td className="px-4 py-3 text-sm text-blue-600 text-right">-</td>
-                  <td className="px-4 py-3 text-sm text-orange-600 text-right">-</td>
-                  <td className="px-4 py-3 text-sm text-green-600 text-right">-</td>
+                  <td className="px-4 py-3 text-sm text-green-600 text-right">
+                    {totalWageInput > 0 ? formatNumber(totalWageInput) : '-'}
+                  </td>
                 </tr>
               </tfoot>
             </table>
