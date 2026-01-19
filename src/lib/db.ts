@@ -832,12 +832,13 @@ export interface PayrollRecord {
   employee_id: string;
   employee_name: string;
   employee_position: string;
-  legal_entity: string;
+  legal_entity: string;        // Entity/Branch name
+  wage_category: 'primary' | 'additional';  // Primary (bank) or Additional (cash)
   month: number;
   year: number;
-  gross_salary: number;  // Before tax
+  gross_salary: number;  // Before tax (same as net for Additional wages)
   bonuses: number;
-  deductions: number;    // Tax amount
+  deductions: number;    // Tax amount (0 for Additional wages)
   net_salary: number;    // What employee receives (the amount you imported)
   status: 'draft' | 'approved' | 'paid';
   payment_date: string | null;
@@ -857,7 +858,7 @@ function calculateTaxFromNet(netSalary: number): number {
 }
 
 // Get all payroll records for a specific month/year
-// Uses employee_wages table (net salaries) as the source
+// Uses employee_wages (Primary/bank) and employee_branch_wages (Additional/cash) tables
 export async function getPayrollByMonth(year: number, month: number): Promise<PayrollRecord[]> {
   if (!isSupabaseAdminConfigured()) {
     return [];
@@ -866,14 +867,24 @@ export async function getPayrollByMonth(year: number, month: number): Promise<Pa
   // Get all employees
   const employees = await getEmployees();
 
-  // Get all employee wages (this is the NET salary data you imported)
-  const { data: allWages, error: wagesError } = await supabaseAdmin!
+  // Get all PRIMARY wages (bank - from legal entities)
+  const { data: primaryWages, error: primaryError } = await supabaseAdmin!
     .from('employee_wages')
     .select('*, legal_entities(id, name, short_name)')
     .eq('is_active', true);
 
-  if (wagesError) {
-    console.error('Error fetching wages:', wagesError);
+  if (primaryError) {
+    console.error('Error fetching primary wages:', primaryError);
+  }
+
+  // Get all ADDITIONAL wages (cash - from branches)
+  const { data: additionalWages, error: additionalError } = await supabaseAdmin!
+    .from('employee_branch_wages')
+    .select('*, branches(id, name)')
+    .eq('is_active', true);
+
+  if (additionalError) {
+    console.error('Error fetching additional wages:', additionalError);
   }
 
   // Get existing payslips for this month (to check status)
@@ -890,30 +901,31 @@ export async function getPayrollByMonth(year: number, month: number): Promise<Pa
   const payslipMap = new Map((payslips || []).map(p => [p.employee_id, p]));
   const employeeMap = new Map(employees.map(e => [e.id, e]));
 
-  // Build payroll records from wages - deduplicate by employee_id + legal_entity_id
-  const seenKeys = new Set<string>();
-  const uniqueWages = (allWages || []).filter(wage => {
+  // Build payroll records from PRIMARY wages (with 12% tax)
+  const seenPrimaryKeys = new Set<string>();
+  const uniquePrimaryWages = (primaryWages || []).filter(wage => {
     const key = `${wage.employee_id}-${wage.legal_entity_id}`;
-    if (seenKeys.has(key)) {
+    if (seenPrimaryKeys.has(key)) {
       return false;
     }
-    seenKeys.add(key);
+    seenPrimaryKeys.add(key);
     return true;
   });
 
-  const payrollRecords: PayrollRecord[] = uniqueWages.map(wage => {
+  const primaryRecords: PayrollRecord[] = uniquePrimaryWages.map(wage => {
     const employee = employeeMap.get(wage.employee_id);
     const payslip = payslipMap.get(wage.employee_id);
     const netSalary = wage.wage_amount || 0;
-    const grossSalary = calculateGrossFromNet(netSalary);
+    const grossSalary = calculateGrossFromNet(netSalary);  // 12% tax applied
     const tax = calculateTaxFromNet(netSalary);
 
     return {
-      id: payslip?.id || `wage-${wage.id}-${year}-${month}`,
+      id: payslip?.id || `primary-${wage.id}-${year}-${month}`,
       employee_id: wage.employee_id,
       employee_name: employee?.full_name || 'Unknown',
       employee_position: employee?.position || '',
       legal_entity: wage.legal_entities?.short_name || wage.legal_entities?.name || '-',
+      wage_category: 'primary' as const,
       month,
       year,
       gross_salary: grossSalary,
@@ -925,21 +937,73 @@ export async function getPayrollByMonth(year: number, month: number): Promise<Pa
     };
   });
 
-  return payrollRecords.sort((a, b) => b.net_salary - a.net_salary);
+  // Build payroll records from ADDITIONAL wages (NO tax - cash as-is)
+  const seenAdditionalKeys = new Set<string>();
+  const uniqueAdditionalWages = (additionalWages || []).filter(wage => {
+    const key = `${wage.employee_id}-${wage.branch_id}`;
+    if (seenAdditionalKeys.has(key)) {
+      return false;
+    }
+    seenAdditionalKeys.add(key);
+    return true;
+  });
+
+  const additionalRecords: PayrollRecord[] = uniqueAdditionalWages.map(wage => {
+    const employee = employeeMap.get(wage.employee_id);
+    const payslip = payslipMap.get(wage.employee_id);
+    const netSalary = wage.wage_amount || 0;
+    // NO tax for Additional wages - gross = net, deductions = 0
+
+    return {
+      id: `additional-${wage.id}-${year}-${month}`,
+      employee_id: wage.employee_id,
+      employee_name: employee?.full_name || 'Unknown',
+      employee_position: employee?.position || '',
+      legal_entity: wage.branches?.name || '-',
+      wage_category: 'additional' as const,
+      month,
+      year,
+      gross_salary: netSalary,  // Same as net (no tax)
+      bonuses: 0,
+      deductions: 0,  // NO tax for cash wages
+      net_salary: netSalary,
+      status: payslip?.status || 'draft',
+      payment_date: payslip?.payment_date || null,
+    };
+  });
+
+  // Combine and sort by net salary descending
+  const allRecords = [...primaryRecords, ...additionalRecords];
+  return allRecords.sort((a, b) => b.net_salary - a.net_salary);
 }
 
 // Get payroll statistics for a month
 export async function getPayrollStats(year: number, month: number) {
   const payroll = await getPayrollByMonth(year, month);
 
+  // Separate Primary and Additional wages
+  const primaryPayroll = payroll.filter(p => p.wage_category === 'primary');
+  const additionalPayroll = payroll.filter(p => p.wage_category === 'additional');
+
+  // Get unique employee count (employees may have both Primary and Additional wages)
+  const uniqueEmployeeIds = new Set(payroll.map(p => p.employee_id));
+
   return {
     totalGross: payroll.reduce((sum, p) => sum + p.gross_salary + p.bonuses, 0),
     totalDeductions: payroll.reduce((sum, p) => sum + p.deductions, 0),
     totalNet: payroll.reduce((sum, p) => sum + p.net_salary, 0),
+    // Primary wages breakdown (bank, with 12% tax)
+    primaryGross: primaryPayroll.reduce((sum, p) => sum + p.gross_salary, 0),
+    primaryNet: primaryPayroll.reduce((sum, p) => sum + p.net_salary, 0),
+    primaryTax: primaryPayroll.reduce((sum, p) => sum + p.deductions, 0),
+    // Additional wages breakdown (cash, no tax)
+    additionalTotal: additionalPayroll.reduce((sum, p) => sum + p.net_salary, 0),
+    // Status counts
     paid: payroll.filter(p => p.status === 'paid').length,
     approved: payroll.filter(p => p.status === 'approved').length,
     draft: payroll.filter(p => p.status === 'draft').length,
-    totalEmployees: payroll.length,
+    totalRecords: payroll.length,
+    totalEmployees: uniqueEmployeeIds.size,
   };
 }
 

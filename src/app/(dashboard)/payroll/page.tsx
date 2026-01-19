@@ -92,13 +92,17 @@ export default async function PayrollPage({
           <p className="text-base lg:text-xl font-semibold text-red-600">
             -{formatCurrency(stats.totalDeductions)}
           </p>
-          <p className="text-xs text-gray-400 mt-1 hidden sm:block">~12% tax rate</p>
+          <p className="text-xs text-gray-400 mt-1 hidden sm:block">12% tax on Primary</p>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-3 lg:p-5">
           <p className="text-xs lg:text-sm text-gray-500 mb-1">Net Payable</p>
           <p className="text-base lg:text-xl font-semibold text-green-600">
             {formatCurrency(stats.totalNet)}
           </p>
+          <div className="text-xs text-gray-400 mt-1 hidden sm:block space-y-0.5">
+            <p>Primary: {formatCurrency(stats.primaryNet)}</p>
+            <p>Additional: {formatCurrency(stats.additionalTotal)}</p>
+          </div>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-3 lg:p-5">
           <p className="text-xs lg:text-sm text-gray-500 mb-1">Status</p>
