@@ -6,8 +6,7 @@ import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase';
 // POST /api/attendance/[id]/checkout - Manual check-out
 export const POST = withAuth(async (
   request: NextRequest,
-  user: { id: string; email: string; role: string },
-  { params }: { params: Promise<{ id: string }> }
+  { user, params }: { user: { id: string; email: string; role: string }; params?: Record<string, string> }
 ) => {
   // Check permission - need attendance edit permission
   if (!hasPermission(user.role, PERMISSIONS.ATTENDANCE_EDIT)) {
@@ -17,6 +16,8 @@ export const POST = withAuth(async (
     );
   }
 
+  const id = params?.id;
+
   if (!isSupabaseAdminConfigured()) {
     return NextResponse.json(
       { error: 'Database not configured' },
@@ -24,8 +25,14 @@ export const POST = withAuth(async (
     );
   }
 
+  if (!id) {
+    return NextResponse.json(
+      { error: 'Attendance ID is required' },
+      { status: 400 }
+    );
+  }
+
   try {
-    const { id } = await params;
     const body = await request.json();
     const { checkOutTime } = body;
 
