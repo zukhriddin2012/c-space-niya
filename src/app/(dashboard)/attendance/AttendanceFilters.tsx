@@ -174,7 +174,16 @@ export default function AttendanceFilters({ branches, isEmployee }: AttendanceFi
               <input
                 type="date"
                 value={date}
-                onChange={(e) => setDate(e.target.value)}
+                onChange={(e) => {
+                  const newDate = e.target.value;
+                  setDate(newDate);
+                  // Auto-apply when date changes (like quick date buttons)
+                  const params = new URLSearchParams();
+                  params.set('date', newDate);
+                  if (branch) params.set('branch', branch);
+                  if (status) params.set('status', status);
+                  router.push(`/attendance?${params.toString()}`);
+                }}
                 max={quickDates.today}
                 className="outline-none text-sm flex-1 bg-transparent min-w-0"
               />
