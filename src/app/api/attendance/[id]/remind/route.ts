@@ -77,12 +77,12 @@ export const POST = withAuth(async (
     // Prepare message based on type (Uzbek + Russian)
     const messages = {
       checkin: {
-        text: `🔔 Eslatma\n\nHurmatli ${employee.full_name}, siz bugun ishga kirganingizni qayd qilmadingiz.\n\nIltimos, bot orqali ishga kirish vaqtingizni qayd qiling.\n\n—\n\n🔔 Напоминание\n\nУважаемый(ая) ${employee.full_name}, вы не отметили приход на работу сегодня.\n\nПожалуйста, отметьте время прихода через бот.`,
+        text: `🔔 Eslatma\n\nHurmatli ${employee.full_name}, siz bugun ishga kirganingizni qayd qilmadingiz.\n\nIltimos, bot orqali ishga kirish vaqtingizni qayd qiling.\n\nP.S. Mabodo bugun dam olish kuni bo'lsa yoki ta'tilda bo'lsangiz, bu xabarni e'tiborsiz qoldiring. Biz sizni hurmat qilamiz :)\n\n—\n\n🔔 Напоминание\n\nУважаемый(ая) ${employee.full_name}, вы не отметили приход на работу сегодня.\n\nПожалуйста, отметьте время прихода через бот.\n\nP.S. Если сегодня выходной или вы в отпуске, проигнорируйте это сообщение. Мы вас уважаем :)`,
         button: '✅ Ishga kirish / Отметить приход',
         callback: 'home_checkin',
       },
       checkout: {
-        text: `🔔 Eslatma\n\nHurmatli ${employee.full_name}, siz ofisdan chiqqaningizni qayd qilmadingiz.\n\nIltimos, bot orqali ishdan chiqish vaqtingizni qayd qiling.\n\n—\n\n🔔 Напоминание\n\nУважаемый(ая) ${employee.full_name}, вы не отметили уход из офиса.\n\nПожалуйста, отметьте время ухода через бот.`,
+        text: `🔔 Eslatma\n\nHurmatli ${employee.full_name}, siz ofisdan chiqqaningizni qayd qilmadingiz.\n\nIltimos, bot orqali ishdan chiqish vaqtingizni qayd qiling.\n\nP.S. Mabodo haliham ofisda bo'lsangiz, bu xabarni e'tiborsiz qoldiring. Biz sizni hurmat qilamiz :)\n\n—\n\n🔔 Напоминание\n\nУважаемый(ая) ${employee.full_name}, вы не отметили уход из офиса.\n\nПожалуйста, отметьте время ухода через бот.\n\nP.S. Если вы ещё в офисе, проигнорируйте это сообщение. Мы вас уважаем :)`,
         button: '🚪 Chiqishni qayd qilish / Отметить уход',
         callback: 'home_checkout',
       },
