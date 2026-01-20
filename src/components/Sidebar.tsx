@@ -22,8 +22,6 @@ import {
   ChevronRight,
   Table,
   Kanban,
-  PanelLeftClose,
-  PanelLeft,
 } from 'lucide-react';
 import type { User, UserRole } from '@/types';
 import { getRoleLabel } from '@/lib/auth';
@@ -132,7 +130,7 @@ const navItems: NavItem[] = [
 
 export default function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
-  const { isCollapsed, toggleSidebar } = useSidebar();
+  const { isCollapsed } = useSidebar();
   const [expandedItems, setExpandedItems] = useState<string[]>(() => {
     // Auto-expand if we're on a child route
     const expanded: string[] = [];
@@ -286,17 +284,6 @@ export default function Sidebar({ user }: SidebarProps) {
             </div>
           )}
         </Link>
-      </div>
-
-      {/* Toggle Button */}
-      <div className={`px-2 py-2 border-b border-gray-100 ${isCollapsed ? 'flex justify-center' : ''}`}>
-        <button
-          onClick={toggleSidebar}
-          className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
-          title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          {isCollapsed ? <PanelLeft size={20} /> : <PanelLeftClose size={20} />}
-        </button>
       </div>
 
       {/* Navigation */}
