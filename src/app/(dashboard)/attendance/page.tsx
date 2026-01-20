@@ -245,16 +245,21 @@ export default async function AttendancePage({
     filteredAttendance = filteredAttendance.filter(a => a.status === selectedStatus);
   }
 
+  // Present = currently in office (checked in, not checked out yet) - includes both on-time and late arrivals
+  const currentlyPresent = allAttendance.filter((a) =>
+    (a.status === 'present' || a.status === 'late') && !a.checkOut
+  ).length;
+
   const stats = {
-    present: allAttendance.filter((a) => a.status === 'present').length,
+    present: currentlyPresent,
     late: allAttendance.filter((a) => a.status === 'late').length,
     absent: allAttendance.filter((a) => a.status === 'absent').length,
     earlyLeave: allAttendance.filter((a) => a.status === 'early_leave').length,
   };
 
-  const totalActive = stats.present + stats.late + stats.earlyLeave;
+  const totalCheckedIn = allAttendance.filter((a) => a.status === 'present' || a.status === 'late' || a.status === 'early_leave').length;
   const attendanceRate = allAttendance.length > 0
-    ? Math.round((totalActive / allAttendance.length) * 100)
+    ? Math.round((totalCheckedIn / allAttendance.length) * 100)
     : 0;
 
   // Get branches with employees
@@ -301,7 +306,7 @@ export default async function AttendancePage({
               <span className="text-sm font-medium">Present</span>
             </div>
             <p className="text-2xl font-semibold text-gray-900">{stats.present}</p>
-            <p className="text-xs text-green-600 mt-1">{attendanceRate}% rate</p>
+            <p className="text-xs text-green-600 mt-1">currently in office</p>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-4">
             <div className="flex items-center gap-2 text-orange-600 mb-2">
@@ -342,7 +347,7 @@ export default async function AttendancePage({
                 address: branch.address,
                 latitude: branch.latitude,
                 longitude: branch.longitude,
-                present: branchAttendance.filter(a => a.status === 'present').length,
+                present: branchAttendance.filter(a => (a.status === 'present' || a.status === 'late') && !a.checkOut).length,
                 late: branchAttendance.filter(a => a.status === 'late').length,
                 absent: branchAttendance.filter(a => a.status === 'absent').length,
                 earlyLeave: branchAttendance.filter(a => a.status === 'early_leave').length,

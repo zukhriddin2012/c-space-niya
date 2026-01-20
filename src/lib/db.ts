@@ -515,13 +515,16 @@ export async function getAttendanceStats(date?: string) {
   const targetDate = date || getTashkentDateString();
   const attendance = await getAttendanceByDate(targetDate);
   const employees = await getEmployees();
+  // Only count active employees for attendance stats
+  const activeEmployees = employees.filter(e => e.status === 'active');
 
   return {
-    total: employees.length,
-    present: attendance.filter(a => a.status === 'present').length,
+    total: activeEmployees.length,
+    // Present = currently in office (checked in but not checked out), includes both on-time and late arrivals
+    present: attendance.filter(a => (a.status === 'present' || a.status === 'late') && !a.check_out).length,
     late: attendance.filter(a => a.status === 'late').length,
     earlyLeave: attendance.filter(a => a.status === 'early_leave').length,
-    absent: employees.length - attendance.length,
+    absent: activeEmployees.length - attendance.length,
     checkedOut: attendance.filter(a => a.check_out).length,
   };
 }
