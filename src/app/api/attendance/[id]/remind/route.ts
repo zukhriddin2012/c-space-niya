@@ -74,16 +74,16 @@ export const POST = withAuth(async (
       );
     }
 
-    // Prepare message based on type
+    // Prepare message based on type (Uzbek + Russian)
     const messages = {
       checkin: {
-        uz: `🔔 Eslatma\n\nHurmatli ${employee.full_name}, siz bugun ishga kirganingizni qayd qilmadingiz.\n\nIltimos, botga kirib, ishga kirish vaqtingizni qayd qiling.`,
-        button: '✅ Ishga kirish',
+        text: `🔔 Eslatma\n\nHurmatli ${employee.full_name}, siz bugun ishga kirganingizni qayd qilmadingiz.\n\nIltimos, bot orqali ishga kirish vaqtingizni qayd qiling.\n\n—\n\n🔔 Напоминание\n\nУважаемый(ая) ${employee.full_name}, вы не отметили приход на работу сегодня.\n\nПожалуйста, отметьте время прихода через бот.`,
+        button: '✅ Ishga kirish / Отметить приход',
         callback: 'home_checkin',
       },
       checkout: {
-        uz: `🔔 Eslatma\n\nHurmatli ${employee.full_name}, siz ishdan chiqishingizni qayd qilmadingiz.\n\nIltimos, botga kirib, ishdan chiqish vaqtingizni qayd qiling.`,
-        button: '🚪 Chiqishni qayd qilish',
+        text: `🔔 Eslatma\n\nHurmatli ${employee.full_name}, siz ofisdan chiqqaningizni qayd qilmadingiz.\n\nIltimos, bot orqali ishdan chiqish vaqtingizni qayd qiling.\n\n—\n\n🔔 Напоминание\n\nУважаемый(ая) ${employee.full_name}, вы не отметили уход из офиса.\n\nПожалуйста, отметьте время ухода через бот.`,
+        button: '🚪 Chiqishni qayd qilish / Отметить уход',
         callback: 'home_checkout',
       },
     };
@@ -98,7 +98,7 @@ export const POST = withAuth(async (
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: employee.telegram_id,
-          text: msg.uz,
+          text: msg.text,
           reply_markup: {
             inline_keyboard: [
               [{ text: msg.button, callback_data: msg.callback }],
