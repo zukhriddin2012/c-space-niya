@@ -16,6 +16,7 @@ import { hasPermission, PERMISSIONS } from '@/lib/permissions';
 import AttendanceFilters from './AttendanceFilters';
 import AttendanceMap from '@/components/AttendanceMap';
 import ManualCheckoutButton from './ManualCheckoutButton';
+import ReminderButton from './ReminderButton';
 
 // Get current date in Tashkent timezone (UTC+5) - consistent with bot
 function getTashkentDateString(): string {
@@ -30,6 +31,7 @@ function getTashkentDateString(): string {
 interface AttendanceRecord {
   id: string;
   attendanceDbId: string | null; // The actual database ID for API calls
+  employeeDbId: string; // The employee's database UUID for API calls
   employeeId: string;
   employeeName: string;
   position: string;
@@ -70,6 +72,7 @@ async function getAttendanceForDate(date: string): Promise<AttendanceRecord[]> {
     return {
       id: a.id,
       attendanceDbId: a.id, // The actual database ID for API calls
+      employeeDbId: a.employee_id, // The employee's database UUID
       employeeId: employee?.employee_id || a.employee_id,
       employeeName: employee?.full_name || 'Unknown',
       position: employee?.position || '',
@@ -92,6 +95,7 @@ async function getAttendanceForDate(date: string): Promise<AttendanceRecord[]> {
     .map(e => ({
       id: `absent-${e.id}`,
       attendanceDbId: null, // No attendance record exists
+      employeeDbId: e.id, // The employee's database UUID
       employeeId: e.employee_id,
       employeeName: e.full_name,
       position: e.position,
@@ -540,14 +544,32 @@ export default async function AttendancePage({
                   </td>
                   {canEditAttendance && (
                     <td className="px-4 lg:px-6 py-4">
-                      {/* Show manual checkout button only if: checked in, not checked out, not absent */}
-                      {record.attendanceDbId && record.checkInTime && !record.checkOutTime && record.status !== 'absent' && (
-                        <ManualCheckoutButton
-                          attendanceId={record.attendanceDbId}
-                          employeeName={record.employeeName}
-                          checkInTime={formatTime(record.checkInTime)}
-                        />
-                      )}
+                      <div className="flex items-center gap-2">
+                        {/* Show manual checkout button only if: checked in, not checked out, not absent */}
+                        {record.attendanceDbId && record.checkInTime && !record.checkOutTime && record.status !== 'absent' && (
+                          <ManualCheckoutButton
+                            attendanceId={record.attendanceDbId}
+                            employeeName={record.employeeName}
+                            checkInTime={formatTime(record.checkInTime)}
+                          />
+                        )}
+                        {/* Show check-in reminder for absent employees */}
+                        {record.status === 'absent' && (
+                          <ReminderButton
+                            employeeId={record.employeeDbId}
+                            employeeName={record.employeeName}
+                            type="checkin"
+                          />
+                        )}
+                        {/* Show check-out reminder for employees who checked in but not out */}
+                        {record.checkInTime && !record.checkOutTime && record.status !== 'absent' && (
+                          <ReminderButton
+                            employeeId={record.employeeDbId}
+                            employeeName={record.employeeName}
+                            type="checkout"
+                          />
+                        )}
+                      </div>
                     </td>
                   )}
                 </tr>
