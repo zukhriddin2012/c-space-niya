@@ -5,6 +5,7 @@ import { getBranches, getEmployees, getAttendanceByDate } from '@/lib/db';
 import { hasPermission, PERMISSIONS } from '@/lib/permissions';
 import AttendanceFilters from '../AttendanceFilters';
 import AttendanceTable from '../AttendanceTable';
+import { unstable_cache } from 'next/cache';
 
 // Get current date in Tashkent timezone (UTC+5) - consistent with bot
 function getTashkentDateString(): string {
@@ -15,6 +16,20 @@ function getTashkentDateString(): string {
   const day = String(tashkentTime.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
+
+// Cache branches for 5 minutes (they rarely change)
+const getCachedBranches = unstable_cache(
+  async () => getBranches(),
+  ['branches'],
+  { revalidate: 300 }
+);
+
+// Cache employees for 1 minute (changes more frequently)
+const getCachedEmployees = unstable_cache(
+  async () => getEmployees(),
+  ['employees'],
+  { revalidate: 60 }
+);
 
 interface AttendanceRecord {
   id: string;
@@ -34,13 +49,13 @@ interface AttendanceRecord {
   overnightFromDate?: string;
 }
 
-// Fetch attendance data for a specific date
-async function getAttendanceForDate(date: string): Promise<AttendanceRecord[]> {
-  const [attendance, employees, branches] = await Promise.all([
-    getAttendanceByDate(date),
-    getEmployees(),
-    getBranches(),
-  ]);
+// Fetch attendance data for a specific date (uses pre-fetched branches/employees)
+async function getAttendanceForDate(
+  date: string,
+  employees: Awaited<ReturnType<typeof getEmployees>>,
+  branches: Awaited<ReturnType<typeof getBranches>>
+): Promise<AttendanceRecord[]> {
+  const attendance = await getAttendanceByDate(date);
 
   const branchMap = new Map(branches.map(b => [b.id, b.name]));
   const employeeMap = new Map(employees.map(e => [e.id, e]));
@@ -128,10 +143,13 @@ export default async function AttendanceSheetPage({
   const selectedBranch = params.branch || '';
   const selectedStatus = params.status || '';
 
-  const [allAttendance, branches] = await Promise.all([
-    getAttendanceForDate(selectedDate),
-    getBranches(),
+  // Fetch branches and employees once (cached), then use for attendance processing
+  const [branches, employees] = await Promise.all([
+    getCachedBranches(),
+    getCachedEmployees(),
   ]);
+
+  const allAttendance = await getAttendanceForDate(selectedDate, employees, branches);
 
   let filteredAttendance = allAttendance;
   if (selectedBranch) {

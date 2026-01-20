@@ -3,6 +3,7 @@ import { hasPermission } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { getBranches, getEmployees, getTodayAttendance } from '@/lib/db';
 import BranchesClient from './BranchesClient';
+import { unstable_cache } from 'next/cache';
 
 export interface BranchWithStats {
   id: string;
@@ -17,25 +18,55 @@ export interface BranchWithStats {
   salaryBudget: number;
 }
 
-// Fetch branch data with employee counts
+// Cache branches for 5 minutes
+const getCachedBranches = unstable_cache(
+  async () => getBranches(),
+  ['branches'],
+  { revalidate: 300 }
+);
+
+// Cache employees for 1 minute
+const getCachedEmployees = unstable_cache(
+  async () => getEmployees(),
+  ['employees'],
+  { revalidate: 60 }
+);
+
+// Fetch branch data with employee counts - optimized with pre-computed maps
 async function getBranchesWithStats(): Promise<BranchWithStats[]> {
   const [branches, employees, attendance] = await Promise.all([
-    getBranches(),
-    getEmployees(),
+    getCachedBranches(),
+    getCachedEmployees(),
     getTodayAttendance(),
   ]);
 
-  return branches.map(branch => {
-    const branchEmployees = employees.filter(e => e.branch_id === branch.id);
-    const salaryBudget = branchEmployees.reduce((sum, e) => sum + (e.salary || 0), 0);
-    const presentToday = attendance.filter(a => a.check_in_branch_id === branch.id).length;
+  // Pre-compute employee counts and salary by branch (O(n) instead of O(n*m))
+  const branchStats = new Map<string, { count: number; salary: number }>();
+  for (const e of employees) {
+    if (e.branch_id) {
+      const existing = branchStats.get(e.branch_id) || { count: 0, salary: 0 };
+      existing.count++;
+      existing.salary += e.salary || 0;
+      branchStats.set(e.branch_id, existing);
+    }
+  }
 
+  // Pre-compute present count by branch (O(n) instead of O(n*m))
+  const presentByBranch = new Map<string, number>();
+  for (const a of attendance) {
+    if (a.check_in_branch_id) {
+      presentByBranch.set(a.check_in_branch_id, (presentByBranch.get(a.check_in_branch_id) || 0) + 1);
+    }
+  }
+
+  return branches.map(branch => {
+    const stats = branchStats.get(branch.id) || { count: 0, salary: 0 };
     return {
       ...branch,
-      isActive: branchEmployees.length > 0,
-      totalEmployees: branchEmployees.length,
-      presentToday,
-      salaryBudget,
+      isActive: stats.count > 0,
+      totalEmployees: stats.count,
+      presentToday: presentByBranch.get(branch.id) || 0,
+      salaryBudget: stats.salary,
     };
   });
 }

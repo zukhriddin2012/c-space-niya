@@ -220,12 +220,12 @@ export default async function AttendanceDashboardPage() {
 
         {/* Branch Attendance Cards */}
         {activeBranches.length > 0 && (
-          <div className="bg-white rounded-xl border border-gray-200 p-4 xl:p-5">
-            <div className="flex items-center gap-2 mb-3 xl:mb-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 xl:p-5 flex flex-col" style={{ height: '300px' }}>
+            <div className="flex items-center gap-2 mb-3 xl:mb-4 flex-shrink-0">
               <MapPin size={18} className="text-purple-600" />
               <h3 className="text-sm xl:text-base font-semibold text-gray-900">Branch Summary</h3>
             </div>
-            <div className="space-y-2.5 xl:space-y-3">
+            <div className="space-y-2.5 xl:space-y-3 overflow-y-auto flex-1 pr-1">
               {activeBranches.map(branch => (
                 <BranchAttendanceCard
                   key={branch.id}
