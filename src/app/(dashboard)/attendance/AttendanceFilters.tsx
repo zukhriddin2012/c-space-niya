@@ -14,31 +14,6 @@ interface AttendanceFiltersProps {
   isEmployee: boolean;
 }
 
-// Helper to format date for display (using Tashkent timezone for comparison)
-function formatDateDisplay(dateStr: string): string {
-  const date = new Date(dateStr + 'T00:00:00');
-  // Get today in Tashkent timezone
-  const now = new Date();
-  const tashkentToday = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Tashkent' }));
-  tashkentToday.setHours(0, 0, 0, 0);
-
-  const yesterday = new Date(tashkentToday);
-  yesterday.setDate(yesterday.getDate() - 1);
-
-  if (date.toDateString() === tashkentToday.toDateString()) {
-    return 'Today';
-  } else if (date.toDateString() === yesterday.toDateString()) {
-    return 'Yesterday';
-  }
-
-  return date.toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    year: date.getFullYear() !== tashkentToday.getFullYear() ? 'numeric' : undefined,
-  });
-}
-
 // Get current date in Tashkent timezone
 function getTashkentDate(): Date {
   const now = new Date();
@@ -213,8 +188,6 @@ export default function AttendanceFilters({ branches, isEmployee }: AttendanceFi
               <ChevronRight size={18} />
             </button>
           </div>
-          {/* Display friendly date */}
-          <p className="text-xs text-purple-600 mt-1 ml-10">{formatDateDisplay(date)}</p>
         </div>
 
         {!isEmployee && (

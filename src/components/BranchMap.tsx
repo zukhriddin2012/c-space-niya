@@ -123,12 +123,10 @@ export default function BranchMap({ branches, height = '400px', showLegend = tru
                 position: relative;
                 z-index: 1;
               ">
-                <img
-                  src="/logo-icon.svg"
-                  alt="C-Space"
-                  style="width: 28px; height: 28px;"
-                  onerror="this.style.display='none'"
-                />
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
               </div>
               <div style="
                 width: 0;
@@ -186,10 +184,24 @@ export default function BranchMap({ branches, height = '400px', showLegend = tru
               padding-bottom: 10px;
               border-bottom: 1px solid #e5e7eb;
             ">
-              <img src="/logo-icon.svg" alt="C-Space" style="width: 32px; height: 32px;" onerror="this.style.display='none'" />
-              <div>
+              <div style="
+                width: 36px;
+                height: 36px;
+                background: #f3e8ff;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+              ">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+              </div>
+              <div style="flex: 1; min-width: 0;">
                 <div style="font-weight: 600; font-size: 15px; color: #111827;">${branch.name}</div>
-                <div style="font-size: 12px; color: #6b7280;">${branch.address || 'No address'}</div>
+                <div style="font-size: 12px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${branch.address || 'No address'}</div>
               </div>
             </div>
 

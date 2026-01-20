@@ -188,17 +188,31 @@ export default function AttendanceMap({ branches, height = '350px', selectedDate
               padding-bottom: 10px;
               border-bottom: 1px solid #e5e7eb;
             ">
-              <img src="/logo-icon.svg" alt="C-Space" style="width: 28px; height: 28px;" onerror="this.style.display='none'" />
-              <div>
+              <div style="
+                width: 36px;
+                height: 36px;
+                background: #f3e8ff;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+              ">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+              </div>
+              <div style="flex: 1; min-width: 0;">
                 <div style="font-weight: 600; font-size: 14px; color: #111827;">${branch.name}</div>
-                <div style="font-size: 11px; color: #6b7280;">${branch.address || 'No address'}</div>
+                <div style="font-size: 11px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${branch.address || 'No address'}</div>
               </div>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px;">
               <div style="background: #dcfce7; padding: 8px; border-radius: 8px; text-align: center;">
                 <div style="font-size: 18px; font-weight: 700; color: #16a34a;">${branch.present}</div>
-                <div style="font-size: 10px; color: #15803d;">Present</div>
+                <div style="font-size: 10px; color: #15803d;">On Time</div>
               </div>
               <div style="background: #fef3c7; padding: 8px; border-radius: 8px; text-align: center;">
                 <div style="font-size: 18px; font-weight: 700; color: #d97706;">${branch.late}</div>
