@@ -179,13 +179,13 @@ export default function Sidebar({ user }: SidebarProps) {
     const isChildActive = hasChildren && item.children?.some(child => pathname === child.href);
     const Icon = item.icon;
 
-    if (hasChildren) {
+    if (hasChildren && item.children) {
       // Don't show expandable items when collapsed
       if (isCollapsed) {
         return (
           <li key={item.href}>
             <Link
-              href={item.children[0].href}
+              href={item.children[0]?.href || item.href}
               className={`flex items-center justify-center p-2.5 rounded-lg text-sm font-medium transition-colors ${
                 isActive || isChildActive
                   ? 'bg-purple-50 text-purple-700'
