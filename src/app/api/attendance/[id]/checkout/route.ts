@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api-auth';
 import { hasPermission, PERMISSIONS } from '@/lib/permissions';
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase';
+import type { UserRole } from '@/types';
 
 // POST /api/attendance/[id]/checkout - Manual check-out
 export const POST = withAuth(async (
   request: NextRequest,
-  { user, params }: { user: { id: string; email: string; role: string }; params?: Record<string, string> }
+  { user, params }: { user: { id: string; email: string; role: UserRole }; params?: Record<string, string> }
 ) => {
   // Check permission - need attendance edit permission
   if (!hasPermission(user.role, PERMISSIONS.ATTENDANCE_EDIT)) {
