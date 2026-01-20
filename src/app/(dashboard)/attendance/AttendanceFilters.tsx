@@ -104,13 +104,14 @@ export default function AttendanceFilters({ branches, isEmployee }: AttendanceFi
 
   // Navigate to previous/next day
   const navigateDay = (direction: 'prev' | 'next') => {
-    const currentDate = new Date(date + 'T00:00:00');
+    const currentDate = new Date(date + 'T12:00:00'); // Use noon to avoid timezone issues
     if (direction === 'prev') {
       currentDate.setDate(currentDate.getDate() - 1);
     } else {
       currentDate.setDate(currentDate.getDate() + 1);
     }
-    const newDate = currentDate.toISOString().split('T')[0];
+    // Format manually to avoid timezone conversion issues
+    const newDate = formatDateString(currentDate);
     setDate(newDate);
 
     // Auto-apply when navigating
@@ -137,8 +138,8 @@ export default function AttendanceFilters({ branches, isEmployee }: AttendanceFi
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-3 lg:p-4 mb-4 lg:mb-6">
       {/* Quick Date Buttons */}
-      <div className="flex flex-wrap gap-1.5 lg:gap-2 mb-3 lg:mb-4">
-        <span className="text-xs font-medium text-gray-500 self-center mr-1 lg:mr-2 hidden sm:inline">Quick:</span>
+      <div className="flex flex-wrap items-center gap-1.5 lg:gap-2 mb-3 lg:mb-4">
+        <span className="text-xs font-medium text-gray-500 mr-1 lg:mr-2 hidden sm:inline">Quick:</span>
         <button
           onClick={() => selectQuickDate(quickDates.today)}
           className={`px-2 lg:px-3 py-1 lg:py-1.5 text-xs font-medium rounded-lg transition-colors ${
@@ -181,9 +182,9 @@ export default function AttendanceFilters({ branches, isEmployee }: AttendanceFi
         </button>
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-end flex-wrap gap-3 lg:gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-end gap-3 lg:gap-4">
         {/* Date Picker with Navigation */}
-        <div className="flex-1 sm:flex-initial">
+        <div>
           <label className="block text-xs font-medium text-gray-500 mb-1">Date</label>
           <div className="flex items-center gap-1">
             <button
@@ -193,7 +194,7 @@ export default function AttendanceFilters({ branches, isEmployee }: AttendanceFi
             >
               <ChevronLeft size={18} />
             </button>
-            <div className="flex items-center gap-2 px-3 lg:px-4 py-2 border border-gray-300 rounded-lg bg-white flex-1 sm:flex-initial sm:min-w-[180px]">
+            <div className="flex items-center gap-2 px-3 lg:px-4 py-2 border border-gray-300 rounded-lg bg-white min-w-[160px]">
               <Calendar size={16} className="text-purple-500 flex-shrink-0" />
               <input
                 type="date"
@@ -213,17 +214,18 @@ export default function AttendanceFilters({ branches, isEmployee }: AttendanceFi
             </button>
           </div>
           {/* Display friendly date */}
-          <p className="text-xs text-purple-600 mt-1 text-center sm:text-left sm:ml-10">{formatDateDisplay(date)}</p>
+          <p className="text-xs text-purple-600 mt-1 ml-10">{formatDateDisplay(date)}</p>
         </div>
 
         {!isEmployee && (
-          <div className="flex flex-col sm:flex-row gap-3 lg:gap-4 flex-1 sm:flex-initial">
-            <div className="flex-1 sm:flex-initial">
+          <>
+            {/* Branch Filter */}
+            <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">Branch</label>
               <select
                 value={branch}
                 onChange={(e) => setBranch(e.target.value)}
-                className="w-full sm:w-auto px-3 lg:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none text-sm sm:min-w-[160px]"
+                className="w-full lg:w-auto px-3 lg:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none text-sm min-w-[160px]"
               >
                 <option value="">All Branches</option>
                 {branches.map((b) => (
@@ -234,12 +236,13 @@ export default function AttendanceFilters({ branches, isEmployee }: AttendanceFi
               </select>
             </div>
 
-            <div className="flex-1 sm:flex-initial">
+            {/* Status Filter */}
+            <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">Status</label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className="w-full sm:w-auto px-3 lg:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none text-sm sm:min-w-[130px]"
+                className="w-full lg:w-auto px-3 lg:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none text-sm min-w-[130px]"
               >
                 <option value="">All Status</option>
                 <option value="present">Present</option>
@@ -248,20 +251,21 @@ export default function AttendanceFilters({ branches, isEmployee }: AttendanceFi
                 <option value="early_leave">Early Leave</option>
               </select>
             </div>
-          </div>
+          </>
         )}
 
-        <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+        {/* Action Buttons */}
+        <div className="flex gap-2 lg:ml-auto">
           <button
             onClick={handleApply}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-3 lg:px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+            className="flex-1 lg:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
           >
             <Search size={16} />
             Apply
           </button>
           <button
             onClick={handleReset}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-3 lg:px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+            className="flex-1 lg:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
           >
             Reset
           </button>

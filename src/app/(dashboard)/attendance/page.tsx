@@ -118,7 +118,7 @@ function StatusBadge({ status, isOvernight }: { status: string; isOvernight?: bo
     { label: string; className: string; icon: React.ComponentType<{ size?: number }> }
   > = {
     present: {
-      label: 'Present',
+      label: 'On Time',
       className: 'bg-green-50 text-green-700',
       icon: CheckCircle,
     },
@@ -329,7 +329,7 @@ export default async function AttendancePage({
           <div className="bg-white rounded-xl border border-gray-200 p-4">
             <div className="flex items-center gap-2 text-green-600 mb-2">
               <CheckCircle size={20} />
-              <span className="text-sm font-medium">Present</span>
+              <span className="text-sm font-medium">Present Now</span>
             </div>
             <p className="text-2xl font-semibold text-gray-900">{stats.present}</p>
             <p className="text-xs text-green-600 mt-1">currently in office</p>
