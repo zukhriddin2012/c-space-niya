@@ -19,6 +19,9 @@ import {
   Calendar,
   Plus,
   Send,
+  FileSignature,
+  UserPlus,
+  Play,
 } from 'lucide-react';
 import type { Candidate, CandidateStage, ChecklistItem, CandidateComment, CandidateEvent } from '@/lib/db';
 
@@ -123,6 +126,30 @@ export default function CandidateDetailModal({
 
   // New checklist item
   const [newChecklistItem, setNewChecklistItem] = useState('');
+
+  // Probation workflow
+  const [probationLoading, setProbationLoading] = useState(false);
+
+  const handleProbationAction = async (action: string) => {
+    setProbationLoading(true);
+    try {
+      const res = await fetch(`/api/candidates/${candidate.id}/probation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      if (res.ok) {
+        onRefresh();
+      } else {
+        const data = await res.json();
+        console.error('Probation action failed:', data.error);
+      }
+    } catch (error) {
+      console.error('Error performing probation action:', error);
+    } finally {
+      setProbationLoading(false);
+    }
+  };
 
   // Fetch comments when tab changes
   useEffect(() => {
@@ -371,11 +398,38 @@ export default function CandidateDetailModal({
                 </div>
               )}
 
+              {/* Start Probation Button (for under_review stage) */}
+              {candidate.stage === 'under_review' && (
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium text-purple-800">Ready for Probation?</h4>
+                      <p className="text-sm text-purple-600 mt-1">
+                        {candidate.applied_role?.toLowerCase().includes('community manager') ||
+                         candidate.applied_role?.toLowerCase().includes('cm')
+                          ? '2-week probation period for Community Managers'
+                          : '3-month standard probation period'}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleProbationAction('start_probation')}
+                      disabled={probationLoading}
+                      className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                    >
+                      <Play size={16} />
+                      Start Probation
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Probation Info */}
               {candidate.stage === 'probation' && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <h4 className="font-medium text-yellow-800 mb-2">Probation Period</h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <h4 className="font-medium text-yellow-800 mb-3">Probation Period</h4>
+
+                  {/* Dates */}
+                  <div className="grid grid-cols-2 gap-4 text-sm mb-4">
                     <div>
                       <p className="text-gray-500">Start Date</p>
                       <p className="font-medium">{candidate.probation_start_date ? formatDate(candidate.probation_start_date) : 'Not set'}</p>
@@ -384,19 +438,76 @@ export default function CandidateDetailModal({
                       <p className="text-gray-500">End Date</p>
                       <p className="font-medium">{candidate.probation_end_date ? formatDate(candidate.probation_end_date) : 'Not set'}</p>
                     </div>
-                    <div>
-                      <p className="text-gray-500">Term Sheet</p>
-                      <p className={`font-medium ${candidate.term_sheet_signed ? 'text-green-600' : 'text-gray-500'}`}>
-                        {candidate.term_sheet_signed ? '✓ Signed' : 'Not signed'}
-                      </p>
+                  </div>
+
+                  {/* Workflow Steps */}
+                  <div className="space-y-3 pt-3 border-t border-yellow-200">
+                    {/* Step 1: Term Sheet */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                          candidate.term_sheet_signed ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
+                        }`}>
+                          <FileSignature size={16} />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">Term Sheet Signing</p>
+                          <p className="text-xs text-gray-500">
+                            {candidate.term_sheet_signed ? 'Signed by candidate' : 'Meeting with candidate to sign probation terms'}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleProbationAction(candidate.term_sheet_signed ? 'unsign_term_sheet' : 'sign_term_sheet')}
+                        disabled={probationLoading}
+                        className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                          candidate.term_sheet_signed
+                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                            : 'bg-yellow-200 text-yellow-800 hover:bg-yellow-300'
+                        }`}
+                      >
+                        {candidate.term_sheet_signed ? '✓ Signed' : 'Mark Signed'}
+                      </button>
                     </div>
-                    <div>
-                      <p className="text-gray-500">Temp Account</p>
-                      <p className={`font-medium ${candidate.probation_account_created ? 'text-green-600' : 'text-gray-500'}`}>
-                        {candidate.probation_account_created ? '✓ Created' : 'Not created'}
-                      </p>
+
+                    {/* Step 2: Create Account */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                          candidate.probation_account_created ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
+                        }`}>
+                          <UserPlus size={16} />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">Temporary Account</p>
+                          <p className="text-xs text-gray-500">
+                            {candidate.probation_account_created ? 'Account active' : 'Create probation account in system'}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleProbationAction(candidate.probation_account_created ? 'remove_account' : 'create_account')}
+                        disabled={probationLoading}
+                        className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                          candidate.probation_account_created
+                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                            : 'bg-yellow-200 text-yellow-800 hover:bg-yellow-300'
+                        }`}
+                      >
+                        {candidate.probation_account_created ? '✓ Created' : 'Create Account'}
+                      </button>
                     </div>
                   </div>
+
+                  {/* Progress indicator */}
+                  {candidate.term_sheet_signed && candidate.probation_account_created && (
+                    <div className="mt-4 pt-3 border-t border-yellow-200">
+                      <p className="text-sm text-green-700 flex items-center gap-2">
+                        <CheckCircle size={16} />
+                        All probation steps completed. Ready to hire when probation ends.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
