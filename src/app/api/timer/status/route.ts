@@ -63,6 +63,7 @@ export async function GET(request: NextRequest) {
       .from('attendance')
       .select(`
         id,
+        date,
         check_in,
         check_in_timestamp,
         check_out,
@@ -90,9 +91,15 @@ export async function GET(request: NextRequest) {
     // Get branch name
     const branchName = (attendance.check_in_branch as any)?.name || 'Unknown';
 
-    // Use check_in_timestamp which contains full ISO timestamp
+    // Use check_in_timestamp if available, otherwise construct from date + check_in
     // check_in is just TIME (HH:MM:SS), check_in_timestamp is TIMESTAMP
-    const checkInTime = attendance.check_in_timestamp;
+    let checkInTime = attendance.check_in_timestamp;
+
+    // Fallback: if check_in_timestamp is null, construct it from date + check_in
+    if (!checkInTime && attendance.date && attendance.check_in) {
+      // Combine date (YYYY-MM-DD) with check_in time (HH:MM:SS)
+      checkInTime = `${attendance.date}T${attendance.check_in}`;
+    }
 
     return NextResponse.json({
       isActive: true,
