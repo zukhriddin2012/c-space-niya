@@ -7,14 +7,14 @@ import type { User } from '@/types';
 // GET /api/candidates/[id]/events - Get all events for a candidate
 export const GET = withAuth(async (
   request: NextRequest,
-  context: { user: User; params: Promise<{ id: string }> }
+  context: { user: User; params?: Record<string, string> }
 ) => {
   try {
     if (!isSupabaseAdminConfigured() || !supabaseAdmin) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
     }
 
-    const { id } = await context.params;
+    const id = context.params?.id;
 
     const { data: events, error } = await supabaseAdmin
       .from('candidate_events')
@@ -40,14 +40,14 @@ export const GET = withAuth(async (
 // POST /api/candidates/[id]/events - Add an event
 export const POST = withAuth(async (
   request: NextRequest,
-  context: { user: User; params: Promise<{ id: string }> }
+  context: { user: User; params?: Record<string, string> }
 ) => {
   try {
     if (!isSupabaseAdminConfigured() || !supabaseAdmin) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
     }
 
-    const { id } = await context.params;
+    const id = context.params?.id;
     const body = await request.json();
     const { title, event_type, scheduled_at, with_user_id, location, notes } = body;
 
@@ -91,7 +91,7 @@ export const POST = withAuth(async (
 // PUT /api/candidates/[id]/events - Update an event (mark complete, etc.)
 export const PUT = withAuth(async (
   request: NextRequest,
-  context: { user: User; params: Promise<{ id: string }> }
+  context: { user: User; params?: Record<string, string> }
 ) => {
   try {
     if (!isSupabaseAdminConfigured() || !supabaseAdmin) {
@@ -137,7 +137,7 @@ export const PUT = withAuth(async (
 // DELETE /api/candidates/[id]/events?event_id=xxx - Delete an event
 export const DELETE = withAuth(async (
   request: NextRequest,
-  context: { user: User; params: Promise<{ id: string }> }
+  context: { user: User; params?: Record<string, string> }
 ) => {
   try {
     if (!isSupabaseAdminConfigured() || !supabaseAdmin) {

@@ -109,7 +109,7 @@ export default function CandidateDetailModal({
   const [loadingComments, setLoadingComments] = useState(false);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [newComment, setNewComment] = useState('');
-  const [commentStageTag, setCommentStageTag] = useState(candidate.stage);
+  const [commentStageTag, setCommentStageTag] = useState<string>(candidate.stage);
   const [postingComment, setPostingComment] = useState(false);
 
   // New event form

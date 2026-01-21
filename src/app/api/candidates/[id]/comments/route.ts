@@ -7,14 +7,14 @@ import type { User } from '@/types';
 // GET /api/candidates/[id]/comments - Get all comments for a candidate
 export const GET = withAuth(async (
   request: NextRequest,
-  context: { user: User; params: Promise<{ id: string }> }
+  context: { user: User; params?: Record<string, string> }
 ) => {
   try {
     if (!isSupabaseAdminConfigured() || !supabaseAdmin) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
     }
 
-    const { id } = await context.params;
+    const id = context.params?.id;
 
     const { data: comments, error } = await supabaseAdmin
       .from('candidate_comments')
@@ -40,14 +40,14 @@ export const GET = withAuth(async (
 // POST /api/candidates/[id]/comments - Add a comment
 export const POST = withAuth(async (
   request: NextRequest,
-  context: { user: User; params: Promise<{ id: string }> }
+  context: { user: User; params?: Record<string, string> }
 ) => {
   try {
     if (!isSupabaseAdminConfigured() || !supabaseAdmin) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
     }
 
-    const { id } = await context.params;
+    const id = context.params?.id;
     const body = await request.json();
     const { content, stage_tag } = body;
 
@@ -84,7 +84,7 @@ export const POST = withAuth(async (
 // DELETE /api/candidates/[id]/comments?comment_id=xxx - Delete a comment
 export const DELETE = withAuth(async (
   request: NextRequest,
-  context: { user: User; params: Promise<{ id: string }> }
+  context: { user: User; params?: Record<string, string> }
 ) => {
   try {
     if (!isSupabaseAdminConfigured() || !supabaseAdmin) {
@@ -105,7 +105,9 @@ export const DELETE = withAuth(async (
       .eq('id', commentId)
       .single();
 
-    if (comment && comment.user_id !== context.user.id && context.user.role !== 'admin') {
+    // Allow comment owner, HR, or General Manager to delete comments
+    const canDeleteAnyComment = ['general_manager', 'ceo', 'hr'].includes(context.user.role);
+    if (comment && comment.user_id !== context.user.id && !canDeleteAnyComment) {
       return NextResponse.json({ error: 'Not authorized to delete this comment' }, { status: 403 });
     }
 
