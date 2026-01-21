@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import { Briefcase, MapPin, Clock, Eye, Plus, MessageCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Plus, Check, Minus } from 'lucide-react';
 import AddEmployeeModal from './AddEmployeeModal';
 
 interface Employee {
@@ -39,32 +39,6 @@ interface EmployeesTableProps {
   canEditSalary: boolean;
   canCreateEmployee?: boolean;
   canAssignRoles?: boolean;
-}
-
-function EmployeeStatusBadge({ status }: { status: string }) {
-  const statusStyles: Record<string, string> = {
-    active: 'bg-green-50 text-green-700',
-    inactive: 'bg-gray-50 text-gray-700',
-    terminated: 'bg-red-50 text-red-700',
-    probation: 'bg-yellow-50 text-yellow-700',
-  };
-
-  const statusLabels: Record<string, string> = {
-    active: 'Active',
-    inactive: 'Inactive',
-    terminated: 'Terminated',
-    probation: 'Probation',
-  };
-
-  return (
-    <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-        statusStyles[status] || statusStyles.inactive
-      }`}
-    >
-      {statusLabels[status] || status}
-    </span>
-  );
 }
 
 function LevelBadge({ level }: { level: string }) {
@@ -112,20 +86,6 @@ function EmploymentTypeBadge({ type }: { type: string }) {
   );
 }
 
-function TelegramBadge({ connected }: { connected: boolean }) {
-  return (
-    <span
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
-        connected ? 'bg-blue-50 text-blue-700' : 'bg-gray-50 text-gray-400'
-      }`}
-      title={connected ? 'Connected to Telegram Bot' : 'Not connected to Telegram'}
-    >
-      <MessageCircle size={12} />
-      {connected ? 'Bot' : '-'}
-    </span>
-  );
-}
-
 function formatSalary(amount: number): string {
   if (!amount || amount === 0) return '-';
   return new Intl.NumberFormat('uz-UZ').format(amount) + ' UZS';
@@ -133,11 +93,11 @@ function formatSalary(amount: number): string {
 
 function formatDate(dateString: string | null): string {
   if (!dateString) return '-';
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+  const date = new Date(dateString);
+  const day = date.getDate();
+  const month = date.toLocaleDateString('en-US', { month: 'short' });
+  const year = date.getFullYear();
+  return `${day} ${month} ${year}`;
 }
 
 export default function EmployeesTable({
@@ -152,10 +112,32 @@ export default function EmployeesTable({
 }: EmployeesTableProps) {
   const [employees, setEmployees] = useState(initialEmployees);
   const [showAddModal, setShowAddModal] = useState(false);
+  const router = useRouter();
 
   const handleAdd = (newEmployee: Employee) => {
     setEmployees([...employees, newEmployee]);
     setShowAddModal(false);
+  };
+
+  const handleRowClick = (employeeId: string) => {
+    if (canEditEmployee) {
+      router.push(`/employees/${employeeId}`);
+    }
+  };
+
+  // Status color for the dot indicator
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-500';
+      case 'probation': return 'bg-yellow-500';
+      case 'inactive': return 'bg-gray-400';
+      case 'terminated': return 'bg-red-500';
+      default: return 'bg-gray-400';
+    }
+  };
+
+  const getStatusTooltip = (status: string) => {
+    return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
   return (
@@ -183,13 +165,13 @@ export default function EmployeesTable({
                   Employee
                 </th>
                 <th className="text-left px-4 lg:px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Position / Level
+                  Position
                 </th>
                 <th className="text-left px-4 lg:px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Branch
                 </th>
                 <th className="text-left px-4 lg:px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Hire Date
+                  Hired
                 </th>
                 {canViewSalary && (
                   <th className="text-right px-4 lg:px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -202,82 +184,86 @@ export default function EmployeesTable({
                 <th className="text-center px-4 lg:px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Bot
                 </th>
-                <th className="text-left px-4 lg:px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="text-right px-4 lg:px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {employees.map((employee) => (
-                <tr key={employee.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 lg:px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-purple-700 font-medium">
-                          {employee.full_name.charAt(0)}
-                        </span>
+              {employees.map((employee) => {
+                const isInactive = employee.status === 'inactive' || employee.status === 'terminated';
+                return (
+                  <tr
+                    key={employee.id}
+                    onClick={() => handleRowClick(employee.id)}
+                    className={`group transition-colors ${
+                      canEditEmployee ? 'hover:bg-purple-50 cursor-pointer' : 'hover:bg-gray-50'
+                    } ${isInactive ? 'opacity-60' : ''}`}
+                  >
+                    <td className="px-4 lg:px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        {/* Avatar with status dot */}
+                        <div className="relative">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                            isInactive ? 'bg-gray-100' : 'bg-purple-100'
+                          }`}>
+                            <span className={`font-medium ${isInactive ? 'text-gray-500' : 'text-purple-700'}`}>
+                              {employee.full_name.charAt(0)}
+                            </span>
+                          </div>
+                          {/* Status indicator dot */}
+                          <div
+                            className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white ${getStatusColor(employee.status)}`}
+                            title={getStatusTooltip(employee.status)}
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <p className={`font-medium truncate transition-colors ${
+                            canEditEmployee ? 'group-hover:text-purple-600' : ''
+                          } text-gray-900`}>
+                            {employee.full_name}
+                          </p>
+                          <p className="text-sm text-gray-500">{employee.employee_id}</p>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <p className="font-medium text-gray-900 truncate">{employee.full_name}</p>
-                        <p className="text-sm text-gray-500">{employee.employee_id}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 lg:px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <Briefcase size={14} className="text-gray-400 flex-shrink-0" />
-                      <span className="text-gray-900 truncate">{employee.position}</span>
-                    </div>
-                    <div className="mt-1">
-                      <LevelBadge level={employee.level || 'junior'} />
-                    </div>
-                  </td>
-                  <td className="px-4 lg:px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <MapPin size={14} className="text-gray-400 flex-shrink-0" />
-                      <span className="text-gray-900 truncate">
-                        {employee.branches?.name || branchMap.get(employee.branch_id || '') || '-'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 lg:px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <Clock size={14} className="text-gray-400 flex-shrink-0" />
-                      <span className="text-gray-900 text-sm">
-                        {formatDate(employee.hire_date)}
-                      </span>
-                    </div>
-                  </td>
-                  {canViewSalary && (
-                    <td className="px-4 lg:px-6 py-4 text-right">
-                      <span className="font-medium text-gray-900">{formatSalary(employee.salary ?? 0)}</span>
                     </td>
-                  )}
-                  <td className="px-4 lg:px-6 py-4">
-                    <EmploymentTypeBadge type={employee.employment_type || 'full-time'} />
-                  </td>
-                  <td className="px-4 lg:px-6 py-4 text-center">
-                    <TelegramBadge connected={!!employee.telegram_id} />
-                  </td>
-                  <td className="px-4 lg:px-6 py-4">
-                    <EmployeeStatusBadge status={employee.status} />
-                  </td>
-                  <td className="px-4 lg:px-6 py-4 text-right">
-                    {canEditEmployee && (
-                      <Link
-                        href={`/employees/${employee.id}`}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
-                      >
-                        <Eye size={14} />
-                        View
-                      </Link>
+                    <td className="px-4 lg:px-6 py-4">
+                      <div className="font-medium text-gray-900">{employee.position}</div>
+                      <div className="mt-1">
+                        <LevelBadge level={employee.level || 'junior'} />
+                      </div>
+                    </td>
+                    <td className="px-4 lg:px-6 py-4 text-gray-700">
+                      {employee.branches?.name || branchMap.get(employee.branch_id || '') || '-'}
+                    </td>
+                    <td className="px-4 lg:px-6 py-4 text-gray-600">
+                      {formatDate(employee.hire_date)}
+                    </td>
+                    {canViewSalary && (
+                      <td className="px-4 lg:px-6 py-4 text-right">
+                        <span className="font-medium text-gray-900">{formatSalary(employee.salary ?? 0)}</span>
+                      </td>
                     )}
-                  </td>
-                </tr>
-              ))}
+                    <td className="px-4 lg:px-6 py-4">
+                      <EmploymentTypeBadge type={employee.employment_type || 'full-time'} />
+                    </td>
+                    <td className="px-4 lg:px-6 py-4 text-center">
+                      {employee.telegram_id ? (
+                        <span
+                          className="inline-flex items-center justify-center w-6 h-6 bg-purple-100 rounded-full"
+                          title="Bot Connected"
+                        >
+                          <Check size={14} className="text-purple-600" />
+                        </span>
+                      ) : (
+                        <span
+                          className="inline-flex items-center justify-center w-6 h-6 bg-gray-100 rounded-full"
+                          title="Not Connected"
+                        >
+                          <Minus size={14} className="text-gray-400" />
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -337,71 +323,77 @@ export default function EmployeesTable({
             )}
           </div>
         ) : (
-          employees.map((employee) => (
-            <div key={employee.id} className="bg-white rounded-xl border border-gray-200 p-4">
-              {/* Header - Avatar, Name, Status */}
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-purple-700 font-medium">
-                      {employee.full_name.charAt(0)}
+          employees.map((employee) => {
+            const isInactive = employee.status === 'inactive' || employee.status === 'terminated';
+            return (
+              <div
+                key={employee.id}
+                onClick={() => handleRowClick(employee.id)}
+                className={`bg-white rounded-xl border border-gray-200 p-4 transition-colors ${
+                  canEditEmployee ? 'hover:border-purple-300 cursor-pointer active:bg-purple-50' : ''
+                } ${isInactive ? 'opacity-60' : ''}`}
+              >
+                {/* Header - Avatar with status dot, Name */}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                        isInactive ? 'bg-gray-100' : 'bg-purple-100'
+                      }`}>
+                        <span className={`font-medium ${isInactive ? 'text-gray-500' : 'text-purple-700'}`}>
+                          {employee.full_name.charAt(0)}
+                        </span>
+                      </div>
+                      {/* Status indicator dot */}
+                      <div
+                        className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white ${getStatusColor(employee.status)}`}
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-gray-900">{employee.full_name}</p>
+                      <p className="text-xs text-gray-500">{employee.employee_id}</p>
+                    </div>
+                  </div>
+                  {/* Bot indicator */}
+                  {employee.telegram_id ? (
+                    <span className="inline-flex items-center justify-center w-6 h-6 bg-purple-100 rounded-full">
+                      <Check size={14} className="text-purple-600" />
                     </span>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-medium text-gray-900">{employee.full_name}</p>
-                    <p className="text-xs text-gray-500">{employee.employee_id}</p>
-                  </div>
+                  ) : (
+                    <span className="inline-flex items-center justify-center w-6 h-6 bg-gray-100 rounded-full">
+                      <Minus size={14} className="text-gray-400" />
+                    </span>
+                  )}
                 </div>
-                <EmployeeStatusBadge status={employee.status} />
-              </div>
 
-              {/* Position & Branch */}
-              <div className="space-y-2 mb-3">
-                <div className="flex items-center gap-2 text-sm">
-                  <Briefcase size={14} className="text-gray-400 flex-shrink-0" />
-                  <span className="text-gray-700">{employee.position}</span>
-                  <LevelBadge level={employee.level || 'junior'} />
+                {/* Position & Branch */}
+                <div className="space-y-1.5 mb-3">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="font-medium text-gray-900">{employee.position}</span>
+                    <LevelBadge level={employee.level || 'junior'} />
+                  </div>
+                  <p className="text-sm text-gray-500">
+                    {employee.branches?.name || branchMap.get(employee.branch_id || '') || '-'}
+                  </p>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <MapPin size={14} className="flex-shrink-0" />
-                  <span>{employee.branches?.name || branchMap.get(employee.branch_id || '') || '-'}</span>
-                </div>
-              </div>
 
-              {/* Stats Grid */}
-              <div className={`grid ${canViewSalary ? 'grid-cols-4' : 'grid-cols-3'} gap-3 text-center bg-gray-50 rounded-lg p-3 mb-3`}>
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">Type</p>
-                  <EmploymentTypeBadge type={employee.employment_type || 'full-time'} />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">Bot</p>
-                  <TelegramBadge connected={!!employee.telegram_id} />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">Hired</p>
-                  <p className="text-sm font-medium text-gray-900">{formatDate(employee.hire_date)}</p>
-                </div>
-                {canViewSalary && (
+                {/* Stats Row */}
+                <div className={`flex items-center justify-between text-sm bg-gray-50 rounded-lg px-3 py-2`}>
                   <div>
-                    <p className="text-xs text-gray-500 mb-1">Salary</p>
-                    <p className="text-sm font-medium text-gray-900">{formatSalary(employee.salary ?? 0)}</p>
+                    <EmploymentTypeBadge type={employee.employment_type || 'full-time'} />
                   </div>
-                )}
+                  <div className="text-gray-600">
+                    {formatDate(employee.hire_date)}
+                  </div>
+                  {canViewSalary && (
+                    <div className="font-medium text-gray-900">
+                      {formatSalary(employee.salary ?? 0)}
+                    </div>
+                  )}
+                </div>
               </div>
-
-              {/* Actions */}
-              {canEditEmployee && (
-                <Link
-                  href={`/employees/${employee.id}`}
-                  className="w-full inline-flex items-center justify-center gap-1 px-3 py-2 text-sm text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
-                >
-                  <Eye size={14} />
-                  View
-                </Link>
-              )}
-            </div>
-          ))
+            );
+          })
         )}
 
         {/* Mobile Pagination */}
