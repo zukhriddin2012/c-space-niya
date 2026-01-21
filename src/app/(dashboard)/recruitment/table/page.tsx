@@ -424,24 +424,6 @@ export default function RecruitmentTablePage() {
                   </th>
                   <th
                     className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('iq_score')}
-                  >
-                    <div className="flex items-center gap-1">
-                      IQ
-                      <SortIcon field="iq_score" />
-                    </div>
-                  </th>
-                  <th
-                    className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('mbti_type')}
-                  >
-                    <div className="flex items-center gap-1">
-                      MBTI
-                      <SortIcon field="mbti_type" />
-                    </div>
-                  </th>
-                  <th
-                    className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                     onClick={() => handleSort('stage')}
                   >
                     <div className="flex items-center gap-1">
@@ -449,14 +431,20 @@ export default function RecruitmentTablePage() {
                       <SortIcon field="stage" />
                     </div>
                   </th>
+                  <th
+                    className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('iq_score')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Assessment
+                      <SortIcon field="iq_score" />
+                    </div>
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Source
+                  </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Resume
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    About
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Actions
                   </th>
                 </tr>
               </thead>
@@ -464,93 +452,67 @@ export default function RecruitmentTablePage() {
                 {filteredCandidates.map((candidate) => {
                   const stageConfig = getStageConfig(candidate.stage);
                   return (
-                    <tr key={candidate.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3">
+                    <tr
+                      key={candidate.id}
+                      onClick={() => setSelectedCandidate(candidate)}
+                      className="hover:bg-purple-50 cursor-pointer transition-colors"
+                    >
+                      <td className="px-4 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-purple-700 font-medium text-sm">
+                          <div className="w-9 h-9 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-purple-700 font-semibold text-sm">
                               {candidate.full_name.charAt(0)}
                             </span>
                           </div>
-                          <span className="font-medium text-gray-900">{candidate.full_name}</span>
+                          <div>
+                            <p className="font-medium text-gray-900">{candidate.full_name}</p>
+                            <p className="text-sm text-gray-500">{candidate.email}</p>
+                          </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
-                        <a href={`mailto:${candidate.email}`} className="text-sm text-blue-600 hover:underline">
-                          {candidate.email}
-                        </a>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">
+                      <td className="px-4 py-4 text-sm text-gray-600">
                         {candidate.applied_role}
                       </td>
-                      <td className="px-4 py-3">
-                        {candidate.iq_score ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded font-medium">
-                            {candidate.iq_score}
+                      <td className="px-4 py-4">
+                        <span className={`px-2.5 py-1 text-xs rounded-full font-medium ${stageConfig.bgColor} ${stageConfig.color}`}>
+                          {stageConfig.label}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex flex-wrap gap-1.5">
+                          {candidate.iq_score && (
+                            <span className="px-2 py-0.5 bg-green-100 text-green-600 text-xs rounded-full">
+                              IQ: {candidate.iq_score}
+                            </span>
+                          )}
+                          {candidate.mbti_type && (
+                            <span className="px-2 py-0.5 bg-purple-100 text-purple-600 text-xs rounded-full">
+                              {candidate.mbti_type}
+                            </span>
+                          )}
+                          {!candidate.iq_score && !candidate.mbti_type && (
+                            <span className="text-gray-400 text-sm">—</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        {candidate.source ? (
+                          <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
+                            {candidate.source}
                           </span>
                         ) : (
-                          <span className="text-gray-400 text-sm">-</span>
+                          <span className="text-gray-400 text-sm">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3">
-                        {candidate.mbti_type ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-50 text-purple-700 text-xs rounded font-medium">
-                            {candidate.mbti_type}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400 text-sm">-</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <select
-                          value={candidate.stage}
-                          onChange={(e) => handleStageChange(candidate.id, e.target.value as CandidateStage)}
-                          className={`px-2 py-1 text-xs rounded-lg border-0 ${stageConfig.bgColor} ${stageConfig.color} font-medium cursor-pointer focus:ring-2 focus:ring-purple-500`}
-                        >
-                          {STAGES.map(stage => (
-                            <option key={stage.id} value={stage.id}>{stage.label}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-4">
                         {candidate.resume_file_name ? (
-                          <button className="flex items-center gap-1 text-sm text-purple-600 hover:text-purple-700">
+                          <span className="text-green-600 text-sm flex items-center gap-1">
                             <FileText size={14} />
                             <span className="truncate max-w-[100px]">{candidate.resume_file_name}</span>
-                          </button>
+                          </span>
                         ) : (
-                          <span className="text-gray-400 text-sm">No file</span>
+                          <span className="text-gray-400 text-sm">—</span>
                         )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <p className="text-sm text-gray-600 truncate max-w-[150px]" title={candidate.about || ''}>
-                          {candidate.about || <span className="text-gray-400">-</span>}
-                        </p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => setSelectedCandidate(candidate)}
-                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
-                            title="View details"
-                          >
-                            <Eye size={16} />
-                          </button>
-                          <button
-                            onClick={() => openEditMode(candidate)}
-                            className="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg"
-                            title="Edit"
-                          >
-                            <Edit size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(candidate.id)}
-                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
-                            title="Delete"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
                       </td>
                     </tr>
                   );
@@ -834,18 +796,102 @@ export default function RecruitmentTablePage() {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Source</label>
+                    <select
+                      value={formData.source}
+                      onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    >
+                      <option value="">Select source...</option>
+                      {SOURCE_OPTIONS.map(source => (
+                        <option key={source} value={source}>{source}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Stage</label>
+                    <select
+                      value={selectedCandidate?.stage || 'screening'}
+                      onChange={(e) => handleStageChange(selectedCandidate!.id, e.target.value as CandidateStage)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    >
+                      {STAGES.map(stage => (
+                        <option key={stage.id} value={stage.id}>{stage.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Resume Upload */}
+                <div className="p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Resume / CV</label>
+
+                  {/* Current file */}
+                  {selectedCandidate?.resume_file_name && !resumeFile && (
+                    <div className="flex items-center justify-between mb-3 p-2 bg-white rounded border">
+                      <div className="flex items-center gap-2">
+                        <FileText size={18} className="text-red-500" />
+                        <span className="text-sm text-gray-700">{selectedCandidate.resume_file_name}</span>
+                        {selectedCandidate.resume_file_size && (
+                          <span className="text-xs text-gray-400">({formatFileSize(selectedCandidate.resume_file_size)})</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* New file selected */}
+                  {resumeFile && (
+                    <div className="flex items-center justify-between mb-3 p-2 bg-purple-50 rounded border border-purple-200">
+                      <div className="flex items-center gap-2">
+                        <FileText size={18} className="text-purple-500" />
+                        <span className="text-sm text-purple-700">{resumeFile.name}</span>
+                        <span className="text-xs text-purple-500">(new)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setResumeFile(null)}
+                        className="text-red-500 hover:text-red-700 text-sm"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Upload button */}
+                  <div className="text-center">
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
+                      className="hidden"
+                      id="resume-upload-edit"
+                    />
+                    <label
+                      htmlFor="resume-upload-edit"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 cursor-pointer"
+                    >
+                      <Upload size={16} />
+                      {selectedCandidate?.resume_file_name ? 'Replace Resume' : 'Upload Resume'}
+                    </label>
+                    <p className="text-xs text-gray-400 mt-2">PDF, DOC, DOCX up to 10MB</p>
+                  </div>
+                </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">About</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                   <textarea
                     value={formData.about}
                     onChange={(e) => setFormData({ ...formData, about: e.target.value })}
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 resize-none"
+                    placeholder="Internal notes about this candidate..."
                   />
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4 border-t">
-                  <button type="button" onClick={() => setIsEditMode(false)} className="px-4 py-2 text-gray-600">
+                  <button type="button" onClick={() => { setIsEditMode(false); setResumeFile(null); }} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
                     Cancel
                   </button>
                   <button type="submit" disabled={processing} className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50">
