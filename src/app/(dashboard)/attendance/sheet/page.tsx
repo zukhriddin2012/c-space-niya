@@ -31,6 +31,16 @@ const getCachedEmployees = unstable_cache(
   { revalidate: 60 }
 );
 
+interface AttendanceSession {
+  id: string;
+  checkIn: string | null;
+  checkOut: string | null;
+  branchName: string;
+  totalHours: number | null;
+  status: 'present' | 'late' | 'early_leave';
+  isActive: boolean;
+}
+
 interface AttendanceRecord {
   id: string;
   attendanceDbId: string | null;
@@ -47,9 +57,15 @@ interface AttendanceRecord {
   totalHours: number | null;
   isOvernight?: boolean;
   overnightFromDate?: string;
+  // Multi-session support
+  sessions: AttendanceSession[];
+  sessionCount: number;
+  totalSessionHours: number;
+  hasActiveSession: boolean;
 }
 
 // Fetch attendance data for a specific date (uses pre-fetched branches/employees)
+// Groups multiple sessions per employee
 async function getAttendanceForDate(
   date: string,
   employees: Awaited<ReturnType<typeof getEmployees>>,
@@ -60,51 +76,64 @@ async function getAttendanceForDate(
   const branchMap = new Map(branches.map(b => [b.id, b.name]));
   const employeeMap = new Map(employees.map(e => [e.id, e]));
 
-  // Deduplicate attendance records by employee_id
-  const employeeAttendanceMap = new Map<string, any>();
+  // Group all attendance records by employee_id (support multiple sessions)
+  const employeeSessionsMap = new Map<string, any[]>();
   for (const a of attendance) {
-    const existing = employeeAttendanceMap.get(a.employee_id);
-    if (!existing) {
-      employeeAttendanceMap.set(a.employee_id, a);
-    } else {
-      const existingHasNoCheckout = !existing.check_out;
-      const currentHasNoCheckout = !a.check_out;
-
-      if (currentHasNoCheckout && !existingHasNoCheckout) {
-        employeeAttendanceMap.set(a.employee_id, a);
-      } else if (!currentHasNoCheckout && existingHasNoCheckout) {
-        // Keep existing
-      } else {
-        if (a.check_in && existing.check_in && a.check_in > existing.check_in) {
-          employeeAttendanceMap.set(a.employee_id, a);
-        }
-      }
-    }
+    const existing = employeeSessionsMap.get(a.employee_id) || [];
+    existing.push(a);
+    employeeSessionsMap.set(a.employee_id, existing);
   }
 
-  const attendanceRecords: AttendanceRecord[] = Array.from(employeeAttendanceMap.values()).map((a: any) => {
-    const employee = employeeMap.get(a.employee_id) || a.employees;
-    const recordDate = a.is_overnight ? a.overnight_from_date : date;
+  const attendanceRecords: AttendanceRecord[] = Array.from(employeeSessionsMap.entries()).map(([empId, sessions]) => {
+    // Sort sessions by check_in time
+    sessions.sort((a, b) => (a.check_in || '').localeCompare(b.check_in || ''));
+
+    const employee = employeeMap.get(empId) || sessions[0]?.employees;
+    const latestSession = sessions[sessions.length - 1];
+    const activeSession = sessions.find(s => !s.check_out);
+
+    // Calculate total hours across all sessions
+    const totalSessionHours = sessions.reduce((sum, s) => sum + (s.total_hours || 0), 0);
+
+    // Build sessions array for expandable view
+    const sessionsList: AttendanceSession[] = sessions.map((s, idx) => ({
+      id: s.id,
+      checkIn: s.check_in ? `${date}T${s.check_in}` : null,
+      checkOut: s.check_out ? `${date}T${s.check_out}` : null,
+      branchName: s.check_in_branch?.name || branchMap.get(s.check_in_branch_id) || '-',
+      totalHours: s.total_hours,
+      status: s.status as 'present' | 'late' | 'early_leave',
+      isActive: !s.check_out,
+    }));
+
+    // Use the latest session for main display, but include all sessions
+    const recordDate = latestSession.is_overnight ? latestSession.overnight_from_date : date;
+
     return {
-      id: a.id,
-      attendanceDbId: a.id,
-      employeeDbId: a.employee_id,
-      employeeId: employee?.employee_id || a.employee_id,
+      id: latestSession.id,
+      attendanceDbId: activeSession?.id || latestSession.id,
+      employeeDbId: empId,
+      employeeId: employee?.employee_id || empId,
       employeeName: employee?.full_name || 'Unknown',
       position: employee?.position || '',
-      branchId: a.check_in_branch_id,
-      branchName: a.check_in_branch?.name || branchMap.get(a.check_in_branch_id) || '-',
-      checkInTime: a.check_in ? `${recordDate}T${a.check_in}` : null,
-      checkOutTime: a.check_out ? `${date}T${a.check_out}` : null,
-      status: a.status as 'present' | 'late' | 'absent' | 'early_leave',
+      branchId: latestSession.check_in_branch_id,
+      branchName: latestSession.check_in_branch?.name || branchMap.get(latestSession.check_in_branch_id) || '-',
+      checkInTime: latestSession.check_in ? `${recordDate}T${latestSession.check_in}` : null,
+      checkOutTime: latestSession.check_out ? `${date}T${latestSession.check_out}` : null,
+      status: latestSession.status as 'present' | 'late' | 'absent' | 'early_leave',
       source: 'telegram' as const,
-      totalHours: a.total_hours,
-      isOvernight: a.is_overnight || false,
-      overnightFromDate: a.overnight_from_date,
+      totalHours: latestSession.total_hours,
+      isOvernight: latestSession.is_overnight || false,
+      overnightFromDate: latestSession.overnight_from_date,
+      // Multi-session data
+      sessions: sessionsList,
+      sessionCount: sessions.length,
+      totalSessionHours: Math.round(totalSessionHours * 10) / 10,
+      hasActiveSession: !!activeSession,
     };
   });
 
-  const checkedInIds = new Set(employeeAttendanceMap.keys());
+  const checkedInIds = new Set(employeeSessionsMap.keys());
   const activeEmployees = employees.filter(e => e.status === 'active');
   const absentEmployees = activeEmployees
     .filter(e => !checkedInIds.has(e.id))
@@ -122,6 +151,10 @@ async function getAttendanceForDate(
       status: 'absent' as const,
       source: null,
       totalHours: null,
+      sessions: [],
+      sessionCount: 0,
+      totalSessionHours: 0,
+      hasActiveSession: false,
     }));
 
   return [...attendanceRecords, ...absentEmployees];

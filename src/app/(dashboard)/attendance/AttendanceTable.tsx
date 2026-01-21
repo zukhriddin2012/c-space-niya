@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Clock,
   CheckCircle,
@@ -11,9 +11,21 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import ManualCheckoutButton from './ManualCheckoutButton';
 import ReminderButton from './ReminderButton';
+
+interface AttendanceSession {
+  id: string;
+  checkIn: string | null;
+  checkOut: string | null;
+  branchName: string;
+  totalHours: number | null;
+  status: 'present' | 'late' | 'early_leave';
+  isActive: boolean;
+}
 
 interface AttendanceRecord {
   id: string;
@@ -31,6 +43,11 @@ interface AttendanceRecord {
   totalHours: number | null;
   isOvernight?: boolean;
   overnightFromDate?: string;
+  // Multi-session support
+  sessions?: AttendanceSession[];
+  sessionCount?: number;
+  totalSessionHours?: number;
+  hasActiveSession?: boolean;
 }
 
 type SortField = 'employeeName' | 'branchName' | 'checkInTime' | 'checkOutTime' | 'status' | 'hours';
@@ -93,6 +110,17 @@ const statusOrder: Record<string, number> = {
 export default function AttendanceTable({ records, canEditAttendance }: AttendanceTableProps) {
   const [sortField, setSortField] = useState<SortField>('employeeName');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+  const toggleExpand = (id: string) => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(id)) {
+      newExpanded.delete(id);
+    } else {
+      newExpanded.add(id);
+    }
+    setExpandedRows(newExpanded);
+  };
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -183,69 +211,144 @@ export default function AttendanceTable({ records, canEditAttendance }: Attendan
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {sortedRecords.map((record) => (
-                <tr key={record.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-3 lg:px-4 xl:px-6 py-3 lg:py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="relative">
-                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                          <span className="text-purple-700 text-sm font-medium">{record.employeeName.charAt(0)}</span>
+              {sortedRecords.map((record) => {
+                const hasMultipleSessions = (record.sessionCount || 0) > 1;
+                const isExpanded = expandedRows.has(record.id);
+
+                return (
+                  <React.Fragment key={record.id}>
+                    <tr className="hover:bg-gray-50 transition-colors">
+                      <td className="px-3 lg:px-4 xl:px-6 py-3 lg:py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="relative">
+                            <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                              <span className="text-purple-700 text-sm font-medium">{record.employeeName.charAt(0)}</span>
+                            </div>
+                            {/* Green dot for currently in office */}
+                            {record.hasActiveSession && record.status !== 'absent' && (
+                              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full animate-pulse" />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-medium text-gray-900 truncate">{record.employeeName}</p>
+                            <p className="text-xs text-gray-500 truncate">{record.position}</p>
+                          </div>
                         </div>
-                        {/* Green dot for currently in office */}
-                        {record.checkInTime && !record.checkOutTime && record.status !== 'absent' && (
-                          <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full animate-pulse" />
+                      </td>
+                      <td className="px-3 lg:px-4 xl:px-6 py-3 lg:py-4">
+                        {hasMultipleSessions ? (
+                          <button
+                            onClick={() => toggleExpand(record.id)}
+                            className="flex items-center gap-2 text-sm text-purple-600 hover:text-purple-700 font-medium"
+                          >
+                            <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full text-xs">
+                              {record.sessionCount} sessions
+                            </span>
+                            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                          </button>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <MapPin size={14} className="text-gray-400 flex-shrink-0" />
+                            <span className="text-sm text-gray-900 truncate">{record.branchName}</span>
+                          </div>
                         )}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-medium text-gray-900 truncate">{record.employeeName}</p>
-                        <p className="text-xs text-gray-500 truncate">{record.position}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-3 lg:px-4 xl:px-6 py-3 lg:py-4">
-                    <div className="flex items-center gap-2">
-                      <MapPin size={14} className="text-gray-400 flex-shrink-0" />
-                      <span className="text-sm text-gray-900 truncate">{record.branchName}</span>
-                    </div>
-                  </td>
-                  <td className="px-3 lg:px-4 xl:px-6 py-3 lg:py-4">
-                    <span className={`text-sm ${record.status === 'late' && !record.isOvernight ? 'text-orange-600 font-medium' : 'text-gray-900'}`}>
-                      {formatTime(record.checkInTime)}
-                      {record.isOvernight && <span className="text-indigo-500 text-xs ml-1">(prev)</span>}
-                    </span>
-                  </td>
-                  <td className="px-3 lg:px-4 xl:px-6 py-3 lg:py-4">
-                    <span className={`text-sm ${record.status === 'early_leave' ? 'text-yellow-600 font-medium' : 'text-gray-900'}`}>
-                      {formatTime(record.checkOutTime)}
-                    </span>
-                  </td>
-                  <td className="px-3 lg:px-4 xl:px-6 py-3 lg:py-4 text-sm text-gray-900">
-                    {formatHours(record.totalHours ?? calculateHours(record.checkInTime, record.checkOutTime))}
-                  </td>
-                  <td className="px-3 lg:px-4 xl:px-6 py-3 lg:py-4">
-                    <StatusBadge status={record.status} isOvernight={record.isOvernight} />
-                  </td>
-                  {canEditAttendance && (
-                    <td className="px-3 lg:px-4 xl:px-6 py-3 lg:py-4">
-                      <div className="flex items-center gap-2">
-                        {record.attendanceDbId && record.checkInTime && !record.checkOutTime && record.status !== 'absent' && (
-                          <ManualCheckoutButton
-                            attendanceId={record.attendanceDbId}
-                            employeeName={record.employeeName}
-                            checkInTime={formatTime(record.checkInTime)}
-                          />
+                      </td>
+                      <td className="px-3 lg:px-4 xl:px-6 py-3 lg:py-4">
+                        {hasMultipleSessions ? (
+                          <span className="text-sm text-gray-500">-</span>
+                        ) : (
+                          <span className={`text-sm ${record.status === 'late' && !record.isOvernight ? 'text-orange-600 font-medium' : 'text-gray-900'}`}>
+                            {formatTime(record.checkInTime)}
+                            {record.isOvernight && <span className="text-indigo-500 text-xs ml-1">(prev)</span>}
+                          </span>
                         )}
-                        {record.status === 'absent' && (
-                          <ReminderButton employeeId={record.employeeDbId} employeeName={record.employeeName} type="checkin" />
+                      </td>
+                      <td className="px-3 lg:px-4 xl:px-6 py-3 lg:py-4">
+                        {hasMultipleSessions ? (
+                          <span className="text-sm text-gray-500">-</span>
+                        ) : (
+                          <span className={`text-sm ${record.status === 'early_leave' ? 'text-yellow-600 font-medium' : 'text-gray-900'}`}>
+                            {formatTime(record.checkOutTime)}
+                          </span>
                         )}
-                        {record.checkInTime && !record.checkOutTime && record.status !== 'absent' && (
-                          <ReminderButton employeeId={record.employeeDbId} employeeName={record.employeeName} type="checkout" />
+                      </td>
+                      <td className="px-3 lg:px-4 xl:px-6 py-3 lg:py-4">
+                        {hasMultipleSessions ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-sm font-semibold rounded-lg">
+                            {record.totalSessionHours}h
+                          </span>
+                        ) : (
+                          <span className="text-sm text-gray-900">
+                            {formatHours(record.totalHours ?? calculateHours(record.checkInTime, record.checkOutTime))}
+                          </span>
                         )}
-                      </div>
-                    </td>
-                  )}
-                </tr>
-              ))}
+                      </td>
+                      <td className="px-3 lg:px-4 xl:px-6 py-3 lg:py-4">
+                        <StatusBadge status={record.status} isOvernight={record.isOvernight} />
+                      </td>
+                      {canEditAttendance && (
+                        <td className="px-3 lg:px-4 xl:px-6 py-3 lg:py-4">
+                          <div className="flex items-center gap-2">
+                            {record.attendanceDbId && record.hasActiveSession && record.status !== 'absent' && (
+                              <ManualCheckoutButton
+                                attendanceId={record.attendanceDbId}
+                                employeeName={record.employeeName}
+                                checkInTime={formatTime(record.checkInTime)}
+                              />
+                            )}
+                            {record.status === 'absent' && (
+                              <ReminderButton employeeId={record.employeeDbId} employeeName={record.employeeName} type="checkin" />
+                            )}
+                            {record.hasActiveSession && record.status !== 'absent' && (
+                              <ReminderButton employeeId={record.employeeDbId} employeeName={record.employeeName} type="checkout" />
+                            )}
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                    {/* Expanded sessions row */}
+                    {hasMultipleSessions && isExpanded && (
+                      <tr className="bg-gray-50">
+                        <td colSpan={canEditAttendance ? 7 : 6} className="px-3 lg:px-4 xl:px-6 py-3">
+                          <div className="space-y-2 ml-11">
+                            {record.sessions?.map((session, idx) => (
+                              <div
+                                key={session.id}
+                                className={`flex items-center gap-4 px-3 py-2 rounded-lg ${
+                                  session.isActive ? 'bg-blue-50 border border-blue-200' : 'bg-white border border-gray-200'
+                                }`}
+                              >
+                                <span className="w-6 h-6 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center font-medium">
+                                  {idx + 1}
+                                </span>
+                                <div className="flex items-center gap-2 text-sm">
+                                  <MapPin size={12} className="text-gray-400" />
+                                  <span className="text-gray-600">{session.branchName}</span>
+                                </div>
+                                <div className="text-sm">
+                                  <span className="text-gray-500">In:</span>{' '}
+                                  <span className="font-medium">{formatTime(session.checkIn)}</span>
+                                </div>
+                                <div className="text-sm">
+                                  <span className="text-gray-500">Out:</span>{' '}
+                                  <span className="font-medium">{formatTime(session.checkOut)}</span>
+                                </div>
+                                <div className="text-sm font-medium text-purple-600">
+                                  {session.isActive ? (
+                                    <span className="text-blue-600">Active</span>
+                                  ) : (
+                                    formatHours(session.totalHours)
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>
