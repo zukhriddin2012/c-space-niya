@@ -42,11 +42,11 @@ import CandidateDetailModal from '@/components/CandidateDetailModal';
 const STAGES: { id: CandidateStage; label: string; color: string; bgColor: string }[] = [
   { id: 'screening', label: 'Screening', color: 'text-blue-700', bgColor: 'bg-blue-50 border-blue-200' },
   { id: 'interview_1', label: 'Interview 1', color: 'text-purple-700', bgColor: 'bg-purple-50 border-purple-200' },
-  { id: 'interview_2', label: 'Interview 2', color: 'text-indigo-700', bgColor: 'bg-indigo-50 border-indigo-200' },
   { id: 'under_review', label: 'Under Review', color: 'text-orange-700', bgColor: 'bg-orange-50 border-orange-200' },
   { id: 'probation', label: 'Probation', color: 'text-yellow-700', bgColor: 'bg-yellow-50 border-yellow-200' },
-  { id: 'hired', label: 'Hired', color: 'text-green-700', bgColor: 'bg-green-50 border-green-200' },
+  { id: 'interview_2', label: 'Interview 2', color: 'text-indigo-700', bgColor: 'bg-indigo-50 border-indigo-200' },
   { id: 'rejected', label: 'Rejected', color: 'text-red-700', bgColor: 'bg-red-50 border-red-200' },
+  { id: 'hired', label: 'Hired', color: 'text-green-700', bgColor: 'bg-green-50 border-green-200' },
 ];
 
 const MBTI_TYPES = [
@@ -494,7 +494,20 @@ export default function RecruitmentBoardPage() {
   );
 
   const getCandidatesByStage = (stage: CandidateStage) => {
-    return filteredCandidates.filter(c => c.stage === stage);
+    const stageCandidates = filteredCandidates.filter(c => c.stage === stage);
+
+    // For rejected and hired, only show the last 5 (most recent by stage_changed_at or created_at)
+    if (stage === 'rejected' || stage === 'hired') {
+      return stageCandidates
+        .sort((a, b) => {
+          const dateA = new Date(a.stage_changed_at || a.created_at).getTime();
+          const dateB = new Date(b.stage_changed_at || b.created_at).getTime();
+          return dateB - dateA; // Most recent first
+        })
+        .slice(0, 5);
+    }
+
+    return stageCandidates;
   };
 
   const getChecklistProgress = (checklist: ChecklistItem[]) => {

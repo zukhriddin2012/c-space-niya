@@ -129,17 +129,23 @@ export default function CandidateDetailModal({
 
   // Probation workflow
   const [probationLoading, setProbationLoading] = useState(false);
+  const [editingProbationDates, setEditingProbationDates] = useState(false);
+  const [probationDates, setProbationDates] = useState({
+    start: candidate.probation_start_date || '',
+    end: candidate.probation_end_date || '',
+  });
 
-  const handleProbationAction = async (action: string) => {
+  const handleProbationAction = async (action: string, extraData?: Record<string, string>) => {
     setProbationLoading(true);
     try {
       const res = await fetch(`/api/candidates/${candidate.id}/probation`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ action, ...extraData }),
       });
       if (res.ok) {
         onRefresh();
+        setEditingProbationDates(false);
       } else {
         const data = await res.json();
         console.error('Probation action failed:', data.error);
@@ -149,6 +155,13 @@ export default function CandidateDetailModal({
     } finally {
       setProbationLoading(false);
     }
+  };
+
+  const handleSaveProbationDates = async () => {
+    await handleProbationAction('set_dates', {
+      probation_start_date: probationDates.start,
+      probation_end_date: probationDates.end,
+    });
   };
 
   // Fetch comments when tab changes
@@ -390,7 +403,25 @@ export default function CandidateDetailModal({
                         <p className="text-xs text-gray-500">{formatFileSize(candidate.resume_file_size)}</p>
                       )}
                     </div>
-                    <button className="flex items-center gap-1 px-3 py-1.5 text-sm text-purple-600 hover:bg-purple-50 rounded-lg">
+                    <button
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(`/api/candidates/${candidate.id}/resume`);
+                          if (res.ok) {
+                            const data = await res.json();
+                            // Open in new tab to download
+                            window.open(data.url, '_blank');
+                          } else {
+                            console.error('Failed to get resume URL');
+                            alert('Failed to download resume');
+                          }
+                        } catch (error) {
+                          console.error('Error downloading resume:', error);
+                          alert('Failed to download resume');
+                        }
+                      }}
+                      className="flex items-center gap-1 px-3 py-1.5 text-sm text-purple-600 hover:bg-purple-50 rounded-lg"
+                    >
                       <Download size={14} />
                       Download
                     </button>
@@ -426,19 +457,74 @@ export default function CandidateDetailModal({
               {/* Probation Info */}
               {candidate.stage === 'probation' && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <h4 className="font-medium text-yellow-800 mb-3">Probation Period</h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium text-yellow-800">Probation Period</h4>
+                    {!editingProbationDates && (
+                      <button
+                        onClick={() => {
+                          setProbationDates({
+                            start: candidate.probation_start_date || '',
+                            end: candidate.probation_end_date || '',
+                          });
+                          setEditingProbationDates(true);
+                        }}
+                        className="text-xs text-yellow-700 hover:text-yellow-900 flex items-center gap-1"
+                      >
+                        <Edit size={12} />
+                        Edit Dates
+                      </button>
+                    )}
+                  </div>
 
                   {/* Dates */}
-                  <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-                    <div>
-                      <p className="text-gray-500">Start Date</p>
-                      <p className="font-medium">{candidate.probation_start_date ? formatDate(candidate.probation_start_date) : 'Not set'}</p>
+                  {editingProbationDates ? (
+                    <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                      <div>
+                        <label className="text-gray-500 block mb-1">Start Date</label>
+                        <input
+                          type="date"
+                          value={probationDates.start}
+                          onChange={(e) => setProbationDates({ ...probationDates, start: e.target.value })}
+                          className="w-full px-2 py-1 border border-yellow-300 rounded text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-gray-500 block mb-1">End Date</label>
+                        <input
+                          type="date"
+                          value={probationDates.end}
+                          onChange={(e) => setProbationDates({ ...probationDates, end: e.target.value })}
+                          className="w-full px-2 py-1 border border-yellow-300 rounded text-sm"
+                        />
+                      </div>
+                      <div className="col-span-2 flex justify-end gap-2 mt-2">
+                        <button
+                          onClick={() => setEditingProbationDates(false)}
+                          className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleSaveProbationDates}
+                          disabled={probationLoading}
+                          className="px-3 py-1 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700 disabled:opacity-50"
+                        >
+                          {probationLoading ? 'Saving...' : 'Save'}
+                        </button>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-gray-500">End Date</p>
-                      <p className="font-medium">{candidate.probation_end_date ? formatDate(candidate.probation_end_date) : 'Not set'}</p>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                      <div>
+                        <p className="text-gray-500">Start Date</p>
+                        <p className="font-medium">{candidate.probation_start_date ? formatDate(candidate.probation_start_date) : 'Not set'}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">End Date</p>
+                        <p className="font-medium">{candidate.probation_end_date ? formatDate(candidate.probation_end_date) : 'Not set'}</p>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Workflow Steps */}
                   <div className="space-y-3 pt-3 border-t border-yellow-200">
