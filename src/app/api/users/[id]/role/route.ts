@@ -3,7 +3,7 @@ import { getSession } from '@/lib/auth-server';
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase';
 import type { UserRole } from '@/types';
 
-const VALID_ROLES: UserRole[] = ['general_manager', 'ceo', 'hr', 'branch_manager', 'recruiter', 'employee'];
+const VALID_ROLES: UserRole[] = ['general_manager', 'ceo', 'hr', 'branch_manager', 'recruiter', 'employee', 'accountant', 'chief_accountant', 'legal_manager'];
 
 // PUT /api/users/[id]/role - Update a user's role
 export async function PUT(
