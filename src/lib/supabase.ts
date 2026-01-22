@@ -64,9 +64,10 @@ export interface Attendance {
   employees?: Employee;
   check_in_branch?: Branch;
   check_out_branch?: Branch;
-  // Overnight shift fields (for night shift workers viewing next day)
+  // Overnight/multi-day shift fields
   is_overnight?: boolean;
   overnight_from_date?: string;
+  is_checkout_day?: boolean; // True when viewing the date this record was checked out (not checked in)
 }
 
 export interface LeaveRequest {
