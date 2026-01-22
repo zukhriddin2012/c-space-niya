@@ -22,6 +22,10 @@ import {
   ChevronRight,
   Table,
   Kanban,
+  Calculator,
+  FileText,
+  ClipboardCheck,
+  ListTodo,
 } from 'lucide-react';
 import type { User, UserRole } from '@/types';
 import { getRoleLabel } from '@/lib/auth';
@@ -101,6 +105,32 @@ const navItems: NavItem[] = [
     href: '/reports',
     icon: BarChart3,
     roles: ['general_manager', 'ceo'],
+  },
+  {
+    name: 'Accounting',
+    href: '/accounting',
+    icon: Calculator,
+    roles: ['general_manager', 'ceo', 'chief_accountant', 'accountant', 'branch_manager', 'legal_manager'],
+    children: [
+      {
+        name: 'My Requests',
+        href: '/accounting/my-requests',
+        icon: FileText,
+        roles: ['general_manager', 'ceo', 'branch_manager', 'legal_manager'],
+      },
+      {
+        name: 'All Requests',
+        href: '/accounting/requests',
+        icon: ListTodo,
+        roles: ['general_manager', 'ceo', 'chief_accountant', 'accountant'],
+      },
+      {
+        name: 'Approvals',
+        href: '/accounting/approvals',
+        icon: ClipboardCheck,
+        roles: ['general_manager', 'ceo', 'chief_accountant'],
+      },
+    ],
   },
   {
     name: 'Departments',

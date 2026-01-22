@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase';
 
 // CORS headers for Mini App
 const corsHeaders = {
@@ -34,6 +29,13 @@ export async function OPTIONS() {
 
 export async function GET(request: NextRequest) {
   try {
+    if (!isSupabaseAdminConfigured()) {
+      return NextResponse.json(
+        { error: 'Database not configured' },
+        { status: 500, headers: corsHeaders }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const telegramId = searchParams.get('telegramId');
 
@@ -45,7 +47,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get employee by telegram_id
-    const { data: employee, error: empError } = await supabase
+    const { data: employee, error: empError } = await supabaseAdmin!
       .from('employees')
       .select('id, full_name, branch_id')
       .eq('telegram_id', telegramId)
@@ -59,7 +61,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get active attendance record (checked in but not checked out)
-    const { data: attendanceData, error: attError } = await supabase
+    const { data: attendanceData, error: attError } = await supabaseAdmin!
       .from('attendance')
       .select(`
         id,
@@ -93,7 +95,7 @@ export async function GET(request: NextRequest) {
     // Get branch name separately
     let branchName = 'Unknown';
     if (attendance.check_in_branch_id) {
-      const { data: branch } = await supabase
+      const { data: branch } = await supabaseAdmin!
         .from('branches')
         .select('name')
         .eq('id', attendance.check_in_branch_id)

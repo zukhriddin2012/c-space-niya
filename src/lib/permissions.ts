@@ -69,6 +69,17 @@ export const PERMISSIONS = {
   // Feedback
   FEEDBACK_SUBMIT: 'feedback:submit',
   FEEDBACK_VIEW_ALL: 'feedback:view_all',
+
+  // Accounting Requests
+  ACCOUNTING_REQUESTS_VIEW: 'accounting_requests:view',
+  ACCOUNTING_REQUESTS_VIEW_ALL: 'accounting_requests:view_all',
+  ACCOUNTING_REQUESTS_CREATE: 'accounting_requests:create',
+  ACCOUNTING_REQUESTS_EDIT_OWN: 'accounting_requests:edit_own',
+  ACCOUNTING_REQUESTS_CANCEL_OWN: 'accounting_requests:cancel_own',
+  ACCOUNTING_REQUESTS_PROCESS: 'accounting_requests:process',
+  ACCOUNTING_REQUESTS_APPROVE_STANDARD: 'accounting_requests:approve_standard', // 2M-10M UZS
+  ACCOUNTING_REQUESTS_APPROVE_HIGH: 'accounting_requests:approve_high', // 10M+ UZS
+  ACCOUNTING_REQUESTS_REPORTS: 'accounting_requests:reports',
 } as const;
 
 export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];
@@ -76,8 +87,11 @@ export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];
 // Role hierarchy (higher level = more permissions)
 export const ROLE_HIERARCHY: Record<UserRole, number> = {
   general_manager: 100,
-  ceo: 90,
-  hr: 70,
+  ceo: 95,
+  chief_accountant: 80,
+  hr: 75,
+  accountant: 70,
+  legal_manager: 65,
   branch_manager: 60,
   recruiter: 50,
   employee: 10,
@@ -131,6 +145,14 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     PERMISSIONS.DASHBOARD_ADMIN,
     PERMISSIONS.FEEDBACK_SUBMIT,
     PERMISSIONS.FEEDBACK_VIEW_ALL,
+    // Accounting - Full access including high-value approvals
+    PERMISSIONS.ACCOUNTING_REQUESTS_VIEW,
+    PERMISSIONS.ACCOUNTING_REQUESTS_VIEW_ALL,
+    PERMISSIONS.ACCOUNTING_REQUESTS_CREATE,
+    PERMISSIONS.ACCOUNTING_REQUESTS_EDIT_OWN,
+    PERMISSIONS.ACCOUNTING_REQUESTS_CANCEL_OWN,
+    PERMISSIONS.ACCOUNTING_REQUESTS_APPROVE_HIGH,
+    PERMISSIONS.ACCOUNTING_REQUESTS_REPORTS,
   ],
 
   ceo: [
@@ -158,6 +180,14 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     PERMISSIONS.DASHBOARD_ADMIN,
     PERMISSIONS.FEEDBACK_SUBMIT,
     PERMISSIONS.FEEDBACK_VIEW_ALL,
+    // Accounting - View all, create own, approve high-value
+    PERMISSIONS.ACCOUNTING_REQUESTS_VIEW,
+    PERMISSIONS.ACCOUNTING_REQUESTS_VIEW_ALL,
+    PERMISSIONS.ACCOUNTING_REQUESTS_CREATE,
+    PERMISSIONS.ACCOUNTING_REQUESTS_EDIT_OWN,
+    PERMISSIONS.ACCOUNTING_REQUESTS_CANCEL_OWN,
+    PERMISSIONS.ACCOUNTING_REQUESTS_APPROVE_HIGH,
+    PERMISSIONS.ACCOUNTING_REQUESTS_REPORTS,
   ],
 
   hr: [
@@ -207,6 +237,11 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     PERMISSIONS.TASKS_CREATE,
     PERMISSIONS.DASHBOARD_VIEW,
     PERMISSIONS.FEEDBACK_SUBMIT,
+    // Accounting - Create and manage own requests
+    PERMISSIONS.ACCOUNTING_REQUESTS_VIEW,
+    PERMISSIONS.ACCOUNTING_REQUESTS_CREATE,
+    PERMISSIONS.ACCOUNTING_REQUESTS_EDIT_OWN,
+    PERMISSIONS.ACCOUNTING_REQUESTS_CANCEL_OWN,
   ],
 
   recruiter: [
@@ -232,6 +267,46 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     PERMISSIONS.PAYROLL_VIEW, // Own payslips
     PERMISSIONS.DASHBOARD_VIEW,
     PERMISSIONS.FEEDBACK_SUBMIT,
+  ],
+
+  chief_accountant: [
+    // Full accounting access + approve standard payments
+    PERMISSIONS.EMPLOYEES_VIEW,
+    PERMISSIONS.BRANCHES_VIEW,
+    PERMISSIONS.DASHBOARD_VIEW,
+    PERMISSIONS.FEEDBACK_SUBMIT,
+    // Accounting
+    PERMISSIONS.ACCOUNTING_REQUESTS_VIEW,
+    PERMISSIONS.ACCOUNTING_REQUESTS_VIEW_ALL,
+    PERMISSIONS.ACCOUNTING_REQUESTS_PROCESS,
+    PERMISSIONS.ACCOUNTING_REQUESTS_APPROVE_STANDARD,
+    PERMISSIONS.ACCOUNTING_REQUESTS_REPORTS,
+  ],
+
+  accountant: [
+    // Process accounting requests, no approval
+    PERMISSIONS.EMPLOYEES_VIEW,
+    PERMISSIONS.BRANCHES_VIEW,
+    PERMISSIONS.DASHBOARD_VIEW,
+    PERMISSIONS.FEEDBACK_SUBMIT,
+    // Accounting
+    PERMISSIONS.ACCOUNTING_REQUESTS_VIEW,
+    PERMISSIONS.ACCOUNTING_REQUESTS_VIEW_ALL,
+    PERMISSIONS.ACCOUNTING_REQUESTS_PROCESS,
+    PERMISSIONS.ACCOUNTING_REQUESTS_REPORTS,
+  ],
+
+  legal_manager: [
+    // Create and manage own accounting requests
+    PERMISSIONS.EMPLOYEES_VIEW,
+    PERMISSIONS.BRANCHES_VIEW,
+    PERMISSIONS.DASHBOARD_VIEW,
+    PERMISSIONS.FEEDBACK_SUBMIT,
+    // Accounting
+    PERMISSIONS.ACCOUNTING_REQUESTS_VIEW,
+    PERMISSIONS.ACCOUNTING_REQUESTS_CREATE,
+    PERMISSIONS.ACCOUNTING_REQUESTS_EDIT_OWN,
+    PERMISSIONS.ACCOUNTING_REQUESTS_CANCEL_OWN,
   ],
 };
 
@@ -265,7 +340,10 @@ export function getRoleLabel(role: UserRole): string {
   const labels: Record<UserRole, string> = {
     general_manager: 'General Manager',
     ceo: 'CEO',
+    chief_accountant: 'Chief Accountant',
+    accountant: 'Accountant',
     hr: 'HR Manager',
+    legal_manager: 'Legal Manager',
     branch_manager: 'Branch Manager',
     recruiter: 'Recruiter',
     employee: 'Employee',
@@ -278,8 +356,11 @@ export function getRoleBadgeColor(role: UserRole): string {
   const colors: Record<UserRole, string> = {
     general_manager: 'bg-purple-100 text-purple-800 border-purple-200',
     ceo: 'bg-amber-100 text-amber-800 border-amber-200',
+    chief_accountant: 'bg-teal-100 text-teal-800 border-teal-200',
+    accountant: 'bg-cyan-100 text-cyan-800 border-cyan-200',
     hr: 'bg-blue-100 text-blue-800 border-blue-200',
-    branch_manager: 'bg-teal-100 text-teal-800 border-teal-200',
+    legal_manager: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+    branch_manager: 'bg-emerald-100 text-emerald-800 border-emerald-200',
     recruiter: 'bg-green-100 text-green-800 border-green-200',
     employee: 'bg-gray-100 text-gray-800 border-gray-200',
   };
@@ -288,7 +369,7 @@ export function getRoleBadgeColor(role: UserRole): string {
 
 // Get all available roles
 export function getAllRoles(): UserRole[] {
-  return ['general_manager', 'ceo', 'hr', 'branch_manager', 'recruiter', 'employee'];
+  return ['general_manager', 'ceo', 'chief_accountant', 'accountant', 'hr', 'legal_manager', 'branch_manager', 'recruiter', 'employee'];
 }
 
 // Permission groups for UI display
@@ -350,5 +431,16 @@ export const PERMISSION_GROUPS = {
   'Recruitment': [
     { key: PERMISSIONS.RECRUITMENT_VIEW, label: 'View Recruitment Pipeline' },
     { key: PERMISSIONS.RECRUITMENT_MANAGE, label: 'Manage Candidates' },
+  ],
+  'Accounting Requests': [
+    { key: PERMISSIONS.ACCOUNTING_REQUESTS_VIEW, label: 'View Own Requests' },
+    { key: PERMISSIONS.ACCOUNTING_REQUESTS_VIEW_ALL, label: 'View All Requests' },
+    { key: PERMISSIONS.ACCOUNTING_REQUESTS_CREATE, label: 'Create Requests' },
+    { key: PERMISSIONS.ACCOUNTING_REQUESTS_EDIT_OWN, label: 'Edit Own Requests' },
+    { key: PERMISSIONS.ACCOUNTING_REQUESTS_CANCEL_OWN, label: 'Cancel Own Requests' },
+    { key: PERMISSIONS.ACCOUNTING_REQUESTS_PROCESS, label: 'Process Requests' },
+    { key: PERMISSIONS.ACCOUNTING_REQUESTS_APPROVE_STANDARD, label: 'Approve 2M-10M UZS' },
+    { key: PERMISSIONS.ACCOUNTING_REQUESTS_APPROVE_HIGH, label: 'Approve 10M+ UZS' },
+    { key: PERMISSIONS.ACCOUNTING_REQUESTS_REPORTS, label: 'View Reports' },
   ],
 };

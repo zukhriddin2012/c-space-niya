@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase';
 
 // CORS headers for Mini App
 const corsHeaders = {
@@ -20,6 +15,13 @@ export async function OPTIONS() {
 
 export async function POST(request: NextRequest) {
   try {
+    if (!isSupabaseAdminConfigured()) {
+      return NextResponse.json(
+        { error: 'Database not configured' },
+        { status: 500, headers: corsHeaders }
+      );
+    }
+
     const body = await request.json();
     const { telegramId } = body;
 
@@ -31,7 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get employee by telegram_id
-    const { data: employee, error: empError } = await supabase
+    const { data: employee, error: empError } = await supabaseAdmin!
       .from('employees')
       .select('id, full_name')
       .eq('telegram_id', telegramId)
@@ -45,7 +47,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get active attendance record
-    const { data: attendance, error: attError } = await supabase
+    const { data: attendance, error: attError } = await supabaseAdmin!
       .from('attendance')
       .select('id, check_in, check_in_timestamp, check_in_branch_id')
       .eq('employee_id', employee.id)
@@ -77,7 +79,7 @@ export async function POST(request: NextRequest) {
     const isEarlyLeave = (checkOutHour < 17) || (checkOutHour === 17 && checkOutMinute < 45);
 
     // Update attendance record
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin!
       .from('attendance')
       .update({
         check_out: checkOut.toISOString(),

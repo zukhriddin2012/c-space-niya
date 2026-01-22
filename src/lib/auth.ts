@@ -834,6 +834,31 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'view_own_payslips',
     'check_in_out',
   ],
+  accountant: [
+    'view_own_profile',
+    'view_own_attendance',
+    'view_own_payslips',
+    'check_in_out',
+    'view_accounting_requests',
+    'process_accounting_requests',
+  ],
+  chief_accountant: [
+    'view_own_profile',
+    'view_own_attendance',
+    'view_own_payslips',
+    'check_in_out',
+    'view_accounting_requests',
+    'process_accounting_requests',
+    'approve_standard_accounting',
+  ],
+  legal_manager: [
+    'view_own_profile',
+    'view_own_attendance',
+    'view_own_payslips',
+    'check_in_out',
+    'create_accounting_requests',
+    'view_own_accounting_requests',
+  ],
 };
 
 export function hasPermission(role: UserRole, permission: string): boolean {
@@ -848,6 +873,9 @@ export function getRoleLabel(role: UserRole): string {
     recruiter: 'Recruiter',
     branch_manager: 'Branch Manager',
     employee: 'Employee',
+    accountant: 'Accountant',
+    chief_accountant: 'Chief Accountant',
+    legal_manager: 'Legal Manager',
   };
   return labels[role];
 }
