@@ -1149,50 +1149,62 @@ export async function getWeeklyAttendanceSummary(totalEmployees: number) {
   // Ensure total is at least 1 to avoid division by zero
   const safeTotal = Math.max(1, totalEmployees);
 
-  const weekData = [];
+  // Build list of dates that need fetching
+  const datesToFetch: { index: number; dateStr: string; dayName: string }[] = [];
+  const weekData: { day: string; date: string; present: number; late: number; absent: number; total: number }[] = [];
 
   for (let i = 0; i < 7; i++) {
     const currentDate = new Date(startOfWeek);
     currentDate.setDate(startOfWeek.getDate() + i);
-    // Format date as YYYY-MM-DD without timezone conversion issues
     const year = currentDate.getFullYear();
     const month = String(currentDate.getMonth() + 1).padStart(2, '0');
     const day = String(currentDate.getDate()).padStart(2, '0');
     const dateStr = `${year}-${month}-${day}`;
 
-    // Only fetch data for dates up to today (and skip weekends for work attendance)
     const isWeekend = currentDate.getDay() === 0 || currentDate.getDay() === 6;
     const isPastOrToday = currentDate <= today;
 
     if (isPastOrToday && !isWeekend) {
-      const attendance = await getAttendanceByDate(dateStr);
-      const present = attendance.filter(a => a.status === 'present').length;
-      const late = attendance.filter(a => a.status === 'late').length;
-      const earlyLeave = attendance.filter(a => a.status === 'early_leave').length;
-      const absent = safeTotal - present - late - earlyLeave;
-
-      weekData.push({
-        day: days[i],
-        date: dateStr,
-        present,
-        late,
-        absent: Math.max(0, absent),
-        total: safeTotal,
-      });
+      datesToFetch.push({ index: i, dateStr, dayName: days[i] });
     } else {
-      // Future dates or weekends - no data
-      weekData.push({
+      // Future dates or weekends - no data needed
+      weekData[i] = {
         day: days[i],
         date: dateStr,
         present: 0,
         late: 0,
         absent: isWeekend ? 0 : safeTotal,
         total: safeTotal,
-      });
+      };
     }
   }
 
-  return weekData;
+  // Fetch all weekday attendance in parallel
+  if (datesToFetch.length > 0) {
+    const attendanceResults = await Promise.all(
+      datesToFetch.map(d => getAttendanceByDate(d.dateStr))
+    );
+
+    datesToFetch.forEach((d, idx) => {
+      const attendance = attendanceResults[idx];
+      const present = attendance.filter(a => a.status === 'present').length;
+      const late = attendance.filter(a => a.status === 'late').length;
+      const earlyLeave = attendance.filter(a => a.status === 'early_leave').length;
+      const absent = safeTotal - present - late - earlyLeave;
+
+      weekData[d.index] = {
+        day: d.dayName,
+        date: d.dateStr,
+        present,
+        late,
+        absent: Math.max(0, absent),
+        total: safeTotal,
+      };
+    });
+  }
+
+  // Sort by index to maintain correct order
+  return weekData.filter(Boolean);
 }
 
 // ============================================

@@ -11,6 +11,21 @@ import {
 } from 'lucide-react';
 import { getBranches, getEmployees, getAttendanceByDate, getWeeklyAttendanceSummary } from '@/lib/db';
 import AttendanceMap from '@/components/AttendanceMap';
+import { unstable_cache } from 'next/cache';
+
+// Cache branches for 5 minutes
+const getCachedBranches = unstable_cache(
+  async () => getBranches(),
+  ['dashboard-branches'],
+  { revalidate: 300 }
+);
+
+// Cache employees for 1 minute
+const getCachedEmployees = unstable_cache(
+  async () => getEmployees(),
+  ['dashboard-employees'],
+  { revalidate: 60 }
+);
 
 // Get current date in Tashkent timezone (UTC+5)
 function getTashkentDateString(): string {
@@ -33,8 +48,8 @@ interface AttendanceRecord {
 async function getAttendanceForDate(date: string): Promise<AttendanceRecord[]> {
   const [attendance, employees, branches] = await Promise.all([
     getAttendanceByDate(date),
-    getEmployees(),
-    getBranches(),
+    getCachedEmployees(),
+    getCachedBranches(),
   ]);
 
   const branchMap = new Map(branches.map(b => [b.id, b.name]));
@@ -127,7 +142,7 @@ export default async function AttendanceDashboardPage() {
 
   const [allAttendance, branches] = await Promise.all([
     getAttendanceForDate(selectedDate),
-    getBranches(),
+    getCachedBranches(),
   ]);
 
   const currentlyPresent = allAttendance.filter((a) =>
