@@ -46,7 +46,7 @@ export default function TelegramCheckinPage() {
             ...result.data,
           }));
           setTimeout(() => {
-            window.Telegram.WebApp.close();
+            window.Telegram?.WebApp?.close();
           }, 2000);
         }
       } else if (result.error === 'ip_not_matched') {
@@ -61,7 +61,7 @@ export default function TelegramCheckinPage() {
             message: 'Office network not detected',
           }));
           setTimeout(() => {
-            window.Telegram.WebApp.close();
+            window.Telegram?.WebApp?.close();
           }, 2000);
         }
       } else if (result.error === 'active_checkin') {
@@ -70,7 +70,7 @@ export default function TelegramCheckinPage() {
 
         if (window.Telegram?.WebApp) {
           setTimeout(() => {
-            window.Telegram.WebApp.close();
+            window.Telegram?.WebApp?.close();
           }, 2000);
         }
       } else {
