@@ -139,6 +139,7 @@ export async function updateEmployee(
     email?: string | null;
     status?: string;
     employment_type?: string;
+    system_role?: string;
   }
 ): Promise<{ success: boolean; employee?: Employee; error?: string }> {
   if (!isSupabaseAdminConfigured()) {
