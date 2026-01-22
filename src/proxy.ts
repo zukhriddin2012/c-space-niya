@@ -6,7 +6,7 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'c-space-hr-secret-key-change-in-production'
 );
 
-const publicPaths = ['/login', '/api/auth/login'];
+const publicPaths = ['/login', '/api/auth/login', '/telegram', '/api/attendance/ip-checkin'];
 
 export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
