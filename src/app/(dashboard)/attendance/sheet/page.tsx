@@ -5,6 +5,8 @@ import { getBranches, getEmployees, getAttendanceByDate } from '@/lib/db';
 import { hasPermission, PERMISSIONS } from '@/lib/permissions';
 import AttendanceFilters from '../AttendanceFilters';
 import AttendanceTable from '../AttendanceTable';
+import BranchView from '../BranchView';
+import ViewToggle from '../ViewToggle';
 import { unstable_cache } from 'next/cache';
 
 // Get current date in Tashkent timezone (UTC+5) - consistent with bot
@@ -163,7 +165,7 @@ async function getAttendanceForDate(
 export default async function AttendanceSheetPage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string; branch?: string; status?: string }>;
+  searchParams: Promise<{ date?: string; branch?: string; status?: string; view?: string }>;
 }) {
   const user = await getSession();
   if (!user) redirect('/login');
@@ -175,6 +177,7 @@ export default async function AttendanceSheetPage({
   const selectedDate = params.date || getTashkentDateString();
   const selectedBranch = params.branch || '';
   const selectedStatus = params.status || '';
+  const currentView = (params.view || 'branch') as 'table' | 'branch';
 
   // Fetch branches and employees once (cached), then use for attendance processing
   const [branches, employees] = await Promise.all([
@@ -212,29 +215,70 @@ export default async function AttendanceSheetPage({
 
   const activeBranches = branches.filter(b => allAttendance.some(a => a.branchId === b.id));
 
+  // Calculate stats
+  const presentCount = allAttendance.filter(a => a.status === 'present' || a.status === 'late').length;
+  const lateCount = allAttendance.filter(a => a.status === 'late').length;
+  const checkedOutCount = allAttendance.filter(a => a.checkOutTime !== null).length;
+  const absentCount = allAttendance.filter(a => a.status === 'absent').length;
+
   return (
     <div>
-      {/* Export Button */}
-      {!isEmployee && (
-        <div className="flex justify-end mb-4">
-          <button className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm">
-            <Download size={18} />
-            Export
-          </button>
+      {/* Stats Row + View Toggle */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-4 text-sm">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+            <span className="text-gray-600">Present:</span>
+            <span className="font-semibold text-gray-900">{presentCount}</span>
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+            <span className="text-gray-600">Late:</span>
+            <span className="font-semibold text-gray-900">{lateCount}</span>
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+            <span className="text-gray-600">Left:</span>
+            <span className="font-semibold text-gray-900">{checkedOutCount}</span>
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+            <span className="text-gray-600">Absent:</span>
+            <span className="font-semibold text-gray-900">{absentCount}</span>
+          </span>
         </div>
+
+        <div className="flex items-center gap-3">
+          {!isEmployee && (
+            <button className="inline-flex items-center gap-2 px-3 py-1.5 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm">
+              <Download size={16} />
+              Export
+            </button>
+          )}
+          <ViewToggle currentView={currentView} />
+        </div>
+      </div>
+
+      {/* Filters - only show in table view */}
+      {currentView === 'table' && (
+        <AttendanceFilters
+          branches={activeBranches.map(b => ({ id: b.id, name: b.name }))}
+          isEmployee={isEmployee}
+        />
       )}
 
-      {/* Filters */}
-      <AttendanceFilters
-        branches={activeBranches.map(b => ({ id: b.id, name: b.name }))}
-        isEmployee={isEmployee}
-      />
-
-      {/* Sortable Attendance Table */}
-      <AttendanceTable
-        records={filteredAttendance}
-        canEditAttendance={canEditAttendance}
-      />
+      {/* Branch View or Table View */}
+      {currentView === 'branch' ? (
+        <BranchView
+          records={allAttendance}
+          branches={branches}
+        />
+      ) : (
+        <AttendanceTable
+          records={filteredAttendance}
+          canEditAttendance={canEditAttendance}
+        />
+      )}
     </div>
   );
 }
