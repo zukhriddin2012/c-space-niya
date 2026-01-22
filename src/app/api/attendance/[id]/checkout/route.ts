@@ -35,7 +35,7 @@ export const POST = withAuth(async (
 
   try {
     const body = await request.json();
-    const { checkOutTime } = body;
+    const { checkOutTime, checkOutDate } = body;
 
     if (!checkOutTime) {
       return NextResponse.json(
@@ -51,6 +51,17 @@ export const POST = withAuth(async (
         { error: 'Invalid time format. Use HH:MM or HH:MM:SS' },
         { status: 400 }
       );
+    }
+
+    // Validate date format if provided (YYYY-MM-DD)
+    if (checkOutDate) {
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(checkOutDate)) {
+        return NextResponse.json(
+          { error: 'Invalid date format. Use YYYY-MM-DD' },
+          { status: 400 }
+        );
+      }
     }
 
     // Format time to HH:MM:SS
@@ -78,21 +89,33 @@ export const POST = withAuth(async (
       );
     }
 
-    // Calculate total hours
-    const checkInParts = record.check_in.split(':');
-    const checkOutParts = formattedTime.split(':');
-    const checkInMinutes = parseInt(checkInParts[0]) * 60 + parseInt(checkInParts[1]);
-    const checkOutMinutes = parseInt(checkOutParts[0]) * 60 + parseInt(checkOutParts[1]);
+    // Calculate total hours using full datetime (handles multi-day shifts)
+    const checkInDate = record.date; // Date of check-in (YYYY-MM-DD)
+    const actualCheckOutDate = checkOutDate || checkInDate; // Use provided date or default to check-in date
 
-    let totalMinutes = checkOutMinutes - checkInMinutes;
-    // Handle overnight shifts
-    if (totalMinutes < 0) {
-      totalMinutes += 24 * 60;
+    // Create full datetime for accurate calculation
+    const checkInDateTime = new Date(`${checkInDate}T${record.check_in}`);
+    const checkOutDateTime = new Date(`${actualCheckOutDate}T${formattedTime}`);
+
+    // Calculate difference in minutes
+    let totalMinutes = Math.round((checkOutDateTime.getTime() - checkInDateTime.getTime()) / (1000 * 60));
+
+    // Sanity check: if negative or unreasonably long (>48 hours), fall back to simple same-day calculation
+    if (totalMinutes < 0 || totalMinutes > 48 * 60) {
+      const checkInParts = record.check_in.split(':');
+      const checkOutParts = formattedTime.split(':');
+      const checkInMins = parseInt(checkInParts[0]) * 60 + parseInt(checkInParts[1]);
+      const checkOutMins = parseInt(checkOutParts[0]) * 60 + parseInt(checkOutParts[1]);
+      totalMinutes = checkOutMins - checkInMins;
+      if (totalMinutes < 0) totalMinutes += 24 * 60;
     }
+
     const totalHours = Math.round((totalMinutes / 60) * 10) / 10;
 
     // Determine if early leave (for day shift: before 17:00, for night shift: before 09:00)
     const shiftId = record.shift_id || 'day';
+    const checkOutParts = formattedTime.split(':');
+    const checkOutMinutes = parseInt(checkOutParts[0]) * 60 + parseInt(checkOutParts[1]);
     const earlyThreshold = shiftId === 'night' ? 9 * 60 : 17 * 60;
     const isEarlyLeave = checkOutMinutes < earlyThreshold && totalHours < 8;
 

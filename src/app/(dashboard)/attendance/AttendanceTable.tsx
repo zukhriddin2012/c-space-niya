@@ -294,6 +294,7 @@ export default function AttendanceTable({ records, canEditAttendance }: Attendan
                                 attendanceId={record.attendanceDbId}
                                 employeeName={record.employeeName}
                                 checkInTime={formatTime(record.checkInTime)}
+                                checkInDate={record.overnightFromDate || (record.checkInTime ? record.checkInTime.split('T')[0] : undefined)}
                               />
                             )}
                             {record.status === 'absent' && (

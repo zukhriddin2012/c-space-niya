@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Clock, X } from 'lucide-react';
+import { Clock, X, AlertTriangle } from 'lucide-react';
 
 interface ManualCheckoutButtonProps {
   attendanceId: string;
   employeeName: string;
   checkInTime: string | null;
+  checkInDate?: string; // YYYY-MM-DD format
   onCheckoutComplete?: () => void;
 }
 
@@ -14,12 +15,23 @@ export default function ManualCheckoutButton({
   attendanceId,
   employeeName,
   checkInTime,
+  checkInDate,
   onCheckoutComplete,
 }: ManualCheckoutButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [checkOutTime, setCheckOutTime] = useState('');
+  const [checkOutDate, setCheckOutDate] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // Check if checkout is on a different day than check-in
+  const getTodayDate = () => {
+    const now = new Date();
+    const tashkent = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Tashkent' }));
+    return tashkent.toISOString().split('T')[0];
+  };
+
+  const isOvernightShift = checkInDate && checkInDate !== getTodayDate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +42,11 @@ export default function ManualCheckoutButton({
       const response = await fetch(`/api/attendance/${attendanceId}/checkout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ checkOutTime }),
+        body: JSON.stringify({
+          checkOutTime,
+          // Include checkout date if it's different from check-in date
+          ...(checkOutDate && checkOutDate !== checkInDate ? { checkOutDate } : {})
+        }),
       });
 
       const data = await response.json();
@@ -67,6 +83,7 @@ export default function ManualCheckoutButton({
       <button
         onClick={() => {
           setCheckOutTime(getDefaultTime());
+          setCheckOutDate(getTodayDate());
           setIsOpen(true);
         }}
         className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded transition-colors"
@@ -104,12 +121,40 @@ export default function ManualCheckoutButton({
             {checkInTime && (
               <div className="bg-gray-50 rounded-lg p-3 mb-4">
                 <p className="text-sm text-gray-600">
-                  Check-in time: <span className="font-medium text-gray-900">{checkInTime}</span>
+                  Check-in: <span className="font-medium text-gray-900">{checkInDate && `${checkInDate} `}{checkInTime}</span>
+                </p>
+              </div>
+            )}
+
+            {isOvernightShift && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 flex items-start gap-2">
+                <AlertTriangle size={16} className="text-amber-600 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-amber-800">
+                  This check-in is from a previous day ({checkInDate}). Make sure to select the correct check-out date.
                 </p>
               </div>
             )}
 
             <form onSubmit={handleSubmit}>
+              {/* Show date picker for overnight shifts or always to be safe */}
+              <div className="mb-4">
+                <label
+                  htmlFor="checkOutDate"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Check-Out Date
+                </label>
+                <input
+                  type="date"
+                  id="checkOutDate"
+                  value={checkOutDate}
+                  onChange={(e) => setCheckOutDate(e.target.value)}
+                  min={checkInDate} // Can't checkout before check-in
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                  required
+                />
+              </div>
+
               <div className="mb-4">
                 <label
                   htmlFor="checkOutTime"
