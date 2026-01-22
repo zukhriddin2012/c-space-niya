@@ -38,6 +38,9 @@ const SYSTEM_ROLES: { value: UserRole; label: string; description: string }[] = 
   { value: 'branch_manager', label: 'Branch Manager', description: 'Can manage employees in their branch' },
   { value: 'recruiter', label: 'Recruiter', description: 'Access to recruitment features' },
   { value: 'hr', label: 'HR Manager', description: 'Full HR and employee management' },
+  { value: 'accountant', label: 'Accountant', description: 'Can process accounting requests' },
+  { value: 'chief_accountant', label: 'Chief Accountant', description: 'Can approve payments and manage accounting' },
+  { value: 'legal_manager', label: 'Legal Manager', description: 'Legal department access' },
   { value: 'ceo', label: 'CEO', description: 'Executive access and approvals' },
   { value: 'general_manager', label: 'General Manager', description: 'Full system access' },
 ];
