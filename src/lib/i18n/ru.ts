@@ -171,12 +171,16 @@ export const ru: Translations = {
     urgent: 'Срочно',
 
     // Actions
+    actions: 'Действия',
     startProcessing: 'Начать обработку',
+    resumeProcessing: 'Продолжить обработку',
+    requestInfo: 'Запросить инфо',
     markNeedsInfo: 'Запросить информацию',
     markComplete: 'Завершить',
     reject: 'Отклонить',
     approve: 'Согласовать',
     submitForApproval: 'Отправить на согласование',
+    sendForApproval: 'Отправить на согласование',
     cancelRequest: 'Отменить заявку',
     addComment: 'Добавить комментарий',
 
@@ -201,13 +205,17 @@ export const ru: Translations = {
     expectedDate: 'Ожидаемая дата',
 
     // Payment categories
+    category: 'Категория',
     officeSupplies: 'Канцтовары',
+    supplies: 'Товары',
     rent: 'Аренда',
     utilities: 'Коммунальные услуги',
     services: 'Услуги',
     equipment: 'Оборудование',
     marketing: 'Маркетинг',
+    salary: 'Зарплата',
     salaryHr: 'Зарплата/Кадры',
+    taxes: 'Налоги',
     other: 'Другое',
 
     // Messages

@@ -26,6 +26,7 @@ import {
   Send,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from '@/contexts/LanguageContext';
 import { hasPermission, PERMISSIONS } from '@/lib/permissions';
 import {
   getStatusLabel,
@@ -50,10 +51,57 @@ import type { AccountingRequest, AccountingComment } from '@/modules/accounting/
 export default function AccountingRequestDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [requestId, setRequestId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [request, setRequest] = useState<AccountingRequest | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Translation helpers
+  const getStatusLabelTranslated = (status: string): string => {
+    const statusMap: Record<string, string> = {
+      pending: t.accounting.pending,
+      in_progress: t.accounting.inProgress,
+      needs_info: t.accounting.needsInfo,
+      pending_approval: t.accounting.pendingApproval,
+      approved: t.accounting.approved,
+      completed: t.accounting.completed,
+      rejected: t.accounting.rejected,
+      cancelled: t.accounting.cancelled,
+    };
+    return statusMap[status] || status;
+  };
+
+  const getTypeLabelTranslated = (type: string): string => {
+    const typeMap: Record<string, string> = {
+      reconciliation: t.accounting.reconciliation,
+      payment: t.accounting.payment,
+      confirmation: t.accounting.confirmation,
+    };
+    return typeMap[type] || type;
+  };
+
+  const getPriorityLabelTranslated = (priority: string): string => {
+    const priorityMap: Record<string, string> = {
+      normal: t.accounting.normal,
+      urgent: t.accounting.urgent,
+    };
+    return priorityMap[priority] || priority;
+  };
+
+  const getCategoryLabelTranslated = (category: string): string => {
+    const categoryMap: Record<string, string> = {
+      utilities: t.accounting.utilities,
+      rent: t.accounting.rent,
+      salary: t.accounting.salary,
+      supplies: t.accounting.supplies,
+      services: t.accounting.services,
+      equipment: t.accounting.equipment,
+      taxes: t.accounting.taxes,
+      other: t.accounting.other,
+    };
+    return categoryMap[category] || category;
+  };
 
   // Action states
   const [actionLoading, setActionLoading] = useState(false);
@@ -316,11 +364,11 @@ export default function AccountingRequestDetailPage({ params }: { params: Promis
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold text-gray-900">{request.requestNumber}</h1>
               <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(request.status)}`}>
-                {getStatusLabel(request.status)}
+                {getStatusLabelTranslated(request.status)}
               </span>
               {request.priority === 'urgent' && (
                 <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor('urgent')}`}>
-                  {getPriorityLabel('urgent')}
+                  {getPriorityLabelTranslated('urgent')}
                 </span>
               )}
             </div>
@@ -366,7 +414,7 @@ export default function AccountingRequestDetailPage({ params }: { params: Promis
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <div className="flex items-center gap-2 mb-4">
               <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getRequestTypeColor(request.requestType)}`}>
-                {getRequestTypeLabel(request.requestType)}
+                {getTypeLabelTranslated(request.requestType)}
               </span>
             </div>
 
@@ -418,36 +466,36 @@ export default function AccountingRequestDetailPage({ params }: { params: Promis
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-500">Recipient Name</p>
+                    <p className="text-sm text-gray-500">{t.accounting.recipientName}</p>
                     <p className="font-medium">{request.recipientName}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Recipient INN</p>
+                    <p className="text-sm text-gray-500">{t.accounting.recipientInn}</p>
                     <p className="font-medium">{request.recipientInn || '-'}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-500">Amount</p>
+                    <p className="text-sm text-gray-500">{t.accounting.amount}</p>
                     <p className="font-medium text-lg text-green-600">{formatCurrency(request.amount!)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Category</p>
-                    <p className="font-medium">{getPaymentCategoryLabel(request.paymentCategory!)}</p>
+                    <p className="text-sm text-gray-500">{t.accounting.category}</p>
+                    <p className="font-medium">{getCategoryLabelTranslated(request.paymentCategory!)}</p>
                   </div>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Payment Purpose</p>
+                  <p className="text-sm text-gray-500">{t.accounting.paymentPurpose}</p>
                   <p className="font-medium">{request.paymentPurpose}</p>
                 </div>
                 {(request.contractNumber || request.invoiceNumber) && (
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-gray-500">Contract Number</p>
+                      <p className="text-sm text-gray-500">{t.accounting.contractNumber}</p>
                       <p className="font-medium">{request.contractNumber || '-'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">Invoice Number</p>
+                      <p className="text-sm text-gray-500">{t.accounting.invoiceNumber}</p>
                       <p className="font-medium">{request.invoiceNumber || '-'}</p>
                     </div>
                   </div>
@@ -550,7 +598,7 @@ export default function AccountingRequestDetailPage({ params }: { params: Promis
           {/* Processing Actions (for accountants) */}
           {canProcess && (request.status === 'pending' || request.status === 'in_progress' || request.status === 'needs_info') && (
             <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Actions</h3>
+              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">{t.accounting.actions}</h3>
               <div className="flex flex-wrap gap-2">
                 {request.status === 'pending' && (
                   <button
@@ -559,7 +607,7 @@ export default function AccountingRequestDetailPage({ params }: { params: Promis
                     className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                   >
                     <PlayCircle size={16} />
-                    Start Processing
+                    {t.accounting.startProcessing}
                   </button>
                 )}
                 {request.status === 'in_progress' && (
@@ -570,7 +618,7 @@ export default function AccountingRequestDetailPage({ params }: { params: Promis
                       className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50"
                     >
                       <Info size={16} />
-                      Request Info
+                      {t.accounting.requestInfo}
                     </button>
                     {request.requestType === 'payment' && request.requiresApproval && (
                       <button
@@ -579,7 +627,7 @@ export default function AccountingRequestDetailPage({ params }: { params: Promis
                         className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
                       >
                         <CheckCircle2 size={16} />
-                        Send for Approval
+                        {t.accounting.sendForApproval}
                       </button>
                     )}
                     {(!request.requiresApproval || request.requestType !== 'payment') && (
@@ -589,7 +637,7 @@ export default function AccountingRequestDetailPage({ params }: { params: Promis
                         className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
                       >
                         <CheckCircle size={16} />
-                        Mark Complete
+                        {t.accounting.markComplete}
                       </button>
                     )}
                     <button
@@ -598,7 +646,7 @@ export default function AccountingRequestDetailPage({ params }: { params: Promis
                       className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
                     >
                       <XCircle size={16} />
-                      Reject
+                      {t.accounting.reject}
                     </button>
                   </>
                 )}
@@ -609,7 +657,7 @@ export default function AccountingRequestDetailPage({ params }: { params: Promis
                     className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                   >
                     <PlayCircle size={16} />
-                    Resume Processing
+                    {t.accounting.resumeProcessing}
                   </button>
                 )}
               </div>

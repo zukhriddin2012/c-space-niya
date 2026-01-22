@@ -171,12 +171,16 @@ export interface Translations {
     urgent: string;
 
     // Actions
+    actions: string;
     startProcessing: string;
+    resumeProcessing: string;
+    requestInfo: string;
     markNeedsInfo: string;
     markComplete: string;
     reject: string;
     approve: string;
     submitForApproval: string;
+    sendForApproval: string;
     cancelRequest: string;
     addComment: string;
 
@@ -201,13 +205,17 @@ export interface Translations {
     expectedDate: string;
 
     // Payment categories
+    category: string;
     officeSupplies: string;
+    supplies: string;
     rent: string;
     utilities: string;
     services: string;
     equipment: string;
     marketing: string;
+    salary: string;
     salaryHr: string;
+    taxes: string;
     other: string;
 
     // Messages

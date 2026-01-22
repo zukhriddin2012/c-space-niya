@@ -171,12 +171,16 @@ export const en: Translations = {
     urgent: 'Urgent',
 
     // Actions
+    actions: 'Actions',
     startProcessing: 'Start Processing',
+    resumeProcessing: 'Resume Processing',
+    requestInfo: 'Request Info',
     markNeedsInfo: 'Request Information',
     markComplete: 'Mark Complete',
     reject: 'Reject',
     approve: 'Approve',
     submitForApproval: 'Submit for Approval',
+    sendForApproval: 'Send for Approval',
     cancelRequest: 'Cancel Request',
     addComment: 'Add Comment',
 
@@ -201,13 +205,17 @@ export const en: Translations = {
     expectedDate: 'Expected Date',
 
     // Payment categories
+    category: 'Category',
     officeSupplies: 'Office Supplies',
+    supplies: 'Supplies',
     rent: 'Rent',
     utilities: 'Utilities',
     services: 'Services',
     equipment: 'Equipment',
     marketing: 'Marketing',
+    salary: 'Salary',
     salaryHr: 'Salary/HR',
+    taxes: 'Taxes',
     other: 'Other',
 
     // Messages
