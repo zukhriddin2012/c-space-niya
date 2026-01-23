@@ -3187,8 +3187,53 @@ export interface Candidate {
   term_sheet_signed: boolean;
   probation_account_created: boolean;
   comment_count: number;
+  // AI Analysis
+  ai_analysis: AIAnalysis | null;
+  ai_analyzed_at: string | null;
   // Joined
   probation_employee?: { full_name: string; employee_id: string };
+}
+
+// AI Analysis result structure
+export interface AIAnalysis {
+  summary: string;
+  skills: {
+    technical: string[];
+    soft: string[];
+    languages: string[];
+  };
+  experience: {
+    total_years: number;
+    companies: {
+      name: string;
+      role: string;
+      duration: string;
+      highlights: string[];
+    }[];
+  };
+  education: {
+    degree: string;
+    institution: string;
+    year: string;
+    field: string;
+  }[];
+  role_fit: {
+    score: number;
+    strengths: string[];
+    gaps: string[];
+    recommendation: string;
+  };
+  red_flags: string[];
+  interview_questions: {
+    question: string;
+    purpose: string;
+  }[];
+  company_research: {
+    company: string;
+    industry: string;
+    insights: string;
+  }[];
+  analyzed_at: string;
 }
 
 // Comment on a candidate
