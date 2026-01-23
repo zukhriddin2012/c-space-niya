@@ -11,7 +11,6 @@ import {
   CheckSquare,
   Square,
   CheckCircle,
-  XCircle,
   Trash2,
   Edit,
   Clock,
@@ -25,6 +24,7 @@ import {
   Link,
   Copy,
   ExternalLink,
+  ChevronRight,
 } from 'lucide-react';
 import type { Candidate, CandidateStage, ChecklistItem, CandidateComment, CandidateEvent } from '@/lib/db';
 import AddEmployeeModal from './AddEmployeeModal';
@@ -1298,14 +1298,24 @@ export default function CandidateDetailModal({
                 Hire
               </button>
             )}
-            <button
-              onClick={() => onReject(candidate.id)}
-              disabled={processing}
-              className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"
-            >
-              <XCircle size={16} />
-              Reject
-            </button>
+            {candidate.stage !== 'hired' && candidate.stage !== 'rejected' && candidate.stage !== 'probation' && (
+              <button
+                onClick={() => {
+                  // Get next stage in the pipeline
+                  const stageOrder: CandidateStage[] = ['screening', 'interview_1', 'under_review', 'probation', 'interview_2', 'hired'];
+                  const currentIndex = stageOrder.indexOf(candidate.stage);
+                  if (currentIndex < stageOrder.length - 1) {
+                    const nextStage = stageOrder[currentIndex + 1];
+                    onStageChange(candidate.id, nextStage);
+                  }
+                }}
+                disabled={processing}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+              >
+                Next Stage
+                <ChevronRight size={16} />
+              </button>
+            )}
           </div>
           <button
             onClick={() => onDelete(candidate.id)}
