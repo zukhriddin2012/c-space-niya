@@ -560,12 +560,8 @@ export default function CandidateDetailModal({
                             <button
                               onClick={() => {
                                 const url = `${window.location.origin}/sign/${doc.signing_token}`;
-                                copyToClipboard(url);
-                                setSigningLinkModalData({
-                                  url,
-                                  candidateName: candidate.full_name,
-                                  candidateEmail: candidate.email || '',
-                                });
+                                setSigningUrl(url);
+                                setShowDocumentModal(true);
                               }}
                               className="flex items-center gap-1 px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded"
                               title="Copy & share link"
