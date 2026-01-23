@@ -125,17 +125,41 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Failed to record check-in' }, { status: 500 });
     }
 
+    const responseData = {
+      id: attendance.id,
+      checkIn: checkInTime.substring(0, 5),
+      branchId: matchedBranch.id,
+      branchName: matchedBranch.name,
+      verificationType: 'ip',
+      isLate: late,
+      shiftId,
+      employeeName: employee.full_name,
+    };
+
+    // Notify Telegram bot via webhook (fire and forget)
+    const botWebhookUrl = process.env.TELEGRAM_BOT_WEBHOOK_URL;
+    const botWebhookSecret = process.env.TELEGRAM_BOT_WEBHOOK_SECRET;
+
+    if (botWebhookUrl && botWebhookSecret) {
+      fetch(`${botWebhookUrl}/webhook/checkin`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${botWebhookSecret}`,
+        },
+        body: JSON.stringify({
+          telegramId,
+          success: true,
+          data: responseData,
+        }),
+      }).catch(err => {
+        console.error('Failed to notify bot webhook:', err.message);
+      });
+    }
+
     return NextResponse.json({
       success: true,
-      data: {
-        id: attendance.id,
-        checkIn: checkInTime.substring(0, 5),
-        branchId: matchedBranch.id,
-        branchName: matchedBranch.name,
-        verificationType: 'ip',
-        isLate: late,
-        employeeName: employee.full_name,
-      },
+      data: responseData,
     });
   } catch (error) {
     console.error('IP check-in error:', error);
