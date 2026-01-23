@@ -26,6 +26,7 @@ interface AttendanceSession {
   totalHours: number | null;
   status: 'present' | 'late' | 'early_leave';
   isActive: boolean;
+  source?: 'telegram' | 'web' | 'manual' | null;
 }
 
 interface AttendanceRecord {
@@ -364,9 +365,10 @@ export default function AttendanceTable({ records, canEditAttendance }: Attendan
                                   <MapPin size={12} className="text-gray-400" />
                                   <span className="text-gray-600">{session.branchName}</span>
                                 </div>
-                                <div className="text-sm">
+                                <div className="flex items-center gap-2 text-sm">
                                   <span className="text-gray-500">In:</span>{' '}
                                   <span className="font-medium">{formatTime(session.checkIn)}</span>
+                                  <VerificationBadge source={session.source || null} t={t} />
                                 </div>
                                 <div className="text-sm">
                                   <span className="text-gray-500">Out:</span>{' '}

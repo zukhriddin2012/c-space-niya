@@ -39,6 +39,7 @@ interface AttendanceSession {
   totalHours: number | null;
   status: 'present' | 'late' | 'early_leave';
   isActive: boolean;
+  source: 'telegram' | 'web' | 'manual' | null;
 }
 
 interface AttendanceRecord {
@@ -104,6 +105,7 @@ async function getAttendanceForDate(
       totalHours: s.total_hours,
       status: s.status as 'present' | 'late' | 'early_leave',
       isActive: !s.check_out,
+      source: s.verification_type === 'ip' ? 'web' as const : 'telegram' as const,
     }));
 
     // Use the latest session for main display, but include all sessions
