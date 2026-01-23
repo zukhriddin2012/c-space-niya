@@ -1,0 +1,281 @@
+import type { Translations } from './types';
+
+export const uz: Translations = {
+  // Common
+  common: {
+    loading: 'Yuklanmoqda...',
+    error: 'Xatolik',
+    save: 'Saqlash',
+    cancel: 'Bekor qilish',
+    delete: "O'chirish",
+    edit: 'Tahrirlash',
+    create: 'Yaratish',
+    search: 'Qidirish',
+    filter: 'Filtr',
+    refresh: 'Yangilash',
+    back: 'Orqaga',
+    next: 'Keyingi',
+    previous: 'Oldingi',
+    submit: 'Yuborish',
+    confirm: 'Tasdiqlash',
+    close: 'Yopish',
+    yes: 'Ha',
+    no: "Yo'q",
+    all: 'Barchasi',
+    none: "Yo'q",
+    select: 'Tanlash',
+    required: 'Majburiy',
+    optional: 'Ixtiyoriy',
+    actions: 'Amallar',
+    status: 'Holat',
+    date: 'Sana',
+    time: 'Vaqt',
+    name: 'Nomi',
+    description: 'Tavsif',
+    notes: 'Izohlar',
+    details: 'Tafsilotlar',
+    view: "Ko'rish",
+    download: 'Yuklab olish',
+    upload: 'Yuklash',
+    noData: "Ma'lumot yo'q",
+    showing: "Ko'rsatilmoqda",
+    of: 'dan',
+    results: 'natija',
+    page: 'Sahifa',
+  },
+
+  // Navigation
+  nav: {
+    dashboard: 'Bosh sahifa',
+    employees: 'Xodimlar',
+    attendance: 'Davomat',
+    payroll: 'Ish haqi',
+    branches: 'Filiallar',
+    departments: "Bo'limlar",
+    recruitment: 'Ishga qabul',
+    reports: 'Hisobotlar',
+    settings: 'Sozlamalar',
+    accounting: 'Buxgalteriya',
+    myRequests: 'Mening arizalarim',
+    allRequests: 'Barcha arizalar',
+    approvals: 'Tasdiqlar',
+    newRequest: 'Yangi ariza',
+    myPortal: 'Shaxsiy kabinet',
+    profile: 'Profil',
+    logout: 'Chiqish',
+  },
+
+  // Dashboard
+  dashboard: {
+    title: 'Bosh sahifa',
+    welcome: 'Xush kelibsiz',
+    totalEmployees: 'Jami xodimlar',
+    activeToday: 'Bugun faol',
+    pendingLeaves: "Kutilayotgan ta'tillar",
+    openPositions: 'Ochiq lavozimlar',
+    recentActivity: "So'nggi faoliyat",
+    quickActions: 'Tezkor amallar',
+  },
+
+  // Employees
+  employees: {
+    title: 'Xodimlar',
+    addEmployee: "Xodim qo'shish",
+    editEmployee: 'Xodimni tahrirlash',
+    employeeDetails: "Xodim ma'lumotlari",
+    fullName: 'F.I.O.',
+    email: 'Elektron pochta',
+    phone: 'Telefon',
+    position: 'Lavozim',
+    department: "Bo'lim",
+    branch: 'Filial',
+    hireDate: 'Ishga qabul sanasi',
+    salary: 'Maosh',
+    status: 'Holat',
+    active: 'Faol',
+    inactive: 'Nofaol',
+    onLeave: "Ta'tilda",
+  },
+
+  // Attendance
+  attendance: {
+    title: 'Davomat',
+    checkIn: 'Kirish',
+    checkOut: 'Chiqish',
+    present: 'Keldi',
+    absent: 'Kelmadi',
+    late: 'Kechikdi',
+    earlyLeave: 'Erta ketdi',
+    overtime: "Qo'shimcha ish",
+    workingHours: 'Ish soatlari',
+    totalHours: 'Jami soatlar',
+    timesheet: 'Tabel',
+  },
+
+  // Branches
+  branches: {
+    title: 'Filiallar',
+    addBranch: "Filial qo'shish",
+    branchName: 'Filial nomi',
+    address: 'Manzil',
+    manager: 'Rahbar',
+    employeeCount: 'Xodimlar soni',
+  },
+
+  // Payroll
+  payroll: {
+    title: 'Ish haqi',
+    baseSalary: 'Asosiy maosh',
+    bonus: 'Bonus',
+    deductions: 'Ushlanmalar',
+    netSalary: 'Sof maosh',
+    payslip: "Ish haqi varaqasi",
+    payPeriod: 'Davr',
+    process: "Hisoblash",
+    approve: 'Tasdiqlash',
+  },
+
+  // Accounting
+  accounting: {
+    title: 'Buxgalteriya',
+    myRequests: 'Buxgalteriyaga arizalarim',
+    allRequests: 'Barcha arizalar',
+    approvals: 'Tasdiqlash navbati',
+    newRequest: 'Yangi ariza',
+    requestNumber: 'Ariza raqami',
+    requestType: 'Ariza turi',
+    requester: 'Ariza beruvchi',
+    assignee: 'Ijrochi',
+    priority: 'Muhimlik',
+    slaDeadline: 'SLA muddati',
+    createdAt: 'Yaratilgan',
+    updatedAt: 'Yangilangan',
+
+    // Request types
+    reconciliation: 'Solishtirma dalolatnoma',
+    payment: "To'lov",
+    confirmation: "To'lovni tasdiqlash",
+
+    // Statuses
+    pending: 'Kutilmoqda',
+    inProgress: 'Jarayonda',
+    needsInfo: "Ma'lumot kerak",
+    pendingApproval: 'Tasdiqlanmoqda',
+    approved: 'Tasdiqlangan',
+    completed: 'Tugallangan',
+    rejected: 'Rad etilgan',
+    cancelled: 'Bekor qilingan',
+
+    // Priority
+    normal: 'Oddiy',
+    urgent: 'Shoshilinch',
+
+    // Actions
+    actions: 'Amallar',
+    startProcessing: "Ishlashni boshlash",
+    resumeProcessing: 'Davom ettirish',
+    requestInfo: "Ma'lumot so'rash",
+    markNeedsInfo: "Ma'lumot so'rash",
+    markComplete: 'Tugallash',
+    reject: 'Rad etish',
+    approve: 'Tasdiqlash',
+    submitForApproval: 'Tasdiqqa yuborish',
+    sendForApproval: 'Tasdiqqa yuborish',
+    cancelRequest: 'Arizani bekor qilish',
+    addComment: 'Izoh qoldirish',
+
+    // Form fields
+    selectType: 'Ariza turini tanlang',
+    selectEntity: 'Yuridik shaxsni tanlang',
+    fromEntity: 'Yuridik shaxs',
+    tenantName: 'Ijarachi nomi',
+    tenantInn: 'Ijarachi STIR',
+    contractNumber: 'Shartnoma raqami',
+    contractPeriod: 'Shartnoma muddati',
+    reconciliationPeriod: 'Solishtirma davri',
+    recipientName: 'Qabul qiluvchi',
+    recipientInn: 'Qabul qiluvchi STIR',
+    amount: 'Summa',
+    paymentCategory: "To'lov toifasi",
+    paymentPurpose: "To'lov maqsadi",
+    invoiceNumber: 'Hisob-faktura raqami',
+    clientName: 'Mijoz nomi',
+    clientInn: 'Mijoz STIR',
+    expectedAmount: 'Kutilayotgan summa',
+    expectedDate: 'Kutilayotgan sana',
+
+    // Payment categories
+    category: 'Toifa',
+    officeSupplies: 'Ofis jihozlari',
+    supplies: 'Tovarlar',
+    rent: 'Ijara',
+    utilities: 'Kommunal xizmatlar',
+    services: 'Xizmatlar',
+    equipment: 'Uskunalar',
+    marketing: 'Marketing',
+    salary: 'Ish haqi',
+    salaryHr: 'Ish haqi/Kadrlar',
+    taxes: 'Soliqlar',
+    other: 'Boshqa',
+
+    // Messages
+    noRequests: 'Arizalar topilmadi',
+    createFirst: 'Birinchi arizangizni yarating',
+    noApprovals: 'Tasdiqlanishi kerak arizalar mavjud emas',
+    approvalRequired: 'Tasdiqlash talab qilinadi',
+    chiefAccountantApproval: 'Bosh hisobchi tasdiqlanishi',
+    executiveApproval: 'Rahbariyat tasdiqlanishi (BoshD/CEO)',
+
+    // SLA
+    slaOnTime: "O'z vaqtida",
+    slaWarning: 'Muddat yaqinlashmoqda',
+    slaOverdue: 'Muddati o\'tgan',
+    slaDaysRemaining: 'kun qoldi',
+    slaHoursRemaining: 'soat qoldi',
+  },
+
+  // Auth
+  auth: {
+    login: 'Kirish',
+    logout: 'Chiqish',
+    email: 'Elektron pochta',
+    password: 'Parol',
+    forgotPassword: 'Parolni unutdingizmi?',
+    rememberMe: 'Meni eslab qol',
+    signIn: 'Kirish',
+    signOut: 'Chiqish',
+    invalidCredentials: "Noto'g'ri email yoki parol",
+  },
+
+  // Settings
+  settings: {
+    title: 'Sozlamalar',
+    general: 'Umumiy',
+    notifications: 'Bildirishnomalar',
+    security: 'Xavfsizlik',
+    language: 'Til',
+    theme: 'Mavzu',
+    darkMode: 'Qorong\'u mavzu',
+    lightMode: 'Yorug\' mavzu',
+  },
+
+  // Errors
+  errors: {
+    generic: 'Xatolik yuz berdi',
+    notFound: 'Topilmadi',
+    unauthorized: 'Iltimos, tizimga kiring',
+    forbidden: 'Ruxsat berilmagan',
+    validationFailed: "Kiritilgan ma'lumotlarni tekshiring",
+    networkError: 'Tarmoq xatoligi. Qayta urinib ko\'ring.',
+    serverError: 'Server xatoligi. Keyinroq urinib ko\'ring.',
+  },
+
+  // Success messages
+  success: {
+    saved: 'Muvaffaqiyatli saqlandi',
+    created: 'Muvaffaqiyatli yaratildi',
+    updated: 'Muvaffaqiyatli yangilandi',
+    deleted: "Muvaffaqiyatli o'chirildi",
+    submitted: 'Muvaffaqiyatli yuborildi',
+  },
+};
