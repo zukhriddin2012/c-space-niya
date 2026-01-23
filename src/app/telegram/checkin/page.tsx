@@ -9,7 +9,7 @@ function TelegramCheckinContent() {
   const shiftId = searchParams.get('shift') || 'day';
 
   const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'gps_needed'>('loading');
-  const [message, setMessage] = useState('Verifying office network...');
+  const [message, setMessage] = useState('Tekshirilmoqda...');
   const [data, setData] = useState<any>(null);
 
   const performCheckin = useCallback(async () => {
@@ -51,14 +51,13 @@ function TelegramCheckinContent() {
         }
       } else if (result.error === 'ip_not_matched') {
         setStatus('gps_needed');
-        setMessage('Office network not detected. Please use GPS check-in.');
+        setMessage('Joylashuvingizni yuboring.');
 
         // Tell Telegram to close and prompt for GPS
         if (window.Telegram?.WebApp) {
           window.Telegram.WebApp.sendData(JSON.stringify({
             success: false,
             action: 'need_gps',
-            message: 'Office network not detected',
           }));
           setTimeout(() => {
             window.Telegram?.WebApp?.close();
@@ -130,9 +129,9 @@ function TelegramCheckinContent() {
                   <span className="font-semibold text-indigo-600">{data.branchName}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-500">Verified</span>
+                  <span className="text-gray-500">Holat</span>
                   <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                    📶 Office WiFi
+                    ✓ Tasdiqlandi
                   </span>
                 </div>
               </div>
@@ -149,9 +148,8 @@ function TelegramCheckinContent() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
-            <h1 className="text-xl font-bold text-amber-600 mb-2">Location Needed</h1>
+            <h1 className="text-xl font-bold text-amber-600 mb-2">Joylashuv kerak</h1>
             <p className="text-gray-600">{message}</p>
-            <p className="text-gray-500 text-sm mt-4">Please use GPS check-in option in the bot.</p>
           </>
         )}
 
