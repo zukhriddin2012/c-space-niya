@@ -150,6 +150,7 @@ export default function CandidateDetailModal({
     candidate_name: string;
     probation_start_date: string | null;
     signing_token: string;
+    access_password: string;
     status: string;
     signed_at: string | null;
     recruiter_signed_at: string | null;
@@ -806,6 +807,7 @@ export default function CandidateDetailModal({
                               onClick={() => {
                                 const url = `${window.location.origin}/sign/${doc.signing_token}`;
                                 setSigningUrl(url);
+                                setDocumentPassword(doc.access_password || '');
                                 setShowDocumentModal(true);
                               }}
                               className="flex items-center gap-1 px-2 py-1 text-xs text-purple-600 hover:bg-purple-50 rounded"
