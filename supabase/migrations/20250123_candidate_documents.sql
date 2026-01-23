@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS candidate_documents (
   -- Candidate Info
   candidate_name VARCHAR(255),
   position VARCHAR(100),
-  branch_id UUID REFERENCES branches(id),
+  branch_id TEXT REFERENCES branches(id),
   branch_name VARCHAR(100),
   branch_address TEXT,
   reporting_to VARCHAR(100),
