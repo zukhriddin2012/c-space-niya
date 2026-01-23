@@ -2,7 +2,10 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
+import Image from 'next/image';
 import { FileText, Lock, CheckCircle, ChevronRight, Trash2, Check, X } from 'lucide-react';
+
+// Brand color: #64177C (C-Space Purple)
 
 interface DocumentData {
   id: string;
@@ -340,23 +343,28 @@ export default function DocumentSigningPage() {
   // Term Sheet Component
   const TermSheetDocument = () => (
     <div className="bg-white rounded-xl shadow-lg max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6 rounded-t-xl">
+      {/* Header - C-Space Brand Color #64177C */}
+      <div className="text-white p-6 rounded-t-xl" style={{ backgroundColor: '#64177C' }}>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-purple-200 text-sm mb-1">Условия трудоустройства</p>
+            <p className="text-white/70 text-sm mb-1">Условия трудоустройства</p>
             <h1 className="text-2xl font-bold">УСЛОВИЯ ТРУДОУСТРОЙСТВА</h1>
           </div>
           <div className="text-right">
-            <div className="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center">
-              <span className="text-2xl font-bold">C</span>
+            <div className="bg-white rounded-xl p-2">
+              <Image
+                src="/logo-icon.svg"
+                alt="C-Space"
+                width={48}
+                height={48}
+                className="w-12 h-12"
+              />
             </div>
-            <p className="text-xs mt-1 text-purple-200">SPACE COWORKING</p>
           </div>
         </div>
         <div className="mt-4">
           <p className="text-lg">Должность: <span className="font-semibold">{document?.position}</span></p>
-          <p className="text-purple-200">Филиал {document?.branch_name}</p>
+          <p className="text-white/70">Филиал {document?.branch_name}</p>
         </div>
       </div>
 
@@ -593,10 +601,13 @@ export default function DocumentSigningPage() {
         {/* Footer */}
         <div className="text-center pt-6 border-t border-gray-200">
           <div className="inline-block">
-            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-2">
-              <span className="text-xl font-bold text-purple-600">C</span>
-            </div>
-            <p className="text-purple-600 font-semibold">SPACE</p>
+            <Image
+              src="/logo-icon.svg"
+              alt="C-Space Coworking"
+              width={48}
+              height={48}
+              className="mx-auto mb-2"
+            />
             <p className="text-sm text-gray-500 italic">Right People. Right Place.</p>
           </div>
           {document?.branch_address && (
@@ -611,23 +622,28 @@ export default function DocumentSigningPage() {
   // Probation Term Sheet Component
   const ProbationTermSheetDocument = () => (
     <div className="bg-white rounded-xl shadow-lg max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6 rounded-t-xl">
+      {/* Header - C-Space Brand Color #64177C */}
+      <div className="text-white p-6 rounded-t-xl" style={{ backgroundColor: '#64177C' }}>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-purple-200 text-sm mb-1">Условия трудоустройства</p>
+            <p className="text-white/70 text-sm mb-1">Условия трудоустройства</p>
             <h1 className="text-2xl font-bold">УСЛОВИЯ ТРУДОУСТРОЙСТВА</h1>
           </div>
           <div className="text-right">
-            <div className="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center">
-              <span className="text-2xl font-bold">C</span>
+            <div className="bg-white rounded-xl p-2">
+              <Image
+                src="/logo-icon.svg"
+                alt="C-Space"
+                width={48}
+                height={48}
+                className="w-12 h-12"
+              />
             </div>
-            <p className="text-xs mt-1 text-purple-200">SPACE COWORKING</p>
           </div>
         </div>
         <div className="mt-4">
           <p className="text-lg">Должность: <span className="font-semibold">{document?.position}</span></p>
-          <p className="text-purple-200">Филиал {document?.branch_name}</p>
+          <p className="text-white/70">Филиал {document?.branch_name}</p>
         </div>
       </div>
 
@@ -884,10 +900,13 @@ export default function DocumentSigningPage() {
         {/* Footer */}
         <div className="text-center pt-6 border-t border-gray-200">
           <div className="inline-block">
-            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-2">
-              <span className="text-xl font-bold text-purple-600">C</span>
-            </div>
-            <p className="text-purple-600 font-semibold">SPACE</p>
+            <Image
+              src="/logo-icon.svg"
+              alt="C-Space Coworking"
+              width={48}
+              height={48}
+              className="mx-auto mb-2"
+            />
             <p className="text-sm text-gray-500 italic">Right People. Right Place.</p>
           </div>
           {document?.branch_address && (
