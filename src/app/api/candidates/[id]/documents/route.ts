@@ -60,12 +60,19 @@ export async function POST(
       interview1_passed = true,
       interview2_passed = false,
 
-      // Employment terms
+      // Employment terms (full contract)
       contract_type,
       contract_duration,
       start_date,
       salary,
       salary_review,
+
+      // Probation-specific fields
+      probation_duration,
+      probation_start_date,
+      probation_end_date,
+      working_hours,
+      probation_salary,
 
       // Probation metrics
       probation_metrics = [],
@@ -143,6 +150,13 @@ export async function POST(
         start_date: start_date || null,
         salary,
         salary_review,
+
+        // Probation-specific fields
+        probation_duration,
+        probation_start_date: probation_start_date || null,
+        probation_end_date: probation_end_date || null,
+        working_hours,
+        probation_salary,
 
         probation_metrics,
 

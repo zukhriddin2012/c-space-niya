@@ -21,12 +21,19 @@ interface DocumentData {
   interview1_passed: boolean;
   interview2_passed: boolean;
 
-  // Employment terms
+  // Employment terms (full contract)
   contract_type: string;
   contract_duration: string;
   start_date: string;
   salary: string;
   salary_review: string;
+
+  // Probation-specific fields
+  probation_duration: string;
+  probation_start_date: string;
+  probation_end_date: string;
+  working_hours: string;
+  probation_salary: string;
 
   // Probation metrics
   probation_metrics: { metric: string; expected_result: string }[];
@@ -39,10 +46,9 @@ interface DocumentData {
 
   // Onboarding
   onboarding_weeks: {
-    week_number: number;
+    week: number;
     title: string;
-    start_date: string;
-    end_date: string;
+    date_range: string;
     items: string[];
   }[];
 
@@ -602,6 +608,305 @@ export default function DocumentSigningPage() {
     </div>
   );
 
+  // Probation Term Sheet Component
+  const ProbationTermSheetDocument = () => (
+    <div className="bg-white rounded-xl shadow-lg max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6 rounded-t-xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-purple-200 text-sm mb-1">Условия трудоустройства</p>
+            <h1 className="text-2xl font-bold">УСЛОВИЯ ТРУДОУСТРОЙСТВА</h1>
+          </div>
+          <div className="text-right">
+            <div className="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center">
+              <span className="text-2xl font-bold">C</span>
+            </div>
+            <p className="text-xs mt-1 text-purple-200">SPACE COWORKING</p>
+          </div>
+        </div>
+        <div className="mt-4">
+          <p className="text-lg">Должность: <span className="font-semibold">{document?.position}</span></p>
+          <p className="text-purple-200">Филиал {document?.branch_name}</p>
+        </div>
+      </div>
+
+      <div className="p-6 space-y-8">
+        {/* Section 1: Candidate Info */}
+        <section>
+          <h2 className="text-lg font-bold text-purple-700 mb-4 flex items-center gap-2">
+            <span className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center text-sm">1</span>
+            Информация о кандидате
+          </h2>
+          <div className="bg-gray-50 rounded-lg p-4">
+            <table className="w-full">
+              <tbody className="divide-y divide-gray-200">
+                <tr>
+                  <td className="py-2 text-gray-600 font-medium w-1/3">ФИО</td>
+                  <td className="py-2">{document?.candidate_name}</td>
+                </tr>
+                <tr>
+                  <td className="py-2 text-gray-600 font-medium">Должность</td>
+                  <td className="py-2">{document?.position}</td>
+                </tr>
+                <tr>
+                  <td className="py-2 text-gray-600 font-medium">Филиал</td>
+                  <td className="py-2">{document?.branch_name}</td>
+                </tr>
+                <tr>
+                  <td className="py-2 text-gray-600 font-medium">Подчинение</td>
+                  <td className="py-2">{document?.reporting_to}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* Section 2: Selection Results */}
+        <section>
+          <h2 className="text-lg font-bold text-purple-700 mb-4 flex items-center gap-2">
+            <span className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center text-sm">2</span>
+            Результаты отбора
+          </h2>
+          <div className="bg-gray-50 rounded-lg p-4">
+            <table className="w-full">
+              <thead>
+                <tr className="text-purple-700">
+                  <th className="text-left py-2 font-medium">Этап оценки</th>
+                  <th className="text-left py-2 font-medium">Результат</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                <tr>
+                  <td className="py-2">Скрининг</td>
+                  <td className="py-2">
+                    {document?.screening_passed ? (
+                      <span className="text-green-600 flex items-center gap-1"><Check size={16} /> ПРОЙДЕН</span>
+                    ) : (
+                      <span className="text-red-600 flex items-center gap-1"><X size={16} /> НЕ ПРОЙДЕН</span>
+                    )}
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-2">Интервью 1</td>
+                  <td className="py-2">
+                    {document?.interview1_passed ? (
+                      <span className="text-green-600 flex items-center gap-1"><Check size={16} /> ПРОЙДЕН</span>
+                    ) : (
+                      <span className="text-red-600 flex items-center gap-1"><X size={16} /> НЕ ПРОЙДЕН</span>
+                    )}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* Section 3: Probation Terms */}
+        <section>
+          <h2 className="text-lg font-bold text-purple-700 mb-4 flex items-center gap-2">
+            <span className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center text-sm">3</span>
+            Условия трудоустройства
+          </h2>
+          <p className="text-gray-600 mb-3 font-medium">Испытательный срок</p>
+          <div className="bg-gray-50 rounded-lg p-4">
+            <table className="w-full">
+              <tbody className="divide-y divide-gray-200">
+                <tr>
+                  <td className="py-2 text-gray-600 font-medium w-1/3">Продолжительность</td>
+                  <td className="py-2">{document?.probation_duration}</td>
+                </tr>
+                <tr>
+                  <td className="py-2 text-gray-600 font-medium">Дата начала</td>
+                  <td className="py-2">{formatDate(document?.probation_start_date || '')}</td>
+                </tr>
+                <tr>
+                  <td className="py-2 text-gray-600 font-medium">Дата окончания</td>
+                  <td className="py-2">{formatDate(document?.probation_end_date || '')}</td>
+                </tr>
+                <tr>
+                  <td className="py-2 text-gray-600 font-medium">Рабочие часы</td>
+                  <td className="py-2">{document?.working_hours}</td>
+                </tr>
+                <tr>
+                  <td className="py-2 text-gray-600 font-medium">Зарплата (испыт. срок)</td>
+                  <td className="py-2 font-semibold text-purple-700">{document?.probation_salary}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* Section 4: Probation Metrics */}
+        {document?.probation_metrics && document.probation_metrics.length > 0 && (
+          <section>
+            <h2 className="text-lg font-bold text-purple-700 mb-4 flex items-center gap-2">
+              <span className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center text-sm">4</span>
+              Критерии оценки испытательного срока
+            </h2>
+            <p className="text-gray-600 mb-3">
+              Следующие метрики будут отслеживаться в течение испытательного срока для принятия решения о найме:
+            </p>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-purple-700">
+                    <th className="text-left py-2 font-medium">Метрика</th>
+                    <th className="text-left py-2 font-medium">Ожидаемый результат</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {document.probation_metrics.map((metric, idx) => (
+                    <tr key={idx}>
+                      <td className="py-2">{metric.metric}</td>
+                      <td className="py-2">{metric.expected_result}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+
+        {/* Section 5: Final Interview */}
+        {document?.final_interview_date && (
+          <section>
+            <h2 className="text-lg font-bold text-purple-700 mb-4 flex items-center gap-2">
+              <span className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center text-sm">5</span>
+              Финальное интервью и утверждение
+            </h2>
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+              <h3 className="font-bold text-purple-800 mb-2">ДЕТАЛИ ФИНАЛЬНОГО ИНТЕРВЬЮ</h3>
+              <p><strong>Дата:</strong> {formatDate(document.final_interview_date)}</p>
+              <p><strong>Время:</strong> {document.final_interview_time}</p>
+              <p><strong>Интервьюер:</strong> {document.final_interview_interviewer}</p>
+              <p><strong>Цель:</strong> {document.final_interview_purpose}</p>
+            </div>
+            <p className="text-gray-600 text-sm">
+              COO оценит результаты работы кандидата в течение испытательного срока и примет окончательное решение по следующим вопросам:
+            </p>
+            <ul className="list-disc list-inside text-gray-600 text-sm mt-2 space-y-1">
+              <li>Утверждение на постоянную работу в качестве {document.position} сроком на 1 год</li>
+              <li>Назначение конкретного филиала (с учётом потребностей компании и предпочтений кандидата)</li>
+            </ul>
+          </section>
+        )}
+
+        {/* Section 6: Onboarding */}
+        {document?.onboarding_weeks && document.onboarding_weeks.length > 0 && (
+          <section>
+            <h2 className="text-lg font-bold text-purple-700 mb-4 flex items-center gap-2">
+              <span className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center text-sm">6</span>
+              Обзор адаптации (филиал {document.branch_name})
+            </h2>
+            <p className="text-gray-600 mb-4 italic">
+              Программа адаптации разработана для подготовки кандидата к успешной работе в качестве {document.position} в {document.branch_name}.
+            </p>
+
+            {document.onboarding_weeks.map((week, weekIdx) => (
+              <div key={weekIdx} className="mb-6">
+                <h3 className="font-semibold text-gray-800 mb-2">{week.title} ({week.date_range})</h3>
+                <ol className="list-decimal list-inside space-y-2 text-gray-600">
+                  {week.items.map((item, itemIdx) => (
+                    <li key={itemIdx} className="pl-2">{item}</li>
+                  ))}
+                </ol>
+              </div>
+            ))}
+          </section>
+        )}
+
+        {/* Section 7: Contacts */}
+        {document?.contacts && document.contacts.length > 0 && (
+          <section>
+            <h2 className="text-lg font-bold text-purple-700 mb-4 flex items-center gap-2">
+              <span className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center text-sm">7</span>
+              Контактные лица
+            </h2>
+            <p className="text-gray-600 mb-3">По любым вопросам обращайтесь к соответствующим специалистам:</p>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-purple-700">
+                    <th className="text-left py-2 font-medium">Имя</th>
+                    <th className="text-left py-2 font-medium">Должность</th>
+                    <th className="text-left py-2 font-medium">Зона ответственности</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {document.contacts.map((contact, idx) => (
+                    <tr key={idx}>
+                      <td className="py-2">{contact.name}</td>
+                      <td className="py-2 text-purple-600 italic">{contact.position}</td>
+                      <td className="py-2">{contact.responsibility}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {document.escalation_contact && (
+              <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <h4 className="font-bold text-yellow-800">ЭСКАЛАЦИЯ ВОПРОСОВ</h4>
+                <p className="text-yellow-700">
+                  <strong>{document.escalation_contact} ({document.escalation_contact_position})</strong> - обращайтесь по любому вопросу, который не был решён в течение более 3 дней
+                </p>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* Section 8: Signatures */}
+        <section>
+          <h2 className="text-lg font-bold text-purple-700 mb-4 flex items-center gap-2">
+            <span className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center text-sm">8</span>
+            Подтверждение и подписи
+          </h2>
+          <p className="text-gray-600 mb-4">
+            Подписывая ниже, обе стороны подтверждают и соглашаются с условиями, изложенными в данном документе.
+          </p>
+          <div className="grid grid-cols-2 gap-6">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="font-bold text-purple-700 mb-3">КАНДИДАТ</h4>
+              <p className="text-sm text-gray-600">ФИО: {document?.candidate_name}</p>
+              <p className="text-sm text-gray-600 mt-2">Подпись: _______________________</p>
+              <p className="text-sm text-gray-600 mt-2">Дата: _______________________</p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="font-bold text-purple-700 mb-3">ПРЕДСТАВИТЕЛЬ C-SPACE</h4>
+              <p className="text-sm text-gray-600">ФИО: {document?.representative_name}</p>
+              <p className="text-sm text-gray-600 mt-2">Подпись: _______________________</p>
+              <p className="text-sm text-gray-600 mt-2">Дата: _______________________</p>
+            </div>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <div className="text-center pt-6 border-t border-gray-200">
+          <div className="inline-block">
+            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-2">
+              <span className="text-xl font-bold text-purple-600">C</span>
+            </div>
+            <p className="text-purple-600 font-semibold">SPACE</p>
+            <p className="text-sm text-gray-500 italic">Right People. Right Place.</p>
+          </div>
+          {document?.branch_address && (
+            <p className="text-xs text-gray-400 mt-2">Филиал {document.branch_name} | {document.branch_address}</p>
+          )}
+          <p className="text-xs text-gray-400 mt-2">Конфиденциально | C-Space Coworking</p>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Determine which document component to render
+  const DocumentComponent = () => {
+    if (document?.document_type === 'probation_term_sheet') {
+      return <ProbationTermSheetDocument />;
+    }
+    return <TermSheetDocument />;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -709,7 +1014,7 @@ export default function DocumentSigningPage() {
 
           <ProgressSteps />
 
-          <TermSheetDocument />
+          <DocumentComponent />
 
           <div className="flex gap-4 mt-6 max-w-4xl mx-auto">
             <button

@@ -29,6 +29,7 @@ import {
 import type { Candidate, CandidateStage, ChecklistItem, CandidateComment, CandidateEvent } from '@/lib/db';
 import AddEmployeeModal from './AddEmployeeModal';
 import TermSheetFormModal, { TermSheetData } from './TermSheetFormModal';
+import ProbationTermSheetFormModal, { ProbationTermSheetData } from './ProbationTermSheetFormModal';
 
 const STAGES: { id: CandidateStage; label: string; color: string; bgColor: string }[] = [
   { id: 'screening', label: 'Screening', color: 'text-blue-700', bgColor: 'bg-blue-50 border-blue-200' },
@@ -157,6 +158,8 @@ export default function CandidateDetailModal({
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [documentPassword, setDocumentPassword] = useState('');
   const [showTermSheetForm, setShowTermSheetForm] = useState(false);
+  const [showProbationTermSheetForm, setShowProbationTermSheetForm] = useState(false);
+  const [showDocumentTypeSelection, setShowDocumentTypeSelection] = useState(false);
 
   // Sync probation dates when candidate data changes (after refresh)
   useEffect(() => {
@@ -197,8 +200,17 @@ export default function CandidateDetailModal({
     } catch (error) {
       console.error('Error fetching branches:', error);
     }
-    // Show the Term Sheet form modal
-    setShowTermSheetForm(true);
+    // Show document type selection modal
+    setShowDocumentTypeSelection(true);
+  };
+
+  const handleSelectDocumentType = (type: 'full_term_sheet' | 'probation_term_sheet') => {
+    setShowDocumentTypeSelection(false);
+    if (type === 'full_term_sheet') {
+      setShowTermSheetForm(true);
+    } else {
+      setShowProbationTermSheetForm(true);
+    }
   };
 
   const handleSubmitTermSheet = async (data: TermSheetData) => {
@@ -225,6 +237,35 @@ export default function CandidateDetailModal({
     } catch (error) {
       console.error('Error creating document:', error);
       alert('Failed to create Term Sheet');
+    } finally {
+      setCreatingDocument(false);
+    }
+  };
+
+  const handleSubmitProbationTermSheet = async (data: ProbationTermSheetData) => {
+    setCreatingDocument(true);
+    setShowProbationTermSheetForm(false);
+    setDocumentPassword(data.password);
+
+    try {
+      const res = await fetch(`/api/candidates/${candidate.id}/documents`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (res.ok) {
+        const result = await res.json();
+        setSigningUrl(result.signing_url);
+        setShowDocumentModal(true);
+        fetchDocuments();
+      } else {
+        const result = await res.json();
+        alert(result.error || 'Failed to create Probation Term Sheet');
+      }
+    } catch (error) {
+      console.error('Error creating document:', error);
+      alert('Failed to create Probation Term Sheet');
     } finally {
       setCreatingDocument(false);
     }
@@ -1284,6 +1325,70 @@ export default function CandidateDetailModal({
         </div>
       )}
 
+      {/* Document Type Selection Modal */}
+      {showDocumentTypeSelection && (
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FileSignature size={32} className="text-purple-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900">Выберите тип документа</h3>
+              <p className="text-gray-500 mt-2">
+                Какой документ вы хотите создать для {candidate.full_name}?
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => handleSelectDocumentType('probation_term_sheet')}
+                className="w-full p-4 border-2 border-purple-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition-all text-left group"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Clock size={20} className="text-yellow-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 group-hover:text-purple-700">
+                      Условия испытательного срока
+                    </h4>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Для кандидатов на испытательный срок. Включает метрики оценки, программу адаптации и условия пробного периода.
+                    </p>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                onClick={() => handleSelectDocumentType('full_term_sheet')}
+                className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition-all text-left group"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <FileText size={20} className="text-green-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 group-hover:text-purple-700">
+                      Полные условия трудоустройства
+                    </h4>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Для найма на постоянную работу. Включает полные условия контракта, зарплату и дату начала работы.
+                    </p>
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            <button
+              onClick={() => setShowDocumentTypeSelection(false)}
+              className="w-full mt-4 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+            >
+              Отмена
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Term Sheet Form Modal */}
       {showTermSheetForm && (
         <TermSheetFormModal
@@ -1298,6 +1403,23 @@ export default function CandidateDetailModal({
           branches={branches}
           onClose={() => setShowTermSheetForm(false)}
           onSubmit={handleSubmitTermSheet}
+        />
+      )}
+
+      {/* Probation Term Sheet Form Modal */}
+      {showProbationTermSheetForm && (
+        <ProbationTermSheetFormModal
+          candidate={{
+            id: candidate.id,
+            full_name: candidate.full_name,
+            email: candidate.email || '',
+            applied_role: candidate.applied_role,
+            probation_start_date: candidate.probation_start_date || undefined,
+            probation_end_date: candidate.probation_end_date || undefined,
+          }}
+          branches={branches}
+          onClose={() => setShowProbationTermSheetForm(false)}
+          onSubmit={handleSubmitProbationTermSheet}
         />
       )}
     </div>

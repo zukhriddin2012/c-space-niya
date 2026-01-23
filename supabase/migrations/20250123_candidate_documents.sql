@@ -21,12 +21,19 @@ CREATE TABLE IF NOT EXISTS candidate_documents (
   interview1_passed BOOLEAN DEFAULT true,
   interview2_passed BOOLEAN DEFAULT false,
 
-  -- Employment Terms
+  -- Employment Terms (for full contract)
   contract_type VARCHAR(100) DEFAULT 'Трудовой договор на 1 год',
   contract_duration VARCHAR(50),
   start_date DATE,
   salary VARCHAR(50),
   salary_review VARCHAR(255),
+
+  -- Probation-specific fields
+  probation_duration VARCHAR(50),  -- e.g., "2 недели"
+  probation_start_date DATE,
+  probation_end_date DATE,
+  working_hours VARCHAR(50),  -- e.g., "9:00 - 18:00"
+  probation_salary VARCHAR(100),  -- e.g., "2 000 000 сум (на руки)"
 
   -- Probation Metrics (JSON array)
   probation_metrics JSONB DEFAULT '[]'::jsonb,
