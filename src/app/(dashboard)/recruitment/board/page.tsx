@@ -35,18 +35,20 @@ import {
   ArrowRight,
   Table,
   MessageSquare,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import type { Candidate, CandidateStage, ChecklistItem } from '@/lib/db';
 import CandidateDetailModal from '@/components/CandidateDetailModal';
 
-const STAGES: { id: CandidateStage; label: string; color: string; bgColor: string }[] = [
-  { id: 'screening', label: 'Screening', color: 'text-blue-700', bgColor: 'bg-blue-50 border-blue-200' },
-  { id: 'interview_1', label: 'Interview 1', color: 'text-purple-700', bgColor: 'bg-purple-50 border-purple-200' },
-  { id: 'under_review', label: 'Under Review', color: 'text-orange-700', bgColor: 'bg-orange-50 border-orange-200' },
-  { id: 'probation', label: 'Probation', color: 'text-yellow-700', bgColor: 'bg-yellow-50 border-yellow-200' },
-  { id: 'interview_2', label: 'Interview 2', color: 'text-indigo-700', bgColor: 'bg-indigo-50 border-indigo-200' },
-  { id: 'hired', label: 'Hired', color: 'text-green-700', bgColor: 'bg-green-50 border-green-200' },
-  { id: 'rejected', label: 'Rejected', color: 'text-red-700', bgColor: 'bg-red-50 border-red-200' },
+const STAGES: { id: CandidateStage; label: string; shortLabel: string; color: string; bgColor: string }[] = [
+  { id: 'screening', label: 'Screening', shortLabel: 'Screen', color: 'text-blue-700', bgColor: 'bg-blue-50 border-blue-200' },
+  { id: 'interview_1', label: 'Interview 1', shortLabel: 'Int. 1', color: 'text-purple-700', bgColor: 'bg-purple-50 border-purple-200' },
+  { id: 'under_review', label: 'Under Review', shortLabel: 'Review', color: 'text-orange-700', bgColor: 'bg-orange-50 border-orange-200' },
+  { id: 'probation', label: 'Probation', shortLabel: 'Prob.', color: 'text-yellow-700', bgColor: 'bg-yellow-50 border-yellow-200' },
+  { id: 'interview_2', label: 'Interview 2', shortLabel: 'Int. 2', color: 'text-indigo-700', bgColor: 'bg-indigo-50 border-indigo-200' },
+  { id: 'hired', label: 'Hired', shortLabel: 'Hired', color: 'text-green-700', bgColor: 'bg-green-50 border-green-200' },
+  { id: 'rejected', label: 'Rejected', shortLabel: 'Reject', color: 'text-red-700', bgColor: 'bg-red-50 border-red-200' },
 ];
 
 const MBTI_TYPES = [
@@ -158,6 +160,7 @@ export default function RecruitmentBoardPage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [draggedCandidate, setDraggedCandidate] = useState<string | null>(null);
+  const [mobileStageIndex, setMobileStageIndex] = useState(0);
   const [stats, setStats] = useState<{
     total: number;
     byStage: Record<CandidateStage, number>;
@@ -516,93 +519,97 @@ export default function RecruitmentBoardPage() {
     return { completed, total: checklist.length };
   };
 
+  // Mobile stage navigation
+  const currentMobileStage = STAGES[mobileStageIndex];
+  const currentStageCandidates = getCandidatesByStage(currentMobileStage.id);
+
   return (
-    <div className="p-6 min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-3 sm:p-6 min-h-screen bg-gray-50">
+      {/* Header - Mobile Optimized */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 sm:mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <Users className="text-purple-600" size={28} />
-            Recruitment Pipeline
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2 sm:gap-3">
+            <Users className="text-purple-600" size={24} />
+            Pipeline
           </h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-gray-600 text-sm mt-1 hidden sm:block">
             Track and manage candidates through the hiring process
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Link
             href="/recruitment/table"
-            className="flex items-center gap-2 px-4 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            <Table size={18} />
-            Switch to Table
+            <Table size={16} />
+            <span className="hidden sm:inline">Table</span>
           </Link>
           <button
             onClick={() => setIsImportModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="hidden sm:flex items-center gap-2 px-3 py-2 text-sm text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            <Upload size={18} />
-            Import CSV
+            <Upload size={16} />
+            Import
           </button>
           <button
             onClick={() => {
               resetForm();
               setIsAddModalOpen(true);
             }}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors"
           >
-            <Plus size={18} />
-            Add Candidate
+            <Plus size={16} />
+            <span className="hidden xs:inline">Add</span>
           </button>
         </div>
       </div>
 
-      {/* Stats */}
+      {/* Stats - Mobile Optimized */}
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-50 rounded-lg">
-                <Users size={20} className="text-purple-600" />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-purple-50 rounded-lg">
+                <Users size={18} className="text-purple-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-                <p className="text-sm text-gray-500">Total Candidates</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.total}</p>
+                <p className="text-xs sm:text-sm text-gray-500">Total</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <Clock size={20} className="text-blue-600" />
+          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-blue-50 rounded-lg">
+                <Clock size={18} className="text-blue-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">
                   {stats.byStage.screening + stats.byStage.interview_1 + stats.byStage.interview_2 + stats.byStage.under_review}
                 </p>
-                <p className="text-sm text-gray-500">In Progress</p>
+                <p className="text-xs sm:text-sm text-gray-500">Active</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-yellow-50 rounded-lg">
-                <AlertCircle size={20} className="text-yellow-600" />
+          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-yellow-50 rounded-lg">
+                <AlertCircle size={18} className="text-yellow-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.byStage.probation}</p>
-                <p className="text-sm text-gray-500">In Probation</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.byStage.probation}</p>
+                <p className="text-xs sm:text-sm text-gray-500">Probation</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-50 rounded-lg">
-                <CheckCircle size={20} className="text-green-600" />
+          <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-green-50 rounded-lg">
+                <CheckCircle size={18} className="text-green-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.byStage.hired}</p>
-                <p className="text-sm text-gray-500">Hired</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.byStage.hired}</p>
+                <p className="text-xs sm:text-sm text-gray-500">Hired</p>
               </div>
             </div>
           </div>
@@ -610,15 +617,15 @@ export default function RecruitmentBoardPage() {
       )}
 
       {/* Search */}
-      <div className="mb-6">
-        <div className="relative max-w-md">
+      <div className="mb-4 sm:mb-6">
+        <div className="relative">
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             placeholder="Search candidates..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
           />
         </div>
       </div>
@@ -629,167 +636,291 @@ export default function RecruitmentBoardPage() {
           <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
-        <div className="overflow-x-auto pb-4">
-          <div className="flex gap-4">
-            {STAGES.map((stage) => {
-              const stageCandidates = getCandidatesByStage(stage.id);
-              return (
-                <div
-                  key={stage.id}
-                  className="w-[300px] shrink-0 flex flex-col"
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, stage.id)}
-                >
-                  {/* Column Header */}
-                  <div className={`px-4 py-3 rounded-t-xl border-2 ${stage.bgColor}`}>
-                    <div className="flex items-center justify-between">
-                      <h3 className={`font-semibold ${stage.color}`}>{stage.label}</h3>
-                      <span className={`px-2 py-0.5 rounded-full text-sm font-medium ${stage.bgColor} ${stage.color}`}>
-                        {stageCandidates.length}
-                      </span>
+        <>
+          {/* Desktop Board */}
+          <div className="hidden md:block overflow-x-auto pb-4">
+            <div className="flex gap-4">
+              {STAGES.map((stage) => {
+                const stageCandidates = getCandidatesByStage(stage.id);
+                return (
+                  <div
+                    key={stage.id}
+                    className="w-[280px] lg:w-[300px] shrink-0 flex flex-col"
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, stage.id)}
+                  >
+                    {/* Column Header */}
+                    <div className={`px-4 py-3 rounded-t-xl border-2 ${stage.bgColor}`}>
+                      <div className="flex items-center justify-between">
+                        <h3 className={`font-semibold ${stage.color}`}>{stage.label}</h3>
+                        <span className={`px-2 py-0.5 rounded-full text-sm font-medium ${stage.bgColor} ${stage.color}`}>
+                          {stageCandidates.length}
+                        </span>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Column Body - Fixed Height, Scrollable */}
-                  <div className="bg-gray-100 rounded-b-xl p-3 h-[600px] overflow-y-auto space-y-3">
-                    {stageCandidates.map((candidate) => {
-                      const checklistProgress = getChecklistProgress(candidate.checklist);
-                      const daysInStage = getDaysInStage(candidate.created_at, candidate.stage_changed_at);
-                      return (
-                        <div
-                          key={candidate.id}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, candidate.id)}
-                          onClick={() => setSelectedCandidate(candidate)}
-                          className={`bg-white rounded-lg p-3 shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-shadow ${
-                            draggedCandidate === candidate.id ? 'opacity-50' : ''
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center shrink-0">
-                              <span className="text-purple-700 font-semibold">
-                                {candidate.full_name.charAt(0)}
-                              </span>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-gray-900 truncate">{candidate.full_name}</p>
-                              <p className="text-sm text-gray-500">{candidate.applied_role}</p>
-
-                              {/* Labels Row */}
-                              <div className="flex flex-wrap gap-1.5 mt-2">
-                                {/* Source Label */}
-                                {candidate.source && (
-                                  <span className={`text-xs px-2 py-0.5 rounded-full ${SOURCE_COLORS[candidate.source] || SOURCE_COLORS['Other']}`}>
-                                    {candidate.source}
-                                  </span>
-                                )}
-
-                                {/* Days in Stage */}
-                                <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full">
-                                  {daysInStage}d
+                    {/* Column Body */}
+                    <div className="bg-gray-100 rounded-b-xl p-3 min-h-[400px] max-h-[600px] overflow-y-auto space-y-3">
+                      {stageCandidates.map((candidate) => {
+                        const checklistProgress = getChecklistProgress(candidate.checklist);
+                        const daysInStage = getDaysInStage(candidate.created_at, candidate.stage_changed_at);
+                        return (
+                          <div
+                            key={candidate.id}
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, candidate.id)}
+                            onClick={() => setSelectedCandidate(candidate)}
+                            className={`bg-white rounded-lg p-3 shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-shadow ${
+                              draggedCandidate === candidate.id ? 'opacity-50' : ''
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center shrink-0">
+                                <span className="text-purple-700 font-semibold">
+                                  {candidate.full_name.charAt(0)}
                                 </span>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-gray-900 truncate">{candidate.full_name}</p>
+                                <p className="text-sm text-gray-500 truncate">{candidate.applied_role}</p>
 
-                                {/* Event Badge */}
-                                {candidate.next_event_at && (
-                                  (() => {
-                                    const eventInfo = formatEventDate(candidate.next_event_at);
-                                    return (
-                                      <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${
-                                        eventInfo.isOverdue
-                                          ? 'bg-red-100 text-red-600'
-                                          : eventInfo.isToday || eventInfo.isTomorrow
-                                          ? 'bg-yellow-100 text-yellow-700'
-                                          : 'bg-orange-100 text-orange-600'
-                                      }`}>
-                                        <Calendar size={10} />
-                                        {eventInfo.isOverdue ? 'Overdue' : eventInfo.text}
-                                      </span>
-                                    );
-                                  })()
-                                )}
-
-                                {/* Comment Count */}
-                                {(candidate.comment_count ?? 0) > 0 && (
-                                  <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full flex items-center gap-1">
-                                    <MessageSquare size={10} />
-                                    {candidate.comment_count}
+                                {/* Labels Row */}
+                                <div className="flex flex-wrap gap-1.5 mt-2">
+                                  {candidate.source && (
+                                    <span className={`text-xs px-2 py-0.5 rounded-full ${SOURCE_COLORS[candidate.source] || SOURCE_COLORS['Other']}`}>
+                                      {candidate.source}
+                                    </span>
+                                  )}
+                                  <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full">
+                                    {daysInStage}d
                                   </span>
-                                )}
+                                  {candidate.next_event_at && (
+                                    (() => {
+                                      const eventInfo = formatEventDate(candidate.next_event_at);
+                                      return (
+                                        <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${
+                                          eventInfo.isOverdue
+                                            ? 'bg-red-100 text-red-600'
+                                            : eventInfo.isToday || eventInfo.isTomorrow
+                                            ? 'bg-yellow-100 text-yellow-700'
+                                            : 'bg-orange-100 text-orange-600'
+                                        }`}>
+                                          <Calendar size={10} />
+                                          {eventInfo.isOverdue ? 'Overdue' : eventInfo.text}
+                                        </span>
+                                      );
+                                    })()
+                                  )}
+                                  {(candidate.comment_count ?? 0) > 0 && (
+                                    <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full flex items-center gap-1">
+                                      <MessageSquare size={10} />
+                                      {candidate.comment_count}
+                                    </span>
+                                  )}
+                                  {candidate.iq_score && (
+                                    <span className="text-xs px-2 py-0.5 bg-green-100 text-green-600 rounded-full">
+                                      IQ: {candidate.iq_score}
+                                    </span>
+                                  )}
+                                  {candidate.mbti_type && (
+                                    <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-600 rounded-full">
+                                      {candidate.mbti_type}
+                                    </span>
+                                  )}
+                                  {candidate.stage === 'probation' && (
+                                    <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${
+                                      candidate.term_sheet_signed
+                                        ? 'bg-green-100 text-green-600'
+                                        : 'bg-red-100 text-red-600'
+                                    }`}>
+                                      <FileText size={10} />
+                                      {candidate.term_sheet_signed ? 'Signed' : 'Unsigned'}
+                                    </span>
+                                  )}
+                                </div>
 
-                                {/* IQ Score */}
-                                {candidate.iq_score && (
-                                  <span className="text-xs px-2 py-0.5 bg-green-100 text-green-600 rounded-full">
-                                    IQ: {candidate.iq_score}
-                                  </span>
-                                )}
-
-                                {/* MBTI Type */}
-                                {candidate.mbti_type && (
-                                  <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-600 rounded-full">
-                                    {candidate.mbti_type}
-                                  </span>
-                                )}
-
-                                {/* Term Sheet Status (Probation) */}
-                                {candidate.stage === 'probation' && (
-                                  <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${
-                                    candidate.term_sheet_signed
-                                      ? 'bg-green-100 text-green-600'
-                                      : 'bg-red-100 text-red-600'
-                                  }`}>
-                                    <FileText size={10} />
-                                    {candidate.term_sheet_signed ? 'Signed' : 'Unsigned'}
-                                  </span>
+                                {/* Checklist Progress */}
+                                {checklistProgress && (
+                                  <div className="mt-2">
+                                    <div className="flex justify-between text-xs text-gray-500 mb-1">
+                                      <span>Checklist</span>
+                                      <span>{checklistProgress.completed}/{checklistProgress.total}</span>
+                                    </div>
+                                    <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                      <div
+                                        className="h-full bg-green-500 rounded-full transition-all"
+                                        style={{ width: `${(checklistProgress.completed / checklistProgress.total) * 100}%` }}
+                                      />
+                                    </div>
+                                  </div>
                                 )}
                               </div>
-
-                              {/* Checklist Progress (Probation) */}
-                              {checklistProgress && (
-                                <div className="mt-2">
-                                  <div className="flex justify-between text-xs text-gray-500 mb-1">
-                                    <span>Checklist</span>
-                                    <span>{checklistProgress.completed}/{checklistProgress.total}</span>
-                                  </div>
-                                  <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                    <div
-                                      className="h-full bg-green-500 rounded-full transition-all"
-                                      style={{ width: `${(checklistProgress.completed / checklistProgress.total) * 100}%` }}
-                                    />
-                                  </div>
-                                </div>
-                              )}
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
 
-                    {stageCandidates.length === 0 && (
-                      <div className="text-center py-8 text-gray-400 text-sm">
-                        No candidates
-                      </div>
-                    )}
+                      {stageCandidates.length === 0 && (
+                        <div className="text-center py-8 text-gray-400 text-sm">
+                          No candidates
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
+
+          {/* Mobile Board - Single Column with Swipe */}
+          <div className="md:hidden">
+            {/* Stage Navigation */}
+            <div className="flex items-center justify-between mb-4 bg-white rounded-xl border border-gray-200 p-2">
+              <button
+                onClick={() => setMobileStageIndex(Math.max(0, mobileStageIndex - 1))}
+                disabled={mobileStageIndex === 0}
+                className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent"
+              >
+                <ChevronLeft size={20} />
+              </button>
+
+              <div className="flex-1 text-center">
+                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg ${currentMobileStage.bgColor}`}>
+                  <span className={`font-semibold ${currentMobileStage.color}`}>
+                    {currentMobileStage.label}
+                  </span>
+                  <span className={`px-2 py-0.5 rounded-full text-sm font-medium bg-white/50 ${currentMobileStage.color}`}>
+                    {currentStageCandidates.length}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  {mobileStageIndex + 1} of {STAGES.length}
+                </p>
+              </div>
+
+              <button
+                onClick={() => setMobileStageIndex(Math.min(STAGES.length - 1, mobileStageIndex + 1))}
+                disabled={mobileStageIndex === STAGES.length - 1}
+                className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+
+            {/* Stage Dots */}
+            <div className="flex justify-center gap-1.5 mb-4">
+              {STAGES.map((stage, idx) => (
+                <button
+                  key={stage.id}
+                  onClick={() => setMobileStageIndex(idx)}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    idx === mobileStageIndex ? 'bg-purple-600' : 'bg-gray-300'
+                  }`}
+                />
+              ))}
+            </div>
+
+            {/* Candidates List */}
+            <div className="space-y-3">
+              {currentStageCandidates.map((candidate) => {
+                const checklistProgress = getChecklistProgress(candidate.checklist);
+                const daysInStage = getDaysInStage(candidate.created_at, candidate.stage_changed_at);
+                return (
+                  <div
+                    key={candidate.id}
+                    onClick={() => setSelectedCandidate(candidate)}
+                    className="bg-white rounded-xl p-4 border border-gray-200 active:bg-gray-50 cursor-pointer"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center shrink-0">
+                        <span className="text-purple-700 font-semibold text-lg">
+                          {candidate.full_name.charAt(0)}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="font-medium text-gray-900">{candidate.full_name}</p>
+                            <p className="text-sm text-gray-500">{candidate.applied_role}</p>
+                          </div>
+                          <ChevronRight size={18} className="text-gray-400 flex-shrink-0 mt-1" />
+                        </div>
+
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {candidate.source && (
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${SOURCE_COLORS[candidate.source] || SOURCE_COLORS['Other']}`}>
+                              {candidate.source}
+                            </span>
+                          )}
+                          <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full">
+                            {daysInStage}d
+                          </span>
+                          {candidate.iq_score && (
+                            <span className="text-xs px-2 py-0.5 bg-green-100 text-green-600 rounded-full">
+                              IQ: {candidate.iq_score}
+                            </span>
+                          )}
+                          {candidate.mbti_type && (
+                            <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-600 rounded-full">
+                              {candidate.mbti_type}
+                            </span>
+                          )}
+                          {candidate.stage === 'probation' && (
+                            <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${
+                              candidate.term_sheet_signed
+                                ? 'bg-green-100 text-green-600'
+                                : 'bg-red-100 text-red-600'
+                            }`}>
+                              <FileText size={10} />
+                              {candidate.term_sheet_signed ? 'Signed' : 'Pending'}
+                            </span>
+                          )}
+                        </div>
+
+                        {checklistProgress && (
+                          <div className="mt-3">
+                            <div className="flex justify-between text-xs text-gray-500 mb-1">
+                              <span>Checklist</span>
+                              <span>{checklistProgress.completed}/{checklistProgress.total}</span>
+                            </div>
+                            <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-green-500 rounded-full"
+                                style={{ width: `${(checklistProgress.completed / checklistProgress.total) * 100}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {currentStageCandidates.length === 0 && (
+                <div className="text-center py-12 text-gray-400">
+                  <Users className="mx-auto mb-3 text-gray-300" size={40} />
+                  <p>No candidates in {currentMobileStage.label}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
       )}
 
-      {/* Add Candidate Modal */}
+      {/* Add Candidate Modal - Mobile Optimized */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-4 border-b">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
+          <div className="bg-white rounded-t-2xl sm:rounded-xl w-full sm:max-w-2xl sm:mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-white z-10">
               <h2 className="text-lg font-semibold">Add New Candidate</h2>
-              <button onClick={() => setIsAddModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setIsAddModalOpen(false)} className="p-2 text-gray-400 hover:text-gray-600 -mr-2">
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleAddCandidate} className="p-4 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleAddCandidate} className="p-4 space-y-4 overflow-y-auto flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Full Name <span className="text-red-500">*</span>
@@ -799,7 +930,7 @@ export default function RecruitmentBoardPage() {
                     required
                     value={formData.full_name}
                     onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-base"
                   />
                 </div>
                 <div>
@@ -811,19 +942,19 @@ export default function RecruitmentBoardPage() {
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-base"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                   <input
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-base"
                   />
                 </div>
                 <div>
@@ -834,7 +965,7 @@ export default function RecruitmentBoardPage() {
                     required
                     value={formData.applied_role}
                     onChange={(e) => setFormData({ ...formData, applied_role: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-base"
                   >
                     <option value="">Select role...</option>
                     {ROLE_OPTIONS.map(role => (
@@ -853,7 +984,7 @@ export default function RecruitmentBoardPage() {
                     max="200"
                     value={formData.iq_score}
                     onChange={(e) => setFormData({ ...formData, iq_score: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-base"
                   />
                 </div>
                 <div>
@@ -861,7 +992,7 @@ export default function RecruitmentBoardPage() {
                   <select
                     value={formData.mbti_type}
                     onChange={(e) => setFormData({ ...formData, mbti_type: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-base"
                   >
                     <option value="">Select MBTI...</option>
                     {MBTI_TYPES.map(type => (
@@ -876,7 +1007,7 @@ export default function RecruitmentBoardPage() {
                 <select
                   value={formData.source}
                   onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-base"
                 >
                   <option value="">Select source...</option>
                   {SOURCE_OPTIONS.map(source => (
@@ -899,12 +1030,12 @@ export default function RecruitmentBoardPage() {
                     {resumeFile ? (
                       <div className="flex items-center justify-center gap-2 text-purple-600">
                         <FileText size={20} />
-                        <span>{resumeFile.name}</span>
+                        <span className="truncate max-w-[200px]">{resumeFile.name}</span>
                       </div>
                     ) : (
                       <div className="text-gray-500">
                         <Upload size={24} className="mx-auto mb-2" />
-                        <p className="text-sm">Click to upload resume (PDF, DOC, DOCX)</p>
+                        <p className="text-sm">Tap to upload resume</p>
                       </div>
                     )}
                   </label>
@@ -917,23 +1048,24 @@ export default function RecruitmentBoardPage() {
                   value={formData.about}
                   onChange={(e) => setFormData({ ...formData, about: e.target.value })}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-base"
                   placeholder="Notes about the candidate..."
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t">
+              {/* Sticky Footer */}
+              <div className="sticky bottom-0 -mx-4 -mb-4 px-4 py-4 bg-white border-t mt-4 flex gap-3">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  className="flex-1 px-4 py-3 text-gray-600 border border-gray-300 rounded-lg font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={processing}
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                  className="flex-1 px-4 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50"
                 >
                   {processing ? 'Adding...' : 'Add Candidate'}
                 </button>
@@ -945,14 +1077,14 @@ export default function RecruitmentBoardPage() {
 
       {/* Import CSV Modal */}
       {isImportModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-md w-full">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
+          <div className="bg-white rounded-t-2xl sm:rounded-xl w-full sm:max-w-md sm:mx-4 max-h-[90vh] overflow-hidden">
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <Upload size={20} className="text-purple-600" />
-                Import Candidates from CSV
+                Import CSV
               </h2>
-              <button onClick={closeImportModal} className="text-gray-400 hover:text-gray-600">
+              <button onClick={closeImportModal} className="p-2 text-gray-400 hover:text-gray-600 -mr-2">
                 <X size={20} />
               </button>
             </div>
@@ -960,7 +1092,6 @@ export default function RecruitmentBoardPage() {
             <div className="p-4 space-y-4">
               {!importResult ? (
                 <>
-                  {/* File Upload Area */}
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
                     <input
                       type="file"
@@ -981,14 +1112,12 @@ export default function RecruitmentBoardPage() {
                       ) : (
                         <div className="text-gray-500">
                           <Upload size={32} className="mx-auto mb-2" />
-                          <p className="font-medium">Click to upload CSV file</p>
-                          <p className="text-sm mt-1">or drag and drop</p>
+                          <p className="font-medium">Upload CSV file</p>
                         </div>
                       )}
                     </label>
                   </div>
 
-                  {/* Expected Format */}
                   <div className="bg-gray-50 rounded-lg p-3 text-sm">
                     <p className="font-medium text-gray-700 mb-1">Expected columns:</p>
                     <p className="text-gray-500 text-xs">
@@ -996,36 +1125,24 @@ export default function RecruitmentBoardPage() {
                     </p>
                   </div>
 
-                  {/* Import Button */}
-                  <div className="flex justify-end gap-3">
+                  <div className="flex gap-3">
                     <button
                       onClick={closeImportModal}
-                      className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                      className="flex-1 px-4 py-3 text-gray-600 border border-gray-300 rounded-lg font-medium"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleImport}
                       disabled={!importFile || importProcessing}
-                      className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex-1 px-4 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50"
                     >
-                      {importProcessing ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          Importing...
-                        </>
-                      ) : (
-                        <>
-                          <Upload size={16} />
-                          Import
-                        </>
-                      )}
+                      {importProcessing ? 'Importing...' : 'Import'}
                     </button>
                   </div>
                 </>
               ) : (
                 <>
-                  {/* Import Results */}
                   <div className="text-center py-4">
                     {importResult.imported > 0 ? (
                       <CheckCircle size={48} className="mx-auto text-green-500 mb-3" />
@@ -1037,16 +1154,16 @@ export default function RecruitmentBoardPage() {
 
                   <div className="bg-gray-50 rounded-lg p-4 space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Total rows processed:</span>
+                      <span className="text-gray-600">Total rows:</span>
                       <span className="font-medium">{importResult.total}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-green-600">Successfully imported:</span>
+                      <span className="text-green-600">Imported:</span>
                       <span className="font-medium text-green-600">{importResult.imported}</span>
                     </div>
                     {importResult.skipped > 0 && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-yellow-600">Skipped (duplicates):</span>
+                        <span className="text-yellow-600">Skipped:</span>
                         <span className="font-medium text-yellow-600">{importResult.skipped}</span>
                       </div>
                     )}
@@ -1063,14 +1180,12 @@ export default function RecruitmentBoardPage() {
                     </div>
                   )}
 
-                  <div className="flex justify-end">
-                    <button
-                      onClick={closeImportModal}
-                      className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-                    >
-                      Done
-                    </button>
-                  </div>
+                  <button
+                    onClick={closeImportModal}
+                    className="w-full px-4 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700"
+                  >
+                    Done
+                  </button>
                 </>
               )}
             </div>
@@ -1097,19 +1212,19 @@ export default function RecruitmentBoardPage() {
         />
       )}
 
-      {/* Edit Candidate Modal */}
+      {/* Edit Candidate Modal - Mobile Optimized */}
       {selectedCandidate && isEditMode && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-4 border-b">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
+          <div className="bg-white rounded-t-2xl sm:rounded-xl w-full sm:max-w-2xl sm:mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-white z-10">
               <h2 className="text-lg font-semibold">Edit Candidate</h2>
-              <button onClick={() => setIsEditMode(false)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setIsEditMode(false)} className="p-2 text-gray-400 hover:text-gray-600 -mr-2">
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleUpdateCandidate} className="p-4 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleUpdateCandidate} className="p-4 space-y-4 overflow-y-auto flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                   <input
@@ -1117,7 +1232,7 @@ export default function RecruitmentBoardPage() {
                     required
                     value={formData.full_name}
                     onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-base"
                   />
                 </div>
                 <div>
@@ -1127,19 +1242,19 @@ export default function RecruitmentBoardPage() {
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-base"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                   <input
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-base"
                   />
                 </div>
                 <div>
@@ -1148,7 +1263,7 @@ export default function RecruitmentBoardPage() {
                     required
                     value={formData.applied_role}
                     onChange={(e) => setFormData({ ...formData, applied_role: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-base"
                   >
                     <option value="">Select role...</option>
                     {ROLE_OPTIONS.map(role => (
@@ -1165,7 +1280,7 @@ export default function RecruitmentBoardPage() {
                     type="number"
                     value={formData.iq_score}
                     onChange={(e) => setFormData({ ...formData, iq_score: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-base"
                   />
                 </div>
                 <div>
@@ -1173,7 +1288,7 @@ export default function RecruitmentBoardPage() {
                   <select
                     value={formData.mbti_type}
                     onChange={(e) => setFormData({ ...formData, mbti_type: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-base"
                   >
                     <option value="">Select MBTI...</option>
                     {MBTI_TYPES.map(type => (
@@ -1189,15 +1304,24 @@ export default function RecruitmentBoardPage() {
                   value={formData.about}
                   onChange={(e) => setFormData({ ...formData, about: e.target.value })}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 resize-none"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 resize-none text-base"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t">
-                <button type="button" onClick={() => setIsEditMode(false)} className="px-4 py-2 text-gray-600">
+              {/* Sticky Footer */}
+              <div className="sticky bottom-0 -mx-4 -mb-4 px-4 py-4 bg-white border-t mt-4 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsEditMode(false)}
+                  className="flex-1 px-4 py-3 text-gray-600 border border-gray-300 rounded-lg font-medium"
+                >
                   Cancel
                 </button>
-                <button type="submit" disabled={processing} className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50">
+                <button
+                  type="submit"
+                  disabled={processing}
+                  className="flex-1 px-4 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50"
+                >
                   {processing ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>

@@ -20,6 +20,8 @@ import {
   ChevronDown,
   Filter,
   MoreVertical,
+  LayoutGrid,
+  ChevronRight,
 } from 'lucide-react';
 import Link from 'next/link';
 import type { Candidate, CandidateStage, ChecklistItem } from '@/lib/db';
@@ -95,6 +97,7 @@ export default function RecruitmentTablePage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -264,7 +267,6 @@ export default function RecruitmentTablePage() {
       const res = await fetch(`/api/candidates/${candidateId}/resume`);
       if (res.ok) {
         const data = await res.json();
-        // Open in new tab - browser will display PDF or download other file types
         window.open(data.url, '_blank');
       } else {
         const errorData = await res.json();
@@ -277,7 +279,7 @@ export default function RecruitmentTablePage() {
   };
 
   const openEditMode = (candidate: Candidate) => {
-    setResumeFile(null); // Clear any previous resume file
+    setResumeFile(null);
     setSelectedCandidate(candidate);
     setFormData({
       full_name: candidate.full_name,
@@ -307,11 +309,9 @@ export default function RecruitmentTablePage() {
       let aVal: string | number | null = a[sortField];
       let bVal: string | number | null = b[sortField];
 
-      // Handle null values
       if (aVal === null || aVal === undefined) aVal = '';
       if (bVal === null || bVal === undefined) bVal = '';
 
-      // Compare
       if (typeof aVal === 'number' && typeof bVal === 'number') {
         return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
       }
@@ -331,57 +331,72 @@ export default function RecruitmentTablePage() {
   };
 
   return (
-    <div className="p-6 min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-3 sm:p-6 min-h-screen bg-gray-50">
+      {/* Header - Mobile Optimized */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 sm:mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <Users className="text-purple-600" size={28} />
-            Candidates Database
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2 sm:gap-3">
+            <Users className="text-purple-600" size={24} />
+            Candidates
           </h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-gray-600 text-sm mt-1 hidden sm:block">
             View and manage all candidates in a table format
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <Link
             href="/recruitment/board"
-            className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            Switch to Board
+            <LayoutGrid size={16} />
+            <span className="hidden sm:inline">Board</span>
           </Link>
           <button
             onClick={() => {
               resetForm();
               setIsAddModalOpen(true);
             }}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            className="flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors"
           >
-            <Plus size={18} />
-            Add Candidate
+            <Plus size={16} />
+            <span className="hidden xs:inline">Add</span>
           </button>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
-        <div className="flex items-center gap-4">
+      {/* Search and Filters - Mobile Optimized */}
+      <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 mb-4 sm:mb-6">
+        <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1 relative">
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by name, email, or role..."
+              placeholder="Search candidates..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             />
           </div>
-          <div className="flex items-center gap-2">
+
+          {/* Mobile Filter Toggle */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="sm:hidden flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-600"
+          >
+            <Filter size={16} />
+            Filter
+            {stageFilter !== 'all' && (
+              <span className="w-2 h-2 bg-purple-600 rounded-full" />
+            )}
+          </button>
+
+          {/* Desktop Filter */}
+          <div className="hidden sm:flex items-center gap-2">
             <Filter size={16} className="text-gray-400" />
             <select
               value={stageFilter}
               onChange={(e) => setStageFilter(e.target.value as CandidateStage | 'all')}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             >
               <option value="all">All Stages</option>
               {STAGES.map(stage => (
@@ -390,9 +405,41 @@ export default function RecruitmentTablePage() {
             </select>
           </div>
         </div>
+
+        {/* Mobile Filter Dropdown */}
+        {showFilters && (
+          <div className="sm:hidden mt-3 pt-3 border-t border-gray-100">
+            <label className="block text-xs font-medium text-gray-500 mb-2">Filter by Stage</label>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => { setStageFilter('all'); setShowFilters(false); }}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  stageFilter === 'all'
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'bg-gray-100 text-gray-600'
+                }`}
+              >
+                All
+              </button>
+              {STAGES.map(stage => (
+                <button
+                  key={stage.id}
+                  onClick={() => { setStageFilter(stage.id); setShowFilters(false); }}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                    stageFilter === stage.id
+                      ? `${stage.bgColor} ${stage.color}`
+                      : 'bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  {stage.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Table */}
+      {/* Table - Desktop / Cards - Mobile */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         {loading ? (
           <div className="flex justify-center py-12">
@@ -409,98 +456,158 @@ export default function RecruitmentTablePage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th
-                    className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('full_name')}
-                  >
-                    <div className="flex items-center gap-1">
-                      Name
-                      <SortIcon field="full_name" />
-                    </div>
-                  </th>
-                  <th
-                    className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('email')}
-                  >
-                    <div className="flex items-center gap-1">
-                      Email
-                      <SortIcon field="email" />
-                    </div>
-                  </th>
-                  <th
-                    className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('applied_role')}
-                  >
-                    <div className="flex items-center gap-1">
-                      Role
-                      <SortIcon field="applied_role" />
-                    </div>
-                  </th>
-                  <th
-                    className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('stage')}
-                  >
-                    <div className="flex items-center gap-1">
-                      Stage
-                      <SortIcon field="stage" />
-                    </div>
-                  </th>
-                  <th
-                    className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('iq_score')}
-                  >
-                    <div className="flex items-center gap-1">
-                      Assessment
-                      <SortIcon field="iq_score" />
-                    </div>
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Source
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Resume
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Docs
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredCandidates.map((candidate) => {
-                  const stageConfig = getStageConfig(candidate.stage);
-                  return (
-                    <tr
-                      key={candidate.id}
-                      onClick={() => openEditMode(candidate)}
-                      className="hover:bg-purple-50 cursor-pointer transition-colors"
+          <>
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th
+                      className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('full_name')}
                     >
-                      <td className="px-4 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-purple-700 font-semibold text-sm">
-                              {candidate.full_name.charAt(0)}
+                      <div className="flex items-center gap-1">
+                        Name
+                        <SortIcon field="full_name" />
+                      </div>
+                    </th>
+                    <th
+                      className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('applied_role')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Role
+                        <SortIcon field="applied_role" />
+                      </div>
+                    </th>
+                    <th
+                      className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('stage')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Stage
+                        <SortIcon field="stage" />
+                      </div>
+                    </th>
+                    <th
+                      className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('iq_score')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Assessment
+                        <SortIcon field="iq_score" />
+                      </div>
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Source
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Resume
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredCandidates.map((candidate) => {
+                    const stageConfig = getStageConfig(candidate.stage);
+                    return (
+                      <tr
+                        key={candidate.id}
+                        onClick={() => openEditMode(candidate)}
+                        className="hover:bg-purple-50 cursor-pointer transition-colors"
+                      >
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                              <span className="text-purple-700 font-semibold text-sm">
+                                {candidate.full_name.charAt(0)}
+                              </span>
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">{candidate.full_name}</p>
+                              <p className="text-sm text-gray-500">{candidate.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-sm text-gray-600">
+                          {candidate.applied_role}
+                        </td>
+                        <td className="px-4 py-4">
+                          <span className={`px-2.5 py-1 text-xs rounded-full font-medium ${stageConfig.bgColor} ${stageConfig.color}`}>
+                            {stageConfig.label}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex flex-wrap gap-1.5">
+                            {candidate.iq_score && (
+                              <span className="px-2 py-0.5 bg-green-100 text-green-600 text-xs rounded-full">
+                                IQ: {candidate.iq_score}
+                              </span>
+                            )}
+                            {candidate.mbti_type && (
+                              <span className="px-2 py-0.5 bg-purple-100 text-purple-600 text-xs rounded-full">
+                                {candidate.mbti_type}
+                              </span>
+                            )}
+                            {!candidate.iq_score && !candidate.mbti_type && (
+                              <span className="text-gray-400 text-sm">—</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          {candidate.source ? (
+                            <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
+                              {candidate.source}
                             </span>
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900">{candidate.full_name}</p>
-                            <p className="text-sm text-gray-500">{candidate.email}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 text-sm text-gray-600">
-                        {candidate.applied_role}
-                      </td>
-                      <td className="px-4 py-4">
-                        <span className={`px-2.5 py-1 text-xs rounded-full font-medium ${stageConfig.bgColor} ${stageConfig.color}`}>
-                          {stageConfig.label}
+                          ) : (
+                            <span className="text-gray-400 text-sm">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4">
+                          {candidate.resume_file_name ? (
+                            <span className="text-green-600 text-sm flex items-center gap-1">
+                              <FileText size={14} />
+                              <span className="truncate max-w-[100px]">{candidate.resume_file_name}</span>
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 text-sm">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card List */}
+            <div className="md:hidden divide-y divide-gray-100">
+              {filteredCandidates.map((candidate) => {
+                const stageConfig = getStageConfig(candidate.stage);
+                return (
+                  <div
+                    key={candidate.id}
+                    onClick={() => openEditMode(candidate)}
+                    className="p-4 hover:bg-gray-50 active:bg-gray-100 cursor-pointer transition-colors"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-11 h-11 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-purple-700 font-semibold">
+                          {candidate.full_name.charAt(0)}
                         </span>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex flex-wrap gap-1.5">
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="font-medium text-gray-900 truncate">{candidate.full_name}</p>
+                            <p className="text-sm text-gray-500 truncate">{candidate.applied_role}</p>
+                          </div>
+                          <ChevronRight size={18} className="text-gray-400 flex-shrink-0 mt-1" />
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                          <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${stageConfig.bgColor} ${stageConfig.color}`}>
+                            {stageConfig.label}
+                          </span>
                           {candidate.iq_score && (
                             <span className="px-2 py-0.5 bg-green-100 text-green-600 text-xs rounded-full">
                               IQ: {candidate.iq_score}
@@ -511,53 +618,25 @@ export default function RecruitmentTablePage() {
                               {candidate.mbti_type}
                             </span>
                           )}
-                          {!candidate.iq_score && !candidate.mbti_type && (
-                            <span className="text-gray-400 text-sm">—</span>
+                          {candidate.source && (
+                            <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
+                              {candidate.source}
+                            </span>
+                          )}
+                          {candidate.resume_file_name && (
+                            <span className="px-2 py-0.5 bg-blue-100 text-blue-600 text-xs rounded-full flex items-center gap-1">
+                              <FileText size={10} />
+                              CV
+                            </span>
                           )}
                         </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        {candidate.source ? (
-                          <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
-                            {candidate.source}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400 text-sm">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-4">
-                        {candidate.resume_file_name ? (
-                          <span className="text-green-600 text-sm flex items-center gap-1">
-                            <FileText size={14} />
-                            <span className="truncate max-w-[100px]">{candidate.resume_file_name}</span>
-                          </span>
-                        ) : (
-                          <span className="text-gray-400 text-sm">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-4">
-                        {candidate.stage === 'probation' ? (
-                          candidate.term_sheet_signed ? (
-                            <span className="px-2 py-0.5 bg-green-100 text-green-600 text-xs rounded-full flex items-center gap-1 w-fit">
-                              <FileText size={12} />
-                              Signed
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 bg-red-100 text-red-600 text-xs rounded-full flex items-center gap-1 w-fit">
-                              <FileText size={12} />
-                              Pending
-                            </span>
-                          )
-                        ) : (
-                          <span className="text-gray-400 text-sm">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
 
         {/* Table footer with count */}
@@ -568,19 +647,19 @@ export default function RecruitmentTablePage() {
         )}
       </div>
 
-      {/* Add Candidate Modal */}
+      {/* Add Candidate Modal - Mobile Optimized */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-4 border-b">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
+          <div className="bg-white rounded-t-2xl sm:rounded-xl w-full sm:max-w-2xl sm:mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-white z-10">
               <h2 className="text-lg font-semibold">Add New Candidate</h2>
-              <button onClick={() => setIsAddModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setIsAddModalOpen(false)} className="p-2 text-gray-400 hover:text-gray-600 -mr-2">
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleAddCandidate} className="p-4 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleAddCandidate} className="p-4 space-y-4 overflow-y-auto flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Full Name <span className="text-red-500">*</span>
@@ -590,7 +669,7 @@ export default function RecruitmentTablePage() {
                     required
                     value={formData.full_name}
                     onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-base"
                   />
                 </div>
                 <div>
@@ -602,19 +681,19 @@ export default function RecruitmentTablePage() {
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-base"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                   <input
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-base"
                   />
                 </div>
                 <div>
@@ -625,7 +704,7 @@ export default function RecruitmentTablePage() {
                     required
                     value={formData.applied_role}
                     onChange={(e) => setFormData({ ...formData, applied_role: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-base"
                   >
                     <option value="">Select role...</option>
                     {ROLE_OPTIONS.map(role => (
@@ -644,7 +723,7 @@ export default function RecruitmentTablePage() {
                     max="200"
                     value={formData.iq_score}
                     onChange={(e) => setFormData({ ...formData, iq_score: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-base"
                   />
                 </div>
                 <div>
@@ -652,7 +731,7 @@ export default function RecruitmentTablePage() {
                   <select
                     value={formData.mbti_type}
                     onChange={(e) => setFormData({ ...formData, mbti_type: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-base"
                   >
                     <option value="">Select MBTI...</option>
                     {MBTI_TYPES.map(type => (
@@ -667,7 +746,7 @@ export default function RecruitmentTablePage() {
                 <select
                   value={formData.source}
                   onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-base"
                 >
                   <option value="">Select source...</option>
                   {SOURCE_OPTIONS.map(source => (
@@ -690,12 +769,12 @@ export default function RecruitmentTablePage() {
                     {resumeFile ? (
                       <div className="flex items-center justify-center gap-2 text-purple-600">
                         <FileText size={20} />
-                        <span>{resumeFile.name}</span>
+                        <span className="truncate max-w-[200px]">{resumeFile.name}</span>
                       </div>
                     ) : (
                       <div className="text-gray-500">
                         <Upload size={24} className="mx-auto mb-2" />
-                        <p className="text-sm">Click to upload resume (PDF, DOC, DOCX)</p>
+                        <p className="text-sm">Tap to upload resume</p>
                       </div>
                     )}
                   </label>
@@ -708,23 +787,24 @@ export default function RecruitmentTablePage() {
                   value={formData.about}
                   onChange={(e) => setFormData({ ...formData, about: e.target.value })}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-base"
                   placeholder="Notes about the candidate..."
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t">
+              {/* Sticky Footer for Mobile */}
+              <div className="sticky bottom-0 -mx-4 -mb-4 px-4 py-4 bg-white border-t mt-4 flex gap-3">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  className="flex-1 px-4 py-3 text-gray-600 border border-gray-300 rounded-lg font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={processing}
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                  className="flex-1 px-4 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50"
                 >
                   {processing ? 'Adding...' : 'Add Candidate'}
                 </button>
@@ -734,10 +814,10 @@ export default function RecruitmentTablePage() {
         </div>
       )}
 
-      {/* Edit/View Candidate Modal */}
+      {/* Edit/View Candidate Modal - Mobile Optimized */}
       {selectedCandidate && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
+          <div className="bg-white rounded-t-2xl sm:rounded-xl w-full sm:max-w-2xl sm:mx-4 max-h-[90vh] overflow-hidden flex flex-col">
             <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-white z-10">
               <h2 className="text-lg font-semibold">{isEditMode ? 'Edit Candidate' : 'Candidate Details'}</h2>
               <div className="flex items-center gap-2">
@@ -751,7 +831,7 @@ export default function RecruitmentTablePage() {
                 )}
                 <button
                   onClick={() => { setSelectedCandidate(null); setIsEditMode(false); }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="p-2 text-gray-400 hover:text-gray-600 -mr-2"
                 >
                   <X size={20} />
                 </button>
@@ -759,8 +839,8 @@ export default function RecruitmentTablePage() {
             </div>
 
             {isEditMode ? (
-              <form onSubmit={handleUpdateCandidate} className="p-4 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+              <form onSubmit={handleUpdateCandidate} className="p-4 space-y-4 overflow-y-auto flex-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                     <input
@@ -768,7 +848,7 @@ export default function RecruitmentTablePage() {
                       required
                       value={formData.full_name}
                       onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-base"
                     />
                   </div>
                   <div>
@@ -778,19 +858,19 @@ export default function RecruitmentTablePage() {
                       required
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-base"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                     <input
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-base"
                     />
                   </div>
                   <div>
@@ -799,7 +879,7 @@ export default function RecruitmentTablePage() {
                       required
                       value={formData.applied_role}
                       onChange={(e) => setFormData({ ...formData, applied_role: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-base"
                     >
                       <option value="">Select role...</option>
                       {ROLE_OPTIONS.map(role => (
@@ -816,7 +896,7 @@ export default function RecruitmentTablePage() {
                       type="number"
                       value={formData.iq_score}
                       onChange={(e) => setFormData({ ...formData, iq_score: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-base"
                     />
                   </div>
                   <div>
@@ -824,7 +904,7 @@ export default function RecruitmentTablePage() {
                     <select
                       value={formData.mbti_type}
                       onChange={(e) => setFormData({ ...formData, mbti_type: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-base"
                     >
                       <option value="">Select MBTI...</option>
                       {MBTI_TYPES.map(type => (
@@ -834,13 +914,13 @@ export default function RecruitmentTablePage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Source</label>
                     <select
                       value={formData.source}
                       onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-base"
                     >
                       <option value="">Select source...</option>
                       {SOURCE_OPTIONS.map(source => (
@@ -853,7 +933,7 @@ export default function RecruitmentTablePage() {
                     <select
                       value={selectedCandidate?.stage || 'screening'}
                       onChange={(e) => handleStageChange(selectedCandidate!.id, e.target.value as CandidateStage)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-base"
                     >
                       {STAGES.map(stage => (
                         <option key={stage.id} value={stage.id}>{stage.label}</option>
@@ -866,20 +946,16 @@ export default function RecruitmentTablePage() {
                 <div className="p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Resume / CV</label>
 
-                  {/* Current file */}
                   {selectedCandidate?.resume_file_name && !resumeFile && (
                     <div className="flex items-center justify-between mb-3 p-2 bg-white rounded border">
-                      <div className="flex items-center gap-2">
-                        <FileText size={18} className="text-red-500" />
-                        <span className="text-sm text-gray-700">{selectedCandidate.resume_file_name}</span>
-                        {selectedCandidate.resume_file_size && (
-                          <span className="text-xs text-gray-400">({formatFileSize(selectedCandidate.resume_file_size)})</span>
-                        )}
+                      <div className="flex items-center gap-2 min-w-0">
+                        <FileText size={18} className="text-red-500 flex-shrink-0" />
+                        <span className="text-sm text-gray-700 truncate">{selectedCandidate.resume_file_name}</span>
                       </div>
                       <button
                         type="button"
                         onClick={() => handleViewResume(selectedCandidate.id)}
-                        className="flex items-center gap-1 px-3 py-1 text-sm text-purple-600 hover:bg-purple-50 rounded-lg"
+                        className="flex items-center gap-1 px-3 py-1 text-sm text-purple-600 hover:bg-purple-50 rounded-lg flex-shrink-0"
                       >
                         <Eye size={14} />
                         View
@@ -887,25 +963,22 @@ export default function RecruitmentTablePage() {
                     </div>
                   )}
 
-                  {/* New file selected */}
                   {resumeFile && (
                     <div className="flex items-center justify-between mb-3 p-2 bg-purple-50 rounded border border-purple-200">
-                      <div className="flex items-center gap-2">
-                        <FileText size={18} className="text-purple-500" />
-                        <span className="text-sm text-purple-700">{resumeFile.name}</span>
-                        <span className="text-xs text-purple-500">(new)</span>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <FileText size={18} className="text-purple-500 flex-shrink-0" />
+                        <span className="text-sm text-purple-700 truncate">{resumeFile.name}</span>
                       </div>
                       <button
                         type="button"
                         onClick={() => setResumeFile(null)}
-                        className="text-red-500 hover:text-red-700 text-sm"
+                        className="text-red-500 hover:text-red-700 text-sm flex-shrink-0"
                       >
                         Remove
                       </button>
                     </div>
                   )}
 
-                  {/* Upload button */}
                   <div className="text-center">
                     <input
                       type="file"
@@ -921,7 +994,6 @@ export default function RecruitmentTablePage() {
                       <Upload size={16} />
                       {selectedCandidate?.resume_file_name ? 'Replace Resume' : 'Upload Resume'}
                     </label>
-                    <p className="text-xs text-gray-400 mt-2">PDF, DOC, DOCX up to 10MB</p>
                   </div>
                 </div>
 
@@ -931,42 +1003,51 @@ export default function RecruitmentTablePage() {
                     value={formData.about}
                     onChange={(e) => setFormData({ ...formData, about: e.target.value })}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 resize-none"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 resize-none text-base"
                     placeholder="Internal notes about this candidate..."
                   />
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t">
-                  <button type="button" onClick={() => { setIsEditMode(false); setResumeFile(null); }} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+                {/* Sticky Footer */}
+                <div className="sticky bottom-0 -mx-4 -mb-4 px-4 py-4 bg-white border-t mt-4 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => { setIsEditMode(false); setResumeFile(null); }}
+                    className="flex-1 px-4 py-3 text-gray-600 border border-gray-300 rounded-lg font-medium"
+                  >
                     Cancel
                   </button>
-                  <button type="submit" disabled={processing} className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50">
+                  <button
+                    type="submit"
+                    disabled={processing}
+                    className="flex-1 px-4 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50"
+                  >
                     {processing ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
               </form>
             ) : (
-              <div className="p-4 space-y-4">
+              <div className="p-4 space-y-4 overflow-y-auto flex-1">
                 {/* Header */}
                 <div className="flex items-start gap-4">
-                  <div className="w-14 h-14 bg-purple-100 rounded-full flex items-center justify-center">
+                  <div className="w-14 h-14 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
                     <span className="text-purple-700 font-bold text-xl">
                       {selectedCandidate.full_name.charAt(0)}
                     </span>
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <h3 className="text-xl font-semibold text-gray-900">{selectedCandidate.full_name}</h3>
                     <p className="text-gray-600">{selectedCandidate.applied_role}</p>
-                    <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-                      <a href={`mailto:${selectedCandidate.email}`} className="flex items-center gap-1 hover:text-purple-600">
-                        <Mail size={14} />
-                        {selectedCandidate.email}
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 mt-2 text-sm text-gray-500">
+                      <a href={`mailto:${selectedCandidate.email}`} className="flex items-center gap-1 hover:text-purple-600 truncate">
+                        <Mail size={14} className="flex-shrink-0" />
+                        <span className="truncate">{selectedCandidate.email}</span>
                       </a>
                       {selectedCandidate.phone && (
-                        <span className="flex items-center gap-1">
+                        <a href={`tel:${selectedCandidate.phone}`} className="flex items-center gap-1 hover:text-purple-600">
                           <Phone size={14} />
                           {selectedCandidate.phone}
-                        </span>
+                        </a>
                       )}
                     </div>
                   </div>
@@ -1010,13 +1091,16 @@ export default function RecruitmentTablePage() {
                       Resume
                     </h4>
                     <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium">{selectedCandidate.resume_file_name}</p>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{selectedCandidate.resume_file_name}</p>
                         {selectedCandidate.resume_file_size && (
                           <p className="text-xs text-gray-500">{formatFileSize(selectedCandidate.resume_file_size)}</p>
                         )}
                       </div>
-                      <button className="flex items-center gap-1 px-3 py-1.5 text-sm text-purple-600 hover:bg-purple-50 rounded-lg">
+                      <button
+                        onClick={() => handleViewResume(selectedCandidate.id)}
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm text-purple-600 hover:bg-purple-50 rounded-lg flex-shrink-0"
+                      >
                         <Download size={14} />
                         Download
                       </button>
