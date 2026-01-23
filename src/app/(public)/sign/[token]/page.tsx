@@ -109,6 +109,9 @@ export default function DocumentSigningPage() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
 
+  // PDF Download
+  const [downloading, setDownloading] = useState(false);
+
   // Fetch document info
   useEffect(() => {
     fetchDocument();
@@ -303,6 +306,32 @@ export default function DocumentSigningPage() {
       setError('Ошибка отправки подписи');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // Download PDF
+  const handleDownloadPDF = async () => {
+    setDownloading(true);
+    try {
+      const res = await fetch(`/api/documents/sign/${token}/pdf`);
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = window.document.createElement('a');
+        a.href = url;
+        a.download = `term-sheet-${document?.candidate_name?.replace(/\s+/g, '-') || 'document'}.pdf`;
+        window.document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+      } else {
+        const data = await res.json();
+        setError(data.error || 'Ошибка загрузки PDF');
+      }
+    } catch (err) {
+      setError('Ошибка загрузки PDF');
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -1201,34 +1230,6 @@ export default function DocumentSigningPage() {
       </div>
     );
   }
-
-  // Download PDF
-  const [downloading, setDownloading] = useState(false);
-
-  const handleDownloadPDF = async () => {
-    setDownloading(true);
-    try {
-      const res = await fetch(`/api/documents/sign/${token}/pdf`);
-      if (res.ok) {
-        const blob = await res.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = window.document.createElement('a');
-        a.href = url;
-        a.download = `term-sheet-${document?.candidate_name?.replace(/\s+/g, '-') || 'document'}.pdf`;
-        window.document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        a.remove();
-      } else {
-        const data = await res.json();
-        setError(data.error || 'Ошибка загрузки PDF');
-      }
-    } catch (err) {
-      setError('Ошибка загрузки PDF');
-    } finally {
-      setDownloading(false);
-    }
-  };
 
   // Step 4: Success
   if (step === 'success') {
