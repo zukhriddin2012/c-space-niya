@@ -147,6 +147,8 @@ export default function CandidateDetailModal({
   const [documents, setDocuments] = useState<{
     id: string;
     document_type: string;
+    candidate_name: string;
+    probation_start_date: string | null;
     signing_token: string;
     status: string;
     signed_at: string | null;
@@ -154,6 +156,14 @@ export default function CandidateDetailModal({
     recruiter_signed_by: string | null;
     created_at: string;
   }[]>([]);
+
+  // Helper function to format document display name
+  const getDocumentDisplayName = (doc: { candidate_name: string; document_type: string; probation_start_date: string | null }) => {
+    const name = doc.candidate_name || candidate.full_name;
+    const docType = doc.document_type === 'probation_term_sheet' ? 'Probation Term Sheet' : doc.document_type;
+    const date = doc.probation_start_date ? formatDate(doc.probation_start_date) : '';
+    return date ? `${name}_${docType}_${date}` : `${name}_${docType}`;
+  };
   const [showRecruiterSignModal, setShowRecruiterSignModal] = useState(false);
   const [selectedDocForSigning, setSelectedDocForSigning] = useState<string | null>(null);
   const [recruiterSignature, setRecruiterSignature] = useState({
@@ -680,7 +690,7 @@ export default function CandidateDetailModal({
                             <FileText size={14} />
                           </div>
                           <div>
-                            <p className="font-medium text-sm">{doc.document_type}</p>
+                            <p className="font-medium text-sm">{getDocumentDisplayName(doc)}</p>
                             <p className="text-xs text-gray-500">
                               Created {formatDate(doc.created_at)}
                               {doc.signed_at && ` • Signed ${formatDate(doc.signed_at)}`}
@@ -911,7 +921,7 @@ export default function CandidateDetailModal({
                           <div key={doc.id} className="flex items-center justify-between bg-white rounded-lg p-2 text-sm">
                             <div className="flex items-center gap-2">
                               <FileText size={14} className="text-gray-400" />
-                              <span className="text-gray-600">{doc.document_type}</span>
+                              <span className="text-gray-600">{getDocumentDisplayName(doc)}</span>
                               <span className={`text-xs px-2 py-0.5 rounded ${
                                 doc.signed_at ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-600'
                               }`}>
