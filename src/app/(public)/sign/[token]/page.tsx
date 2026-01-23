@@ -66,6 +66,13 @@ interface DocumentData {
   representative_name: string;
   representative_position: string;
 
+  // Recruiter signature
+  recruiter_signed_at: string | null;
+  recruiter_signed_by: string | null;
+  recruiter_signed_by_position: string | null;
+  recruiter_signature_data: string | null;
+  recruiter_signature_type: string | null;
+
   // Signing
   signed_at: string | null;
   signature_data: string | null;
@@ -618,11 +625,37 @@ export default function DocumentSigningPage() {
               <p className="text-sm text-gray-600 mt-2">Подпись: _______________________</p>
               <p className="text-sm text-gray-600 mt-2">Дата: _______________________</p>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-green-50 rounded-lg p-4 border border-green-200">
               <h4 className="font-bold text-purple-700 mb-3">ПРЕДСТАВИТЕЛЬ C-SPACE</h4>
-              <p className="text-sm text-gray-600">ФИО: {document?.representative_name}</p>
-              <p className="text-sm text-gray-600 mt-2">Подпись: _______________________</p>
-              <p className="text-sm text-gray-600 mt-2">Дата: _______________________</p>
+              <p className="text-sm text-gray-600">ФИО: {document?.recruiter_signed_by || document?.representative_name}</p>
+              {document?.recruiter_signed_by_position && (
+                <p className="text-sm text-gray-500">{document.recruiter_signed_by_position}</p>
+              )}
+              <div className="mt-2">
+                <p className="text-sm text-gray-600">Подпись:</p>
+                {document?.recruiter_signature_type === 'type' && document?.recruiter_signature_data ? (
+                  <p className="text-lg font-serif italic text-gray-800 mt-1">
+                    {(() => {
+                      try {
+                        return JSON.parse(document.recruiter_signature_data).name;
+                      } catch {
+                        return document.recruiter_signed_by;
+                      }
+                    })()}
+                  </p>
+                ) : document?.recruiter_signature_type === 'draw' && document?.recruiter_signature_data ? (
+                  <img
+                    src={document.recruiter_signature_data}
+                    alt="Подпись представителя"
+                    className="h-12 mt-1"
+                  />
+                ) : (
+                  <span className="text-green-600 font-medium">✓ Подписано</span>
+                )}
+              </div>
+              <p className="text-sm text-gray-600 mt-2">
+                Дата: {document?.recruiter_signed_at ? formatDate(document.recruiter_signed_at) : '_______________________'}
+              </p>
             </div>
           </div>
         </section>
@@ -917,11 +950,37 @@ export default function DocumentSigningPage() {
               <p className="text-sm text-gray-600 mt-2">Подпись: _______________________</p>
               <p className="text-sm text-gray-600 mt-2">Дата: _______________________</p>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-green-50 rounded-lg p-4 border border-green-200">
               <h4 className="font-bold text-purple-700 mb-3">ПРЕДСТАВИТЕЛЬ C-SPACE</h4>
-              <p className="text-sm text-gray-600">ФИО: {document?.representative_name}</p>
-              <p className="text-sm text-gray-600 mt-2">Подпись: _______________________</p>
-              <p className="text-sm text-gray-600 mt-2">Дата: _______________________</p>
+              <p className="text-sm text-gray-600">ФИО: {document?.recruiter_signed_by || document?.representative_name}</p>
+              {document?.recruiter_signed_by_position && (
+                <p className="text-sm text-gray-500">{document.recruiter_signed_by_position}</p>
+              )}
+              <div className="mt-2">
+                <p className="text-sm text-gray-600">Подпись:</p>
+                {document?.recruiter_signature_type === 'type' && document?.recruiter_signature_data ? (
+                  <p className="text-lg font-serif italic text-gray-800 mt-1">
+                    {(() => {
+                      try {
+                        return JSON.parse(document.recruiter_signature_data).name;
+                      } catch {
+                        return document.recruiter_signed_by;
+                      }
+                    })()}
+                  </p>
+                ) : document?.recruiter_signature_type === 'draw' && document?.recruiter_signature_data ? (
+                  <img
+                    src={document.recruiter_signature_data}
+                    alt="Подпись представителя"
+                    className="h-12 mt-1"
+                  />
+                ) : (
+                  <span className="text-green-600 font-medium">✓ Подписано</span>
+                )}
+              </div>
+              <p className="text-sm text-gray-600 mt-2">
+                Дата: {document?.recruiter_signed_at ? formatDate(document.recruiter_signed_at) : '_______________________'}
+              </p>
             </div>
           </div>
         </section>

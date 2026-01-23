@@ -150,8 +150,19 @@ export default function CandidateDetailModal({
     signing_token: string;
     status: string;
     signed_at: string | null;
+    recruiter_signed_at: string | null;
+    recruiter_signed_by: string | null;
     created_at: string;
   }[]>([]);
+  const [showRecruiterSignModal, setShowRecruiterSignModal] = useState(false);
+  const [selectedDocForSigning, setSelectedDocForSigning] = useState<string | null>(null);
+  const [recruiterSignature, setRecruiterSignature] = useState({
+    name: '',
+    position: '',
+    type: 'type' as 'draw' | 'type',
+    data: '',
+  });
+  const [signingDocument, setSigningDocument] = useState(false);
   const [loadingDocuments, setLoadingDocuments] = useState(false);
   const [creatingDocument, setCreatingDocument] = useState(false);
   const [signingUrl, setSigningUrl] = useState<string | null>(null);
@@ -274,6 +285,59 @@ export default function CandidateDetailModal({
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     alert('Link copied to clipboard!');
+  };
+
+  const handleOpenRecruiterSign = (docId: string) => {
+    setSelectedDocForSigning(docId);
+    setRecruiterSignature({
+      name: '',
+      position: '',
+      type: 'type',
+      data: '',
+    });
+    setShowRecruiterSignModal(true);
+  };
+
+  const handleRecruiterSign = async () => {
+    if (!selectedDocForSigning) return;
+    if (!recruiterSignature.name.trim()) {
+      alert('Пожалуйста, введите ваше имя');
+      return;
+    }
+
+    setSigningDocument(true);
+    try {
+      // Create signature data
+      const signatureData = recruiterSignature.type === 'type'
+        ? JSON.stringify({ type: 'typed', name: recruiterSignature.name, style: 1 })
+        : recruiterSignature.data;
+
+      const res = await fetch(`/api/candidates/${candidate.id}/documents/${selectedDocForSigning}/sign`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          signature_type: recruiterSignature.type,
+          signature_data: signatureData,
+          signer_name: recruiterSignature.name,
+          signer_position: recruiterSignature.position,
+        }),
+      });
+
+      if (res.ok) {
+        setShowRecruiterSignModal(false);
+        setSelectedDocForSigning(null);
+        fetchDocuments();
+        alert('Документ подписан! Теперь вы можете отправить ссылку кандидату.');
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Ошибка подписания документа');
+      }
+    } catch (error) {
+      console.error('Error signing document:', error);
+      alert('Ошибка подписания документа');
+    } finally {
+      setSigningDocument(false);
+    }
   };
 
   const handleDeleteDocument = async (documentId: string) => {
@@ -624,12 +688,35 @@ export default function CandidateDetailModal({
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            doc.signed_at ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-600'
-                          }`}>
-                            {doc.signed_at ? '✓ Signed' : 'Pending'}
-                          </span>
-{!doc.signed_at && (
+                          {/* Status badge based on workflow */}
+                          {doc.signed_at ? (
+                            <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-600">
+                              ✓ Fully Signed
+                            </span>
+                          ) : doc.recruiter_signed_at ? (
+                            <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-600">
+                              Awaiting Candidate
+                            </span>
+                          ) : (
+                            <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-600">
+                              Needs Your Signature
+                            </span>
+                          )}
+
+                          {/* Sign button - only if recruiter hasn't signed */}
+                          {!doc.recruiter_signed_at && (
+                            <button
+                              onClick={() => handleOpenRecruiterSign(doc.id)}
+                              className="flex items-center gap-1 px-2 py-1 text-xs bg-purple-600 text-white hover:bg-purple-700 rounded"
+                              title="Sign & Approve"
+                            >
+                              <FileSignature size={12} />
+                              Sign & Approve
+                            </button>
+                          )}
+
+                          {/* Share button - only after recruiter signed, and before candidate signed */}
+                          {doc.recruiter_signed_at && !doc.signed_at && (
                             <button
                               onClick={() => {
                                 const url = `${window.location.origin}/sign/${doc.signing_token}`;
@@ -643,6 +730,7 @@ export default function CandidateDetailModal({
                               Share
                             </button>
                           )}
+
                           <button
                             onClick={() => handleDeleteDocument(doc.id)}
                             className="flex items-center gap-1 px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded"
@@ -1417,6 +1505,105 @@ export default function CandidateDetailModal({
           onClose={() => setShowProbationTermSheetForm(false)}
           onSubmit={handleSubmitProbationTermSheet}
         />
+      )}
+
+      {/* Recruiter Signature Modal */}
+      {showRecruiterSignModal && (
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FileSignature size={32} className="text-purple-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900">Подпишите документ</h3>
+              <p className="text-gray-500 mt-2">
+                Ваша подпись утвердит условия. После этого документ можно отправить кандидату.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Ваше имя *
+                </label>
+                <input
+                  type="text"
+                  value={recruiterSignature.name}
+                  onChange={(e) => setRecruiterSignature({ ...recruiterSignature, name: e.target.value })}
+                  placeholder="Введите ваше полное имя"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Должность
+                </label>
+                <input
+                  type="text"
+                  value={recruiterSignature.position}
+                  onChange={(e) => setRecruiterSignature({ ...recruiterSignature, position: e.target.value })}
+                  placeholder="Напр: HR Manager, COO"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                />
+              </div>
+
+              <div className="bg-purple-50 rounded-lg p-4">
+                <p className="text-sm text-purple-800">
+                  <strong>Предпросмотр подписи:</strong>
+                </p>
+                <div className="mt-2 bg-white border border-purple-200 rounded-lg p-4 text-center">
+                  <p className="text-lg font-serif italic text-gray-800">
+                    {recruiterSignature.name || 'Ваше имя'}
+                  </p>
+                  {recruiterSignature.position && (
+                    <p className="text-sm text-gray-500 mt-1">{recruiterSignature.position}</p>
+                  )}
+                </div>
+              </div>
+
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="recruiter-agree"
+                  className="w-5 h-5 mt-0.5 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                />
+                <span className="text-sm text-gray-600">
+                  Я подтверждаю, что ознакомился с условиями документа и утверждаю их для отправки кандидату.
+                </span>
+              </label>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowRecruiterSignModal(false);
+                  setSelectedDocForSigning(null);
+                }}
+                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+              >
+                Отмена
+              </button>
+              <button
+                onClick={handleRecruiterSign}
+                disabled={!recruiterSignature.name.trim() || signingDocument}
+                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {signingDocument ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Подписание...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle size={16} />
+                    Подписать и утвердить
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

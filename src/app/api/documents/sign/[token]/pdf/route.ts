@@ -36,6 +36,13 @@ interface DocumentData {
   escalation_contact_position: string;
   representative_name: string;
   representative_position: string;
+  // Recruiter signature
+  recruiter_signed_at: string;
+  recruiter_signed_by: string;
+  recruiter_signed_by_position: string;
+  recruiter_signature_data: string;
+  recruiter_signature_type: string;
+  // Candidate signature
   signed_at: string;
   signature_data: string;
   signature_type: string;
@@ -112,6 +119,13 @@ export async function GET(
       escalation_contact_position: doc.escalation_contact_position || '',
       representative_name: doc.representative_name || '',
       representative_position: doc.representative_position || '',
+      // Recruiter signature
+      recruiter_signed_at: doc.recruiter_signed_at || '',
+      recruiter_signed_by: doc.recruiter_signed_by || '',
+      recruiter_signed_by_position: doc.recruiter_signed_by_position || '',
+      recruiter_signature_data: doc.recruiter_signature_data || '',
+      recruiter_signature_type: doc.recruiter_signature_type || 'typed',
+      // Candidate signature
       signed_at: doc.signed_at,
       signature_data: doc.signature_data || '',
       signature_type: doc.signature_type || 'typed',
@@ -539,14 +553,43 @@ export async function GET(
 
     page.drawText(`Дата: ${formatDate(document.signed_at)}`, { x: margin + 10, y: y - 72, size: 9, font, color: rgb(0, 0, 0) });
 
-    // Representative signature box
+    // Representative signature box (with recruiter signature)
     const repBoxX = margin + boxWidth + 20;
     page.drawRectangle({ x: repBoxX, y: y - boxHeight, width: boxWidth, height: boxHeight, color: lightGray, borderColor: rgb(200 / 255, 200 / 255, 200 / 255), borderWidth: 1 });
 
     page.drawText('ПРЕДСТАВИТЕЛЬ C-SPACE', { x: repBoxX + 10, y: y - 15, size: 11, font: fontBold, color: brandColor });
-    page.drawText(`ФИО: ${document.representative_name || '_________________'}`, { x: repBoxX + 10, y: y - 30, size: 9, font, color: rgb(0, 0, 0) });
-    page.drawText('Подпись: _________________', { x: repBoxX + 10, y: y - 45, size: 9, font, color: rgb(0, 0, 0) });
-    page.drawText('Дата: _________________', { x: repBoxX + 10, y: y - 72, size: 9, font, color: rgb(0, 0, 0) });
+    page.drawText(`ФИО: ${document.recruiter_signed_by || document.representative_name || '_________________'}`, { x: repBoxX + 10, y: y - 30, size: 9, font, color: rgb(0, 0, 0) });
+
+    // Add recruiter signature
+    page.drawText('Подпись:', { x: repBoxX + 10, y: y - 45, size: 9, font, color: rgb(0, 0, 0) });
+
+    if (document.recruiter_signature_type === 'draw' && document.recruiter_signature_data && document.recruiter_signature_data.startsWith('data:image')) {
+      try {
+        const base64Data = document.recruiter_signature_data.split(',')[1];
+        const signatureImage = await pdfDoc.embedPng(Buffer.from(base64Data, 'base64'));
+        const signatureDims = signatureImage.scale(0.3);
+        page.drawImage(signatureImage, {
+          x: repBoxX + 50,
+          y: y - 65,
+          width: Math.min(signatureDims.width, 80),
+          height: Math.min(signatureDims.height, 30),
+        });
+      } catch (e) {
+        console.error('Error embedding recruiter signature image:', e);
+        page.drawText('[Подпись]', { x: repBoxX + 50, y: y - 50, size: 10, font, color: rgb(0, 0, 0) });
+      }
+    } else if (document.recruiter_signature_type === 'typed' && document.recruiter_signature_data) {
+      try {
+        const sigData = JSON.parse(document.recruiter_signature_data);
+        page.drawText(sigData.name, { x: repBoxX + 50, y: y - 50, size: 12, font: fontBold, color: rgb(0, 0, 0) });
+      } catch (e) {
+        page.drawText(document.recruiter_signed_by || '[Подпись]', { x: repBoxX + 50, y: y - 50, size: 10, font, color: rgb(0, 0, 0) });
+      }
+    } else if (document.recruiter_signed_by) {
+      page.drawText(document.recruiter_signed_by, { x: repBoxX + 50, y: y - 50, size: 10, font, color: rgb(0, 0, 0) });
+    }
+
+    page.drawText(`Дата: ${document.recruiter_signed_at ? formatDate(document.recruiter_signed_at) : '_________________'}`, { x: repBoxX + 10, y: y - 72, size: 9, font, color: rgb(0, 0, 0) });
 
     y -= boxHeight + 20;
 

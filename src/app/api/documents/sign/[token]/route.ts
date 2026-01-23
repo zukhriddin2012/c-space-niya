@@ -34,6 +34,14 @@ export async function GET(
       return NextResponse.json({ error: 'Document not found or link expired' }, { status: 404 });
     }
 
+    // Check if document has been approved by recruiter (status should be 'approved' or already 'signed')
+    if (doc.status === 'draft' || !doc.recruiter_signed_at) {
+      return NextResponse.json({
+        error: 'Документ ещё не утверждён. Пожалуйста, дождитесь утверждения от представителя компании.',
+        status: 'not_approved'
+      }, { status: 403 });
+    }
+
     // Format the response - return all document fields
     const document = {
       id: doc.id,
@@ -88,6 +96,13 @@ export async function GET(
       // Representative
       representative_name: doc.representative_name || '',
       representative_position: doc.representative_position || '',
+
+      // Recruiter signature
+      recruiter_signed_at: doc.recruiter_signed_at,
+      recruiter_signed_by: doc.recruiter_signed_by,
+      recruiter_signed_by_position: doc.recruiter_signed_by_position,
+      recruiter_signature_data: doc.recruiter_signature_data,
+      recruiter_signature_type: doc.recruiter_signature_type,
 
       // Signing status
       created_at: doc.created_at,
