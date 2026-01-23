@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   X,
   Mail,
@@ -56,8 +56,8 @@ interface CandidateDetailModalProps {
   onStageChange: (candidateId: string, stage: CandidateStage) => Promise<void>;
   onChecklistUpdate: (candidateId: string, checklist: ChecklistItem[]) => Promise<void>;
   onHire: (candidateId: string) => Promise<void>;
-  onReject: (candidateId: string) => Promise<void>;
   onDelete: (candidateId: string) => Promise<void>;
+  currentUser?: { name: string; role?: string } | null;
   onEdit: () => void;
   onRefresh: () => void;
   processing: boolean;
@@ -106,11 +106,11 @@ export default function CandidateDetailModal({
   onStageChange,
   onChecklistUpdate,
   onHire,
-  onReject,
   onDelete,
   onEdit,
   onRefresh,
   processing,
+  currentUser,
 }: CandidateDetailModalProps) {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [comments, setComments] = useState<CandidateComment[]>([]);
@@ -167,12 +167,77 @@ export default function CandidateDetailModal({
   const [showRecruiterSignModal, setShowRecruiterSignModal] = useState(false);
   const [selectedDocForSigning, setSelectedDocForSigning] = useState<string | null>(null);
   const [recruiterSignature, setRecruiterSignature] = useState({
-    name: '',
-    position: '',
-    type: 'type' as 'draw' | 'type',
+    name: currentUser?.name || '',
+    position: currentUser?.role || '',
+    type: 'draw' as 'draw' | 'type',
     data: '',
   });
   const [signingDocument, setSigningDocument] = useState(false);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Update signature info when currentUser changes
+  useEffect(() => {
+    if (currentUser) {
+      setRecruiterSignature(prev => ({
+        ...prev,
+        name: currentUser.name || prev.name,
+        position: currentUser.role || prev.position,
+      }));
+    }
+  }, [currentUser]);
+
+  // Canvas drawing functions
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    setIsDrawing(true);
+    const rect = canvas.getBoundingClientRect();
+    const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+    const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  };
+
+  const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isDrawing) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+    const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#1f2937';
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  };
+
+  const stopDrawing = () => {
+    setIsDrawing(false);
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const data = canvas.toDataURL('image/png');
+      setRecruiterSignature(prev => ({ ...prev, data }));
+    }
+  };
+
+  const clearCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setRecruiterSignature(prev => ({ ...prev, data: '' }));
+  };
   const [loadingDocuments, setLoadingDocuments] = useState(false);
   const [creatingDocument, setCreatingDocument] = useState(false);
   const [signingUrl, setSigningUrl] = useState<string | null>(null);
@@ -1548,44 +1613,47 @@ export default function CandidateDetailModal({
             </div>
 
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ваше имя *
-                </label>
-                <input
-                  type="text"
-                  value={recruiterSignature.name}
-                  onChange={(e) => setRecruiterSignature({ ...recruiterSignature, name: e.target.value })}
-                  placeholder="Введите ваше полное имя"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                />
+              {/* User info display */}
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-sm text-gray-600">Подписант:</p>
+                <p className="font-medium text-gray-900">{recruiterSignature.name || 'Не указано'}</p>
+                {recruiterSignature.position && (
+                  <p className="text-sm text-gray-500">{recruiterSignature.position}</p>
+                )}
               </div>
 
+              {/* Signature drawing area */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Должность
-                </label>
-                <input
-                  type="text"
-                  value={recruiterSignature.position}
-                  onChange={(e) => setRecruiterSignature({ ...recruiterSignature, position: e.target.value })}
-                  placeholder="Напр: HR Manager, COO"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                />
-              </div>
-
-              <div className="bg-purple-50 rounded-lg p-4">
-                <p className="text-sm text-purple-800">
-                  <strong>Предпросмотр подписи:</strong>
-                </p>
-                <div className="mt-2 bg-white border border-purple-200 rounded-lg p-4 text-center">
-                  <p className="text-lg font-serif italic text-gray-800">
-                    {recruiterSignature.name || 'Ваше имя'}
-                  </p>
-                  {recruiterSignature.position && (
-                    <p className="text-sm text-gray-500 mt-1">{recruiterSignature.position}</p>
-                  )}
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Нарисуйте подпись *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={clearCanvas}
+                    className="text-xs text-purple-600 hover:text-purple-700"
+                  >
+                    Очистить
+                  </button>
                 </div>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg bg-white">
+                  <canvas
+                    ref={canvasRef}
+                    width={350}
+                    height={150}
+                    className="w-full cursor-crosshair touch-none"
+                    onMouseDown={startDrawing}
+                    onMouseMove={draw}
+                    onMouseUp={stopDrawing}
+                    onMouseLeave={stopDrawing}
+                    onTouchStart={startDrawing}
+                    onTouchMove={draw}
+                    onTouchEnd={stopDrawing}
+                  />
+                </div>
+                <p className="text-xs text-gray-400 mt-1 text-center">
+                  Используйте мышь или палец для рисования подписи
+                </p>
               </div>
 
               <label className="flex items-start gap-3 cursor-pointer">
@@ -1605,6 +1673,7 @@ export default function CandidateDetailModal({
                 onClick={() => {
                   setShowRecruiterSignModal(false);
                   setSelectedDocForSigning(null);
+                  clearCanvas();
                 }}
                 className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
               >
@@ -1612,7 +1681,7 @@ export default function CandidateDetailModal({
               </button>
               <button
                 onClick={handleRecruiterSign}
-                disabled={!recruiterSignature.name.trim() || signingDocument}
+                disabled={!recruiterSignature.name.trim() || !recruiterSignature.data || signingDocument}
                 className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {signingDocument ? (

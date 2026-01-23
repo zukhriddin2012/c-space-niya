@@ -1201,7 +1201,6 @@ export default function RecruitmentBoardPage() {
           onStageChange={handleStageChange}
           onChecklistUpdate={handleChecklistUpdate}
           onHire={handleHire}
-          onReject={handleReject}
           onDelete={handleDelete}
           onEdit={openEditMode}
           onRefresh={() => {
@@ -1209,6 +1208,7 @@ export default function RecruitmentBoardPage() {
             fetchStats();
           }}
           processing={processing}
+          currentUser={user}
         />
       )}
 
