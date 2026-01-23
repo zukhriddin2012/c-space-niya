@@ -139,8 +139,8 @@ export default function MobileNav({ user }: MobileNavProps) {
       allRequests: t.nav.allRequests,
       approvals: t.nav.approvals,
       departments: t.nav.departments,
-      feedback: 'Feedback',
-      feedbackInbox: 'Feedback Inbox',
+      feedback: t.nav.feedback,
+      feedbackInbox: t.nav.feedbackInbox,
       settings: t.nav.settings,
     };
     return labels[key] || key;

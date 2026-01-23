@@ -184,16 +184,16 @@ export default function Sidebar({ user }: SidebarProps) {
       attendance: t.nav.attendance,
       payroll: t.nav.payroll,
       recruitment: t.nav.recruitment,
-      tableView: 'Table View', // Not in translations yet
-      boardView: 'Board View', // Not in translations yet
+      tableView: t.nav.tableView,
+      boardView: t.nav.boardView,
       reports: t.nav.reports,
       accounting: t.nav.accounting,
       myRequests: t.nav.myRequests,
       allRequests: t.nav.allRequests,
       approvals: t.nav.approvals,
       departments: t.nav.departments,
-      feedback: 'Feedback', // Not in translations yet
-      feedbackInbox: 'Feedback Inbox', // Not in translations yet
+      feedback: t.nav.feedback,
+      feedbackInbox: t.nav.feedbackInbox,
       settings: t.nav.settings,
     };
     return labels[key] || key;

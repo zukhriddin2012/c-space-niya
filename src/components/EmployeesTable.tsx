@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Check, Minus } from 'lucide-react';
 import AddEmployeeModal from './AddEmployeeModal';
+import { useTranslation } from '@/contexts/LanguageContext';
 
 interface Employee {
   id: string;
@@ -110,6 +111,7 @@ export default function EmployeesTable({
   canCreateEmployee = false,
   canAssignRoles = false,
 }: EmployeesTableProps) {
+  const { t } = useTranslation();
   const [employees, setEmployees] = useState(initialEmployees);
   const [showAddModal, setShowAddModal] = useState(false);
   const router = useRouter();
@@ -150,7 +152,7 @@ export default function EmployeesTable({
             className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors text-sm"
           >
             <Plus size={16} />
-            Add Employee
+            {t.employees.addEmployee}
           </button>
         </div>
       )}
@@ -162,24 +164,24 @@ export default function EmployeesTable({
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
                 <th className="text-left px-4 lg:px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Employee
+                  {t.nav.employees}
                 </th>
                 <th className="text-left px-4 lg:px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Position
+                  {t.employees.position}
                 </th>
                 <th className="text-left px-4 lg:px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Branch
+                  {t.employees.branch}
                 </th>
                 <th className="text-left px-4 lg:px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Hired
+                  {t.employees.hireDate}
                 </th>
                 {canViewSalary && (
                   <th className="text-right px-4 lg:px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Salary
+                    {t.employees.salary}
                   </th>
                 )}
                 <th className="text-left px-4 lg:px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Type
+                  {t.common.status}
                 </th>
                 <th className="text-center px-4 lg:px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Bot
@@ -270,14 +272,14 @@ export default function EmployeesTable({
 
         {employees.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-500">No employees found matching your filters.</p>
+            <p className="text-gray-500">{t.common.noData}</p>
             {canCreateEmployee && (
               <button
                 onClick={() => setShowAddModal(true)}
                 className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors text-sm"
               >
                 <Plus size={16} />
-                Add First Employee
+                {t.employees.addEmployee}
               </button>
             )}
           </div>
@@ -286,22 +288,22 @@ export default function EmployeesTable({
         {/* Desktop Pagination */}
         <div className="flex items-center justify-between px-4 lg:px-6 py-4 border-t border-gray-200 bg-gray-50">
           <p className="text-sm text-gray-500">
-            Showing <span className="font-medium">1</span> to{' '}
-            <span className="font-medium">{employees.length}</span> of{' '}
-            <span className="font-medium">{employees.length}</span> employees
+            {t.common.showing} <span className="font-medium">1</span> - {' '}
+            <span className="font-medium">{employees.length}</span> {t.common.of}{' '}
+            <span className="font-medium">{employees.length}</span> {t.common.results}
           </p>
           <div className="flex gap-2">
             <button
               disabled
               className="px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-400 cursor-not-allowed"
             >
-              Previous
+              {t.common.previous}
             </button>
             <button
               disabled
               className="px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-400 cursor-not-allowed"
             >
-              Next
+              {t.common.next}
             </button>
           </div>
         </div>
@@ -311,14 +313,14 @@ export default function EmployeesTable({
       <div className="md:hidden space-y-3">
         {employees.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-            <p className="text-gray-500">No employees found matching your filters.</p>
+            <p className="text-gray-500">{t.common.noData}</p>
             {canCreateEmployee && (
               <button
                 onClick={() => setShowAddModal(true)}
                 className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors text-sm"
               >
                 <Plus size={16} />
-                Add First Employee
+                {t.employees.addEmployee}
               </button>
             )}
           </div>
@@ -400,7 +402,7 @@ export default function EmployeesTable({
         {employees.length > 0 && (
           <div className="bg-white rounded-xl border border-gray-200 p-4">
             <p className="text-sm text-gray-500 text-center">
-              Showing {employees.length} employees
+              {t.common.showing} {employees.length} {t.common.results}
             </p>
           </div>
         )}

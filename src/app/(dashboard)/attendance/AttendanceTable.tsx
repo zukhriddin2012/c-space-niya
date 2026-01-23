@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import ManualCheckoutButton from './ManualCheckoutButton';
 import ReminderButton from './ReminderButton';
+import { useTranslation } from '@/contexts/LanguageContext';
 
 interface AttendanceSession {
   id: string;
@@ -58,13 +59,13 @@ interface AttendanceTableProps {
   canEditAttendance: boolean;
 }
 
-function VerificationBadge({ source }: { source: string | null }) {
+function VerificationBadge({ source, t }: { source: string | null; t: any }) {
   if (!source) return null;
 
-  const config: Record<string, { label: string; className: string }> = {
-    web: { label: 'IP', className: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-    telegram: { label: 'GPS', className: 'bg-amber-100 text-amber-700 border-amber-200' },
-    manual: { label: 'Manual', className: 'bg-gray-100 text-gray-600 border-gray-200' },
+  const config: Record<string, { labelKey: 'ip' | 'gps' | 'manual'; className: string }> = {
+    web: { labelKey: 'ip', className: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+    telegram: { labelKey: 'gps', className: 'bg-amber-100 text-amber-700 border-amber-200' },
+    manual: { labelKey: 'manual', className: 'bg-gray-100 text-gray-600 border-gray-200' },
   };
 
   const badge = config[source];
@@ -72,21 +73,21 @@ function VerificationBadge({ source }: { source: string | null }) {
 
   return (
     <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${badge.className}`}>
-      {badge.label}
+      {t.attendance[badge.labelKey]}
     </span>
   );
 }
 
-function StatusBadge({ status, isOvernight }: { status: string; isOvernight?: boolean }) {
+function StatusBadge({ status, isOvernight, t }: { status: string; isOvernight?: boolean; t: any }) {
   const statusConfig: Record<
     string,
-    { label: string; className: string; icon: React.ComponentType<{ size?: number }> }
+    { labelKey: string; className: string; icon: React.ComponentType<{ size?: number }> }
   > = {
-    present: { label: 'On Time', className: 'bg-green-50 text-green-700', icon: CheckCircle },
-    late: { label: 'Late', className: 'bg-orange-50 text-orange-700', icon: AlertCircle },
-    absent: { label: 'Absent', className: 'bg-red-50 text-red-700', icon: XCircle },
-    early_leave: { label: 'Early Leave', className: 'bg-yellow-50 text-yellow-700', icon: Clock },
-    overnight: { label: 'Overnight', className: 'bg-indigo-50 text-indigo-700', icon: Moon },
+    present: { labelKey: 'onTime', className: 'bg-green-50 text-green-700', icon: CheckCircle },
+    late: { labelKey: 'late', className: 'bg-orange-50 text-orange-700', icon: AlertCircle },
+    absent: { labelKey: 'absent', className: 'bg-red-50 text-red-700', icon: XCircle },
+    early_leave: { labelKey: 'earlyLeave', className: 'bg-yellow-50 text-yellow-700', icon: Clock },
+    overnight: { labelKey: 'overnight', className: 'bg-indigo-50 text-indigo-700', icon: Moon },
   };
 
   const displayStatus = isOvernight ? 'overnight' : status;
@@ -96,7 +97,7 @@ function StatusBadge({ status, isOvernight }: { status: string; isOvernight?: bo
   return (
     <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${config.className}`}>
       <Icon size={12} />
-      {config.label}
+      {t.attendance[config.labelKey]}
     </span>
   );
 }
@@ -134,6 +135,7 @@ const statusOrder: Record<string, number> = {
 };
 
 export default function AttendanceTable({ records, canEditAttendance }: AttendanceTableProps) {
+  const { t } = useTranslation();
   const [sortField, setSortField] = useState<SortField>('employeeName');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
@@ -228,15 +230,15 @@ export default function AttendanceTable({ records, canEditAttendance }: Attendan
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
-                <SortableHeader field="employeeName">Employee</SortableHeader>
-                <SortableHeader field="branchName">Branch</SortableHeader>
-                <SortableHeader field="checkInTime">Check In</SortableHeader>
-                <SortableHeader field="checkOutTime">Check Out</SortableHeader>
-                <SortableHeader field="hours">Hours</SortableHeader>
-                <SortableHeader field="status">Status</SortableHeader>
+                <SortableHeader field="employeeName">{t.nav.employees}</SortableHeader>
+                <SortableHeader field="branchName">{t.employees.branch}</SortableHeader>
+                <SortableHeader field="checkInTime">{t.attendance.checkIn}</SortableHeader>
+                <SortableHeader field="checkOutTime">{t.attendance.checkOut}</SortableHeader>
+                <SortableHeader field="hours">{t.attendance.workingHours}</SortableHeader>
+                <SortableHeader field="status">{t.common.status}</SortableHeader>
                 {canEditAttendance && (
                   <th className="text-left px-4 lg:px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                    {t.common.actions}
                   </th>
                 )}
               </tr>
@@ -273,7 +275,7 @@ export default function AttendanceTable({ records, canEditAttendance }: Attendan
                             className="flex items-center gap-2 text-sm text-purple-600 hover:text-purple-700 font-medium"
                           >
                             <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full text-xs">
-                              {record.sessionCount} sessions
+                              {record.sessionCount} {t.attendance.sessions}
                             </span>
                             {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                           </button>
@@ -295,7 +297,7 @@ export default function AttendanceTable({ records, canEditAttendance }: Attendan
                                 <span className="text-indigo-500 text-xs ml-1">({formatShortDate(record.overnightFromDate)})</span>
                               )}
                             </span>
-                            <VerificationBadge source={record.source} />
+                            <VerificationBadge source={record.source} t={t} />
                           </div>
                         )}
                       </td>
@@ -320,7 +322,7 @@ export default function AttendanceTable({ records, canEditAttendance }: Attendan
                         )}
                       </td>
                       <td className="px-3 lg:px-4 xl:px-6 py-3 lg:py-4">
-                        <StatusBadge status={record.status} isOvernight={record.isOvernight} />
+                        <StatusBadge status={record.status} isOvernight={record.isOvernight} t={t} />
                       </td>
                       {canEditAttendance && (
                         <td className="px-3 lg:px-4 xl:px-6 py-3 lg:py-4">
@@ -392,13 +394,13 @@ export default function AttendanceTable({ records, canEditAttendance }: Attendan
 
         {sortedRecords.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-500">No attendance records found for the selected filters.</p>
+            <p className="text-gray-500">{t.common.noData}</p>
           </div>
         )}
 
         <div className="flex items-center justify-between px-3 lg:px-4 xl:px-6 py-3 lg:py-4 border-t border-gray-200 bg-gray-50">
           <p className="text-sm text-gray-500">
-            Showing <span className="font-medium">{sortedRecords.length}</span> records
+            {t.common.showing} <span className="font-medium">{sortedRecords.length}</span> {t.common.results}
           </p>
         </div>
       </div>
@@ -407,7 +409,7 @@ export default function AttendanceTable({ records, canEditAttendance }: Attendan
       <div className="md:hidden space-y-3">
         {sortedRecords.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-            <p className="text-gray-500">No attendance records found.</p>
+            <p className="text-gray-500">{t.common.noData}</p>
           </div>
         ) : (
           sortedRecords.map((record) => (
@@ -428,7 +430,7 @@ export default function AttendanceTable({ records, canEditAttendance }: Attendan
                     <p className="text-xs text-gray-500">{record.position}</p>
                   </div>
                 </div>
-                <StatusBadge status={record.status} isOvernight={record.isOvernight} />
+                <StatusBadge status={record.status} isOvernight={record.isOvernight} t={t} />
               </div>
 
               <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
@@ -438,22 +440,22 @@ export default function AttendanceTable({ records, canEditAttendance }: Attendan
 
               <div className="grid grid-cols-3 gap-3 text-center bg-gray-50 rounded-lg p-3">
                 <div>
-                  <p className="text-xs text-gray-500 mb-1">Check In</p>
+                  <p className="text-xs text-gray-500 mb-1">{t.attendance.checkIn}</p>
                   <div className="flex items-center justify-center gap-1">
                     <p className={`text-sm font-medium ${record.status === 'late' ? 'text-orange-600' : 'text-gray-900'}`}>
                       {formatTime(record.checkInTime)}
                     </p>
-                    <VerificationBadge source={record.source} />
+                    <VerificationBadge source={record.source} t={t} />
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 mb-1">Check Out</p>
+                  <p className="text-xs text-gray-500 mb-1">{t.attendance.checkOut}</p>
                   <p className={`text-sm font-medium ${record.status === 'early_leave' ? 'text-yellow-600' : 'text-gray-900'}`}>
                     {formatTime(record.checkOutTime)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 mb-1">Hours</p>
+                  <p className="text-xs text-gray-500 mb-1">{t.attendance.workingHours}</p>
                   <p className="text-sm font-medium text-gray-900">
                     {formatHours(record.totalHours ?? calculateHours(record.checkInTime, record.checkOutTime))}
                   </p>

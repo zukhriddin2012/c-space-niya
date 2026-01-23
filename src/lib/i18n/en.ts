@@ -63,6 +63,10 @@ export const en: Translations = {
     myPortal: 'My Portal',
     profile: 'Profile',
     logout: 'Logout',
+    feedback: 'Feedback',
+    feedbackInbox: 'Feedback Inbox',
+    tableView: 'Table View',
+    boardView: 'Board View',
   },
 
   // Dashboard

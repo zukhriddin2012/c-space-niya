@@ -63,6 +63,10 @@ export interface Translations {
     myPortal: string;
     profile: string;
     logout: string;
+    feedback: string;
+    feedbackInbox: string;
+    tableView: string;
+    boardView: string;
   };
 
   // Dashboard

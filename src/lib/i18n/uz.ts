@@ -63,6 +63,10 @@ export const uz: Translations = {
     myPortal: 'Shaxsiy kabinet',
     profile: 'Profil',
     logout: 'Chiqish',
+    feedback: "Fikr-mulohaza",
+    feedbackInbox: "Kiruvchi fikrlar",
+    tableView: "Jadval ko'rinishi",
+    boardView: "Doska ko'rinishi",
   },
 
   // Dashboard

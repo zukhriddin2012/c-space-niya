@@ -63,6 +63,10 @@ export const ru: Translations = {
     myPortal: 'Мой портал',
     profile: 'Профиль',
     logout: 'Выход',
+    feedback: 'Обратная связь',
+    feedbackInbox: 'Входящие отзывы',
+    tableView: 'Таблица',
+    boardView: 'Доска',
   },
 
   // Dashboard
