@@ -29,7 +29,7 @@ interface AIAnalysisResult {
     field: string;
   }[];
   role_fit: {
-    score: number; // 0-100
+    score: number;
     strengths: string[];
     gaps: string[];
     recommendation: string;
@@ -47,23 +47,9 @@ interface AIAnalysisResult {
   analyzed_at: string;
 }
 
-// Extract text from PDF using unpdf (serverless-compatible)
-async function extractTextFromPdf(buffer: Buffer): Promise<string> {
-  try {
-    const { extractText } = await import('unpdf');
-    const result = await extractText(new Uint8Array(buffer));
-    // result.text is an array of strings (one per page)
-    const textArray = result.text;
-    return Array.isArray(textArray) ? textArray.join('\n\n') : String(textArray || '');
-  } catch (error) {
-    console.error('PDF parsing error:', error);
-    throw new Error('Failed to parse PDF file');
-  }
-}
-
-// Analyze resume with Claude API
+// Analyze resume with Claude API - send PDF directly
 async function analyzeWithClaude(
-  resumeText: string,
+  pdfBase64: string,
   candidateInfo: {
     full_name: string;
     applied_role: string;
@@ -88,9 +74,9 @@ You will:
 5. Generate targeted interview questions
 
 Always be objective, thorough, and provide actionable insights.
-Respond ONLY with valid JSON matching the required structure.`;
+Respond ONLY with valid JSON matching the required structure. Do not include any markdown code blocks or extra text.`;
 
-  const userPrompt = `Analyze this resume for a candidate applying for the "${candidateInfo.applied_role}" position.
+  const userPrompt = `Analyze this resume PDF for a candidate applying for the "${candidateInfo.applied_role}" position.
 
 CANDIDATE INFO:
 - Name: ${candidateInfo.full_name}
@@ -98,24 +84,21 @@ CANDIDATE INFO:
 - Applied Role: ${candidateInfo.applied_role}
 ${candidateInfo.about ? `- About: ${candidateInfo.about}` : ''}
 
-RESUME TEXT:
-${resumeText}
-
-Provide a comprehensive analysis in the following JSON structure:
+Provide a comprehensive analysis in the following JSON structure (respond with ONLY the JSON, no markdown):
 {
   "summary": "2-3 sentence overview of the candidate",
   "skills": {
-    "technical": ["skill1", "skill2", ...],
-    "soft": ["skill1", "skill2", ...],
-    "languages": ["language1 (proficiency)", ...]
+    "technical": ["skill1", "skill2"],
+    "soft": ["skill1", "skill2"],
+    "languages": ["language1 (proficiency)"]
   },
   "experience": {
-    "total_years": number,
+    "total_years": 5,
     "companies": [
       {
         "name": "Company Name",
         "role": "Job Title",
-        "duration": "e.g., 2 years 3 months",
+        "duration": "2 years 3 months",
         "highlights": ["achievement1", "achievement2"]
       }
     ]
@@ -124,14 +107,14 @@ Provide a comprehensive analysis in the following JSON structure:
     {
       "degree": "Degree Name",
       "institution": "University/School",
-      "year": "Graduation year or expected",
+      "year": "2020",
       "field": "Field of study"
     }
   ],
   "role_fit": {
-    "score": 0-100,
-    "strengths": ["strength1", "strength2", ...],
-    "gaps": ["gap1", "gap2", ...],
+    "score": 75,
+    "strengths": ["strength1", "strength2"],
+    "gaps": ["gap1", "gap2"],
     "recommendation": "Your hiring recommendation"
   },
   "red_flags": ["Any concerns or inconsistencies"],
@@ -145,12 +128,10 @@ Provide a comprehensive analysis in the following JSON structure:
     {
       "company": "Company name from resume",
       "industry": "Industry sector",
-      "insights": "Brief insight about this company and what working there might indicate about the candidate"
+      "insights": "Brief insight about this company"
     }
   ]
-}
-
-Be thorough but concise. Focus on actionable insights for HR.`;
+}`;
 
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -165,7 +146,20 @@ Be thorough but concise. Focus on actionable insights for HR.`;
       messages: [
         {
           role: 'user',
-          content: userPrompt,
+          content: [
+            {
+              type: 'document',
+              source: {
+                type: 'base64',
+                media_type: 'application/pdf',
+                data: pdfBase64,
+              },
+            },
+            {
+              type: 'text',
+              text: userPrompt,
+            },
+          ],
         },
       ],
       system: systemPrompt,
@@ -244,36 +238,20 @@ export const POST = withAuth(async (
       return NextResponse.json({ error: 'Failed to download resume file' }, { status: 500 });
     }
 
-    // Convert to buffer
-    const buffer = Buffer.from(await fileData.arrayBuffer());
-
-    // Extract text based on file type
-    let resumeText: string;
+    // Check file type
     const fileName = candidate.resume_file_name?.toLowerCase() || '';
-
-    if (fileName.endsWith('.pdf')) {
-      resumeText = await extractTextFromPdf(buffer);
-    } else if (fileName.endsWith('.txt')) {
-      resumeText = buffer.toString('utf-8');
-    } else if (fileName.endsWith('.docx') || fileName.endsWith('.doc')) {
-      // For DOCX, we'd need mammoth or similar - for now, return error
+    if (!fileName.endsWith('.pdf')) {
       return NextResponse.json({
-        error: 'DOCX files are not yet supported. Please upload a PDF version.'
-      }, { status: 400 });
-    } else {
-      return NextResponse.json({
-        error: 'Unsupported file format. Please upload a PDF or TXT file.'
+        error: 'Only PDF files are supported for AI analysis. Please upload a PDF resume.'
       }, { status: 400 });
     }
 
-    if (!resumeText || resumeText.trim().length < 50) {
-      return NextResponse.json({
-        error: 'Could not extract sufficient text from the resume. The file may be image-based or corrupted.'
-      }, { status: 400 });
-    }
+    // Convert to base64
+    const buffer = Buffer.from(await fileData.arrayBuffer());
+    const pdfBase64 = buffer.toString('base64');
 
-    // Analyze with Claude
-    const analysis = await analyzeWithClaude(resumeText, {
+    // Analyze with Claude - send PDF directly
+    const analysis = await analyzeWithClaude(pdfBase64, {
       full_name: candidate.full_name,
       applied_role: candidate.applied_role,
       email: candidate.email,
