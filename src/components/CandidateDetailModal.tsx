@@ -154,6 +154,8 @@ export default function CandidateDetailModal({
   const [creatingDocument, setCreatingDocument] = useState(false);
   const [signingUrl, setSigningUrl] = useState<string | null>(null);
   const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [documentPassword, setDocumentPassword] = useState('');
 
   // Sync probation dates when candidate data changes (after refresh)
   useEffect(() => {
@@ -185,17 +187,31 @@ export default function CandidateDetailModal({
     }
   };
 
-  const handleCreateSigningLink = async () => {
+  const handleCreateSigningLink = () => {
+    // Generate a random 4-digit password
+    const randomPassword = Math.floor(1000 + Math.random() * 9000).toString();
+    setDocumentPassword(randomPassword);
+    setShowPasswordModal(true);
+  };
+
+  const handleConfirmCreateLink = async () => {
+    if (documentPassword.length < 4) {
+      alert('Пароль должен содержать минимум 4 символа');
+      return;
+    }
+
     setCreatingDocument(true);
+    setShowPasswordModal(false);
     try {
       const res = await fetch(`/api/candidates/${candidate.id}/documents`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           document_type: 'Условия трудоустройства',
-          branch: 'C-Space Yunusabad', // Could be dynamic based on candidate assignment
+          branch: 'C-Space Yunusabad',
           salary: '2 000 000 сум',
           work_hours: '9:00 - 18:00',
+          password: documentPassword,
         }),
       });
 
@@ -1148,6 +1164,49 @@ export default function CandidateDetailModal({
         />
       )}
 
+      {/* Password Input Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Создать ссылку для подписания</h3>
+            <p className="text-gray-500 mb-4">
+              Установите пароль доступа для кандидата. Пароль нужно будет сообщить кандидату вместе со ссылкой.
+            </p>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Пароль для доступа</label>
+              <input
+                type="text"
+                value={documentPassword}
+                onChange={(e) => setDocumentPassword(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg font-mono tracking-wider focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                placeholder="1234"
+              />
+              <p className="text-xs text-gray-500 mt-1">Минимум 4 символа. Можете изменить автоматически сгенерированный пароль.</p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowPasswordModal(false);
+                  setDocumentPassword('');
+                }}
+                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+              >
+                Отмена
+              </button>
+              <button
+                onClick={handleConfirmCreateLink}
+                disabled={documentPassword.length < 4}
+                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Создать ссылку
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Signing Link Modal */}
       {showDocumentModal && signingUrl && (
         <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
@@ -1156,14 +1215,14 @@ export default function CandidateDetailModal({
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CheckCircle size={32} className="text-green-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900">Signing Link Created!</h3>
+              <h3 className="text-xl font-semibold text-gray-900">Ссылка создана!</h3>
               <p className="text-gray-500 mt-2">
-                Send this link to {candidate.full_name} to sign the Term Sheet
+                Отправьте ссылку и пароль кандидату {candidate.full_name}
               </p>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <p className="text-sm text-gray-500 mb-2">Signing URL:</p>
+            <div className="bg-gray-50 rounded-lg p-4 mb-4">
+              <p className="text-sm text-gray-500 mb-2">Ссылка:</p>
               <div className="flex items-center gap-2">
                 <input
                   type="text"
@@ -1181,18 +1240,35 @@ export default function CandidateDetailModal({
               </div>
             </div>
 
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+              <p className="text-sm text-yellow-800 mb-2 font-medium">🔐 Пароль для доступа:</p>
+              <div className="flex items-center gap-2">
+                <span className="flex-1 px-3 py-2 bg-white border border-yellow-300 rounded-lg text-lg font-mono tracking-wider">
+                  {documentPassword}
+                </span>
+                <button
+                  onClick={() => copyToClipboard(documentPassword)}
+                  className="p-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
+                  title="Copy password"
+                >
+                  <Copy size={18} />
+                </button>
+              </div>
+              <p className="text-xs text-yellow-700 mt-2">Обязательно сообщите пароль кандидату!</p>
+            </div>
+
             <div className="bg-blue-50 rounded-lg p-4 mb-6">
-              <h4 className="font-medium text-blue-800 mb-2">Send via:</h4>
+              <h4 className="font-medium text-blue-800 mb-2">Отправить через:</h4>
               <div className="flex gap-3">
                 <a
-                  href={`mailto:${candidate.email}?subject=Условия трудоустройства - C-Space&body=Здравствуйте, ${candidate.full_name}!%0A%0AПожалуйста, перейдите по ссылке для подписания документа:%0A${encodeURIComponent(signingUrl)}%0A%0AС уважением,%0AC-Space HR`}
+                  href={`mailto:${candidate.email}?subject=Условия трудоустройства - C-Space&body=Здравствуйте, ${candidate.full_name}!%0A%0AПожалуйста, перейдите по ссылке для подписания документа:%0A${encodeURIComponent(signingUrl)}%0A%0AПароль для доступа: ${documentPassword}%0A%0AС уважением,%0AC-Space HR`}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 >
                   <Mail size={16} />
                   Email
                 </a>
                 <a
-                  href={`https://t.me/share/url?url=${encodeURIComponent(signingUrl)}&text=Пожалуйста, подпишите документ "Условия трудоустройства"`}
+                  href={`https://t.me/share/url?url=${encodeURIComponent(signingUrl)}&text=Пожалуйста, подпишите документ "Условия трудоустройства"%0AПароль: ${documentPassword}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600"
@@ -1207,10 +1283,11 @@ export default function CandidateDetailModal({
               onClick={() => {
                 setShowDocumentModal(false);
                 setSigningUrl(null);
+                setDocumentPassword('');
               }}
               className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
             >
-              Close
+              Закрыть
             </button>
           </div>
         </div>

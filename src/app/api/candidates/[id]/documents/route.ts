@@ -52,7 +52,13 @@ export async function POST(
       work_hours = '9:00 - 18:00',
       start_date,
       end_date,
+      password,
     } = body;
+
+    // Password is required
+    if (!password || password.length < 4) {
+      return NextResponse.json({ error: 'Password must be at least 4 characters' }, { status: 400 });
+    }
 
     // Get candidate info
     const { data: candidate, error: candidateError } = await supabaseAdmin!
@@ -80,6 +86,7 @@ export async function POST(
         start_date: start_date || candidate.probation_start_date,
         end_date: end_date || candidate.probation_end_date,
         signing_token: signingToken,
+        access_password: password,
         status: 'pending',
       })
       .select()

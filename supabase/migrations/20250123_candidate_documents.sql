@@ -17,10 +17,8 @@ CREATE TABLE IF NOT EXISTS candidate_documents (
   signing_token VARCHAR(64) UNIQUE NOT NULL,
   status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'sent', 'viewed', 'signed', 'expired')),
 
-  -- OTP verification
-  otp_code VARCHAR(6),
-  otp_expires_at TIMESTAMPTZ,
-  otp_verified_at TIMESTAMPTZ,
+  -- Access control (password-based)
+  access_password VARCHAR(100) NOT NULL,
 
   -- Signature data
   signature_type VARCHAR(20) CHECK (signature_type IN ('draw', 'type')),
@@ -99,5 +97,5 @@ CREATE POLICY "Authenticated users can update candidate_documents"
 -- Comments
 COMMENT ON TABLE candidate_documents IS 'Stores documents (Term Sheets) for candidates to sign electronically';
 COMMENT ON COLUMN candidate_documents.signing_token IS 'Unique token for the signing URL';
-COMMENT ON COLUMN candidate_documents.otp_code IS 'One-time password for email verification';
+COMMENT ON COLUMN candidate_documents.access_password IS 'Password provided by HR for document access';
 COMMENT ON COLUMN candidate_documents.signature_data IS 'Base64 PNG for drawn signatures, JSON for typed signatures';
