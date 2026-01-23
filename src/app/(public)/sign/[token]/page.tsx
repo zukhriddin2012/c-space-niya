@@ -2,26 +2,77 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
-import { FileText, Lock, CheckCircle, ChevronRight, Trash2 } from 'lucide-react';
+import { FileText, Lock, CheckCircle, ChevronRight, Trash2, Check, X } from 'lucide-react';
 
 interface DocumentData {
   id: string;
   candidate_id: string;
-  candidate_name: string;
-  candidate_email: string;
   document_type: string;
+
+  // Candidate info
+  candidate_name: string;
   position: string;
-  branch: string;
+  branch_name: string;
+  branch_address: string;
+  reporting_to: string;
+
+  // Selection results
+  screening_passed: boolean;
+  interview1_passed: boolean;
+  interview2_passed: boolean;
+
+  // Employment terms
+  contract_type: string;
+  contract_duration: string;
   start_date: string;
-  end_date: string;
   salary: string;
-  work_hours: string;
-  created_at: string;
+  salary_review: string;
+
+  // Probation metrics
+  probation_metrics: { metric: string; expected_result: string }[];
+
+  // Final interview
+  final_interview_date: string;
+  final_interview_time: string;
+  final_interview_interviewer: string;
+  final_interview_purpose: string;
+
+  // Onboarding
+  onboarding_weeks: {
+    week_number: number;
+    title: string;
+    start_date: string;
+    end_date: string;
+    items: string[];
+  }[];
+
+  // Contacts
+  contacts: { name: string; position: string; responsibility: string }[];
+
+  // Escalation
+  escalation_contact: string;
+  escalation_contact_position: string;
+
+  // Representative
+  representative_name: string;
+  representative_position: string;
+
+  // Signing
   signed_at: string | null;
   signature_data: string | null;
+  created_at: string;
 }
 
 type Step = 'password' | 'document' | 'signature' | 'success';
+
+function formatDate(dateString: string): string {
+  if (!dateString) return 'Не указано';
+  return new Date(dateString).toLocaleDateString('ru-RU', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+}
 
 export default function DocumentSigningPage() {
   const params = useParams();
@@ -120,11 +171,9 @@ export default function DocumentSigningPage() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set canvas size
     canvas.width = canvas.offsetWidth;
     canvas.height = 200;
 
-    // Set drawing style
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 2;
     ctx.lineCap = 'round';
@@ -282,6 +331,277 @@ export default function DocumentSigningPage() {
     </div>
   );
 
+  // Term Sheet Component
+  const TermSheetDocument = () => (
+    <div className="bg-white rounded-xl shadow-lg max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6 rounded-t-xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-purple-200 text-sm mb-1">Условия трудоустройства</p>
+            <h1 className="text-2xl font-bold">УСЛОВИЯ ТРУДОУСТРОЙСТВА</h1>
+          </div>
+          <div className="text-right">
+            <div className="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center">
+              <span className="text-2xl font-bold">C</span>
+            </div>
+            <p className="text-xs mt-1 text-purple-200">SPACE COWORKING</p>
+          </div>
+        </div>
+        <div className="mt-4">
+          <p className="text-lg">Должность: <span className="font-semibold">{document?.position}</span></p>
+          <p className="text-purple-200">Филиал {document?.branch_name}</p>
+        </div>
+      </div>
+
+      <div className="p-6 space-y-8">
+        {/* Section 1: Candidate Info */}
+        <section>
+          <h2 className="text-lg font-bold text-purple-700 mb-4 flex items-center gap-2">
+            <span className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center text-sm">1</span>
+            Информация о кандидате
+          </h2>
+          <div className="bg-gray-50 rounded-lg p-4">
+            <table className="w-full">
+              <tbody className="divide-y divide-gray-200">
+                <tr>
+                  <td className="py-2 text-gray-600 font-medium w-1/3">ФИО</td>
+                  <td className="py-2">{document?.candidate_name}</td>
+                </tr>
+                <tr>
+                  <td className="py-2 text-gray-600 font-medium">Должность</td>
+                  <td className="py-2">{document?.position}</td>
+                </tr>
+                <tr>
+                  <td className="py-2 text-gray-600 font-medium">Филиал</td>
+                  <td className="py-2">{document?.branch_name}</td>
+                </tr>
+                <tr>
+                  <td className="py-2 text-gray-600 font-medium">Подчинение</td>
+                  <td className="py-2">{document?.reporting_to}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* Section 2: Selection Results */}
+        <section>
+          <h2 className="text-lg font-bold text-purple-700 mb-4 flex items-center gap-2">
+            <span className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center text-sm">2</span>
+            Результаты отбора
+          </h2>
+          <div className="bg-gray-50 rounded-lg p-4">
+            <table className="w-full">
+              <thead>
+                <tr className="text-purple-700">
+                  <th className="text-left py-2 font-medium">Этап оценки</th>
+                  <th className="text-left py-2 font-medium">Результат</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                <tr>
+                  <td className="py-2">Скрининг</td>
+                  <td className="py-2">
+                    {document?.screening_passed ? (
+                      <span className="text-green-600 flex items-center gap-1"><Check size={16} /> ПРОЙДЕН</span>
+                    ) : (
+                      <span className="text-red-600 flex items-center gap-1"><X size={16} /> НЕ ПРОЙДЕН</span>
+                    )}
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-2">Интервью 1</td>
+                  <td className="py-2">
+                    {document?.interview1_passed ? (
+                      <span className="text-green-600 flex items-center gap-1"><Check size={16} /> ПРОЙДЕН</span>
+                    ) : (
+                      <span className="text-red-600 flex items-center gap-1"><X size={16} /> НЕ ПРОЙДЕН</span>
+                    )}
+                  </td>
+                </tr>
+                {document?.interview2_passed && (
+                  <tr>
+                    <td className="py-2">Интервью 2</td>
+                    <td className="py-2">
+                      <span className="text-green-600 flex items-center gap-1"><Check size={16} /> ПРОЙДЕН</span>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* Section 3: Employment Terms */}
+        <section>
+          <h2 className="text-lg font-bold text-purple-700 mb-4 flex items-center gap-2">
+            <span className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center text-sm">3</span>
+            Условия трудоустройства
+          </h2>
+          <p className="text-gray-600 mb-3 font-medium">Полная занятость (при успешном прохождении)</p>
+          <div className="bg-gray-50 rounded-lg p-4">
+            <table className="w-full">
+              <tbody className="divide-y divide-gray-200">
+                <tr>
+                  <td className="py-2 text-gray-600 font-medium w-1/3">Тип договора</td>
+                  <td className="py-2">{document?.contract_type}</td>
+                </tr>
+                <tr>
+                  <td className="py-2 text-gray-600 font-medium">Дата вступления в силу</td>
+                  <td className="py-2">{formatDate(document?.start_date || '')}</td>
+                </tr>
+                <tr>
+                  <td className="py-2 text-gray-600 font-medium">Ежемесячная зарплата</td>
+                  <td className="py-2 font-semibold text-purple-700">{document?.salary} сум (на руки)</td>
+                </tr>
+                <tr>
+                  <td className="py-2 text-gray-600 font-medium">Пересмотр зарплаты</td>
+                  <td className="py-2">{document?.salary_review}</td>
+                </tr>
+                <tr>
+                  <td className="py-2 text-gray-600 font-medium">Назначение филиала</td>
+                  <td className="py-2">Будет подтверждено на финальном интервью</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* Section 4: Probation Metrics */}
+        {document?.probation_metrics && document.probation_metrics.length > 0 && (
+          <section>
+            <h2 className="text-lg font-bold text-purple-700 mb-4 flex items-center gap-2">
+              <span className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center text-sm">4</span>
+              Критерии оценки испытательного срока
+            </h2>
+            <p className="text-gray-600 mb-3">
+              Следующие метрики будут отслеживаться в течение испытательного срока для принятия решения о найме:
+            </p>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-purple-700">
+                    <th className="text-left py-2 font-medium">Метрика</th>
+                    <th className="text-left py-2 font-medium">Ожидаемый результат</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {document.probation_metrics.map((metric, idx) => (
+                    <tr key={idx}>
+                      <td className="py-2">{metric.metric}</td>
+                      <td className="py-2">{metric.expected_result}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+
+        {/* Section 5: Final Interview */}
+        {document?.final_interview_date && (
+          <section>
+            <h2 className="text-lg font-bold text-purple-700 mb-4 flex items-center gap-2">
+              <span className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center text-sm">5</span>
+              Финальное интервью и утверждение
+            </h2>
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+              <h3 className="font-bold text-purple-800 mb-2">ДЕТАЛИ ФИНАЛЬНОГО ИНТЕРВЬЮ</h3>
+              <p><strong>Дата:</strong> {formatDate(document.final_interview_date)}</p>
+              <p><strong>Время:</strong> {document.final_interview_time}</p>
+              <p><strong>Интервьюер:</strong> {document.final_interview_interviewer}</p>
+              <p><strong>Цель:</strong> {document.final_interview_purpose}</p>
+            </div>
+            <p className="text-gray-600 text-sm">
+              Интервьюер оценит результаты работы кандидата в течение испытательного срока и примет окончательное решение.
+            </p>
+          </section>
+        )}
+
+        {/* Section 7: Contacts */}
+        {document?.contacts && document.contacts.length > 0 && (
+          <section>
+            <h2 className="text-lg font-bold text-purple-700 mb-4 flex items-center gap-2">
+              <span className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center text-sm">7</span>
+              Контактные лица
+            </h2>
+            <p className="text-gray-600 mb-3">По любым вопросам обращайтесь к соответствующим специалистам:</p>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-purple-700">
+                    <th className="text-left py-2 font-medium">Имя</th>
+                    <th className="text-left py-2 font-medium">Должность</th>
+                    <th className="text-left py-2 font-medium">Зона ответственности</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {document.contacts.map((contact, idx) => (
+                    <tr key={idx}>
+                      <td className="py-2">{contact.name}</td>
+                      <td className="py-2 text-purple-600 italic">{contact.position}</td>
+                      <td className="py-2">{contact.responsibility}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {document.escalation_contact && (
+              <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <h4 className="font-bold text-yellow-800">ЭСКАЛАЦИЯ ВОПРОСОВ</h4>
+                <p className="text-yellow-700">
+                  <strong>{document.escalation_contact} ({document.escalation_contact_position})</strong> - обращайтесь по любому вопросу, который не был решён в течение более 3 дней
+                </p>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* Section 8: Signatures */}
+        <section>
+          <h2 className="text-lg font-bold text-purple-700 mb-4 flex items-center gap-2">
+            <span className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center text-sm">8</span>
+            Подтверждение и подписи
+          </h2>
+          <p className="text-gray-600 mb-4">
+            Подписывая ниже, обе стороны подтверждают и соглашаются с условиями, изложенными в данном документе.
+          </p>
+          <div className="grid grid-cols-2 gap-6">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="font-bold text-purple-700 mb-3">КАНДИДАТ</h4>
+              <p className="text-sm text-gray-600">ФИО: {document?.candidate_name}</p>
+              <p className="text-sm text-gray-600 mt-2">Подпись: _______________________</p>
+              <p className="text-sm text-gray-600 mt-2">Дата: _______________________</p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="font-bold text-purple-700 mb-3">ПРЕДСТАВИТЕЛЬ C-SPACE</h4>
+              <p className="text-sm text-gray-600">ФИО: {document?.representative_name}</p>
+              <p className="text-sm text-gray-600 mt-2">Подпись: _______________________</p>
+              <p className="text-sm text-gray-600 mt-2">Дата: _______________________</p>
+            </div>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <div className="text-center pt-6 border-t border-gray-200">
+          <div className="inline-block">
+            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-2">
+              <span className="text-xl font-bold text-purple-600">C</span>
+            </div>
+            <p className="text-purple-600 font-semibold">SPACE</p>
+            <p className="text-sm text-gray-500 italic">Right People. Right Place.</p>
+          </div>
+          {document?.branch_address && (
+            <p className="text-xs text-gray-400 mt-2">{document.branch_name} | {document.branch_address}</p>
+          )}
+          <p className="text-xs text-gray-400 mt-2">Конфиденциально | C-Space Coworking</p>
+        </div>
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -380,8 +700,8 @@ export default function DocumentSigningPage() {
   // Step 2: Document Review
   if (step === 'document') {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full p-8">
+      <div className="min-h-screen bg-gray-100 py-8 px-4">
+        <div className="max-w-4xl mx-auto">
           <div className="text-center mb-6">
             <h1 className="text-2xl font-bold text-gray-900">Ознакомьтесь с документом</h1>
             <p className="text-gray-500 mt-2">Внимательно прочитайте условия перед подписанием</p>
@@ -389,60 +709,9 @@ export default function DocumentSigningPage() {
 
           <ProgressSteps />
 
-          <div className="border border-gray-200 rounded-xl p-6 mb-6 max-h-[400px] overflow-y-auto bg-gray-50">
-            <h2 className="text-xl font-bold text-center mb-4">УСЛОВИЯ ТРУДОУСТРОЙСТВА</h2>
-            <p className="text-center text-gray-600 mb-6">C-Space Coworking</p>
+          <TermSheetDocument />
 
-            <div className="space-y-4 text-sm text-gray-700">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-gray-500">ФИО кандидата:</p>
-                  <p className="font-medium">{document?.candidate_name}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Должность:</p>
-                  <p className="font-medium">{document?.position || 'Не указано'}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Филиал:</p>
-                  <p className="font-medium">{document?.branch || 'Не указано'}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Дата начала:</p>
-                  <p className="font-medium">{document?.start_date || 'Не указано'}</p>
-                </div>
-              </div>
-
-              <hr className="my-4" />
-
-              <div>
-                <h3 className="font-semibold mb-2">1. Испытательный срок</h3>
-                <p>Испытательный срок составляет 3 месяца с момента начала работы. В течение этого периода обе стороны могут расторгнуть соглашение с уведомлением за 3 рабочих дня.</p>
-              </div>
-
-              <div>
-                <h3 className="font-semibold mb-2">2. Рабочее время</h3>
-                <p>{document?.work_hours || 'Рабочее время: с 9:00 до 18:00, понедельник-пятница. Обеденный перерыв: 1 час.'}</p>
-              </div>
-
-              <div>
-                <h3 className="font-semibold mb-2">3. Оплата труда</h3>
-                <p>Заработная плата выплачивается два раза в месяц: аванс 15-го числа и основная часть в последний рабочий день месяца.</p>
-              </div>
-
-              <div>
-                <h3 className="font-semibold mb-2">4. Конфиденциальность</h3>
-                <p>Сотрудник обязуется не разглашать конфиденциальную информацию компании третьим лицам как во время работы, так и после увольнения.</p>
-              </div>
-
-              <div>
-                <h3 className="font-semibold mb-2">5. Обязанности</h3>
-                <p>Сотрудник обязуется добросовестно выполнять свои должностные обязанности, соблюдать внутренний распорядок и следовать корпоративной культуре компании.</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex gap-4">
+          <div className="flex gap-4 mt-6 max-w-4xl mx-auto">
             <button
               onClick={() => setStep('password')}
               className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"
@@ -484,7 +753,7 @@ export default function DocumentSigningPage() {
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              ✍️ Нарисовать
+              Нарисовать
             </button>
             <button
               onClick={() => setSignatureType('type')}
@@ -494,7 +763,7 @@ export default function DocumentSigningPage() {
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              ⌨️ Напечатать
+              Напечатать
             </button>
           </div>
 

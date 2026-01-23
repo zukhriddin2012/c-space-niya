@@ -32,7 +32,7 @@ export async function GET(
   }
 }
 
-// POST - Create a new document (Term Sheet) for a candidate
+// POST - Create a new Term Sheet document for a candidate
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -46,12 +46,51 @@ export async function POST(
   try {
     const body = await request.json();
     const {
+      // Basic info
       document_type = 'Условия трудоустройства',
-      branch,
-      salary,
-      work_hours = '9:00 - 18:00',
+      candidate_name,
+      position,
+      branch_id,
+      branch_name,
+      branch_address,
+      reporting_to,
+
+      // Selection results
+      screening_passed = true,
+      interview1_passed = true,
+      interview2_passed = false,
+
+      // Employment terms
+      contract_type,
+      contract_duration,
       start_date,
-      end_date,
+      salary,
+      salary_review,
+
+      // Probation metrics
+      probation_metrics = [],
+
+      // Final interview
+      final_interview_date,
+      final_interview_time,
+      final_interview_interviewer,
+      final_interview_purpose,
+
+      // Onboarding
+      onboarding_weeks = [],
+
+      // Contacts
+      contacts = [],
+
+      // Escalation
+      escalation_contact,
+      escalation_contact_position,
+
+      // Representative
+      representative_name,
+      representative_position,
+
+      // Password
       password,
     } = body;
 
@@ -60,15 +99,23 @@ export async function POST(
       return NextResponse.json({ error: 'Password must be at least 4 characters' }, { status: 400 });
     }
 
-    // Get candidate info
-    const { data: candidate, error: candidateError } = await supabaseAdmin!
-      .from('candidates')
-      .select('id, full_name, email, applied_role, probation_start_date, probation_end_date')
-      .eq('id', id)
-      .single();
+    // Get candidate info if candidate_name not provided
+    let finalCandidateName = candidate_name;
+    let finalPosition = position;
 
-    if (candidateError || !candidate) {
-      return NextResponse.json({ error: 'Candidate not found' }, { status: 404 });
+    if (!finalCandidateName || !finalPosition) {
+      const { data: candidate, error: candidateError } = await supabaseAdmin!
+        .from('candidates')
+        .select('full_name, applied_role')
+        .eq('id', id)
+        .single();
+
+      if (candidateError || !candidate) {
+        return NextResponse.json({ error: 'Candidate not found' }, { status: 404 });
+      }
+
+      finalCandidateName = finalCandidateName || candidate.full_name;
+      finalPosition = finalPosition || candidate.applied_role;
     }
 
     // Generate unique signing token
@@ -80,11 +127,39 @@ export async function POST(
       .insert({
         candidate_id: id,
         document_type,
-        branch: branch || 'C-Space Yunusabad',
-        salary: salary || '2 000 000 сум',
-        work_hours,
-        start_date: start_date || candidate.probation_start_date,
-        end_date: end_date || candidate.probation_end_date,
+        candidate_name: finalCandidateName,
+        position: finalPosition,
+        branch_id: branch_id || null,
+        branch_name,
+        branch_address,
+        reporting_to,
+
+        screening_passed,
+        interview1_passed,
+        interview2_passed,
+
+        contract_type,
+        contract_duration,
+        start_date: start_date || null,
+        salary,
+        salary_review,
+
+        probation_metrics,
+
+        final_interview_date: final_interview_date || null,
+        final_interview_time,
+        final_interview_interviewer,
+        final_interview_purpose,
+
+        onboarding_weeks,
+        contacts,
+
+        escalation_contact,
+        escalation_contact_position,
+
+        representative_name,
+        representative_position,
+
         signing_token: signingToken,
         access_password: password,
         status: 'pending',
@@ -94,7 +169,7 @@ export async function POST(
 
     if (docError) {
       console.error('Error creating document:', docError);
-      return NextResponse.json({ error: 'Failed to create document' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to create document: ' + docError.message }, { status: 500 });
     }
 
     // Generate the signing URL
@@ -108,6 +183,7 @@ export async function POST(
         signing_url: signingUrl,
       },
       signing_url: signingUrl,
+      password: password,
     });
   } catch (error) {
     console.error('Error creating document:', error);

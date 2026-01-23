@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import type { Candidate, CandidateStage, ChecklistItem, CandidateComment, CandidateEvent } from '@/lib/db';
 import AddEmployeeModal from './AddEmployeeModal';
+import TermSheetFormModal, { TermSheetData } from './TermSheetFormModal';
 
 const STAGES: { id: CandidateStage; label: string; color: string; bgColor: string }[] = [
   { id: 'screening', label: 'Screening', color: 'text-blue-700', bgColor: 'bg-blue-50 border-blue-200' },
@@ -156,6 +157,7 @@ export default function CandidateDetailModal({
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [documentPassword, setDocumentPassword] = useState('');
+  const [showTermSheetForm, setShowTermSheetForm] = useState(false);
 
   // Sync probation dates when candidate data changes (after refresh)
   useEffect(() => {
@@ -165,12 +167,10 @@ export default function CandidateDetailModal({
     });
   }, [candidate.probation_start_date, candidate.probation_end_date]);
 
-  // Fetch documents when in probation stage
+  // Fetch documents for all candidates (Documents section is always visible)
   useEffect(() => {
-    if (candidate.stage === 'probation') {
-      fetchDocuments();
-    }
-  }, [candidate.id, candidate.stage]);
+    fetchDocuments();
+  }, [candidate.id]);
 
   const fetchDocuments = async () => {
     setLoadingDocuments(true);
@@ -187,46 +187,45 @@ export default function CandidateDetailModal({
     }
   };
 
-  const handleCreateSigningLink = () => {
-    // Generate a random 4-digit password
-    const randomPassword = Math.floor(1000 + Math.random() * 9000).toString();
-    setDocumentPassword(randomPassword);
-    setShowPasswordModal(true);
+  const handleCreateSigningLink = async () => {
+    // Fetch branches first
+    try {
+      const res = await fetch('/api/branches');
+      if (res.ok) {
+        const data = await res.json();
+        setBranches(data.branches || []);
+      }
+    } catch (error) {
+      console.error('Error fetching branches:', error);
+    }
+    // Show the Term Sheet form modal
+    setShowTermSheetForm(true);
   };
 
-  const handleConfirmCreateLink = async () => {
-    if (documentPassword.length < 4) {
-      alert('Пароль должен содержать минимум 4 символа');
-      return;
-    }
-
+  const handleSubmitTermSheet = async (data: TermSheetData) => {
     setCreatingDocument(true);
-    setShowPasswordModal(false);
+    setShowTermSheetForm(false);
+    setDocumentPassword(data.password);
+
     try {
       const res = await fetch(`/api/candidates/${candidate.id}/documents`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          document_type: 'Условия трудоустройства',
-          branch: 'C-Space Yunusabad',
-          salary: '2 000 000 сум',
-          work_hours: '9:00 - 18:00',
-          password: documentPassword,
-        }),
+        body: JSON.stringify(data),
       });
 
       if (res.ok) {
-        const data = await res.json();
-        setSigningUrl(data.signing_url);
+        const result = await res.json();
+        setSigningUrl(result.signing_url);
         setShowDocumentModal(true);
         fetchDocuments();
       } else {
-        const data = await res.json();
-        alert(data.error || 'Failed to create signing link');
+        const result = await res.json();
+        alert(result.error || 'Failed to create Term Sheet');
       }
     } catch (error) {
       console.error('Error creating document:', error);
-      alert('Failed to create signing link');
+      alert('Failed to create Term Sheet');
     } finally {
       setCreatingDocument(false);
     }
@@ -1327,6 +1326,23 @@ export default function CandidateDetailModal({
             </button>
           </div>
         </div>
+      )}
+
+      {/* Term Sheet Form Modal */}
+      {showTermSheetForm && (
+        <TermSheetFormModal
+          candidate={{
+            id: candidate.id,
+            full_name: candidate.full_name,
+            email: candidate.email || '',
+            applied_role: candidate.applied_role,
+            probation_start_date: candidate.probation_start_date,
+            probation_end_date: candidate.probation_end_date,
+          }}
+          branches={branches}
+          onClose={() => setShowTermSheetForm(false)}
+          onSubmit={handleSubmitTermSheet}
+        />
       )}
     </div>
   );
