@@ -301,7 +301,7 @@ export default function ProbationTermSheetFormModal({ candidate, branches, onClo
                 type="text"
                 value={formData.candidate_name}
                 onChange={(e) => setFormData(prev => ({ ...prev, candidate_name: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -311,7 +311,7 @@ export default function ProbationTermSheetFormModal({ candidate, branches, onClo
                 type="text"
                 value={formData.position}
                 onChange={(e) => setFormData(prev => ({ ...prev, position: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -320,7 +320,7 @@ export default function ProbationTermSheetFormModal({ candidate, branches, onClo
               <select
                 value={formData.branch_id}
                 onChange={(e) => handleBranchChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Выберите филиал</option>
                 {branches.map(branch => (
@@ -335,7 +335,7 @@ export default function ProbationTermSheetFormModal({ candidate, branches, onClo
                 type="text"
                 value={formData.branch_address}
                 onChange={(e) => setFormData(prev => ({ ...prev, branch_address: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 placeholder="ул. Ахмад Дониш, 20А, Ташкент"
               />
             </div>
@@ -346,7 +346,7 @@ export default function ProbationTermSheetFormModal({ candidate, branches, onClo
                 type="text"
                 value={formData.reporting_to}
                 onChange={(e) => setFormData(prev => ({ ...prev, reporting_to: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
@@ -363,7 +363,7 @@ export default function ProbationTermSheetFormModal({ candidate, branches, onClo
                   type="checkbox"
                   checked={formData.screening_passed}
                   onChange={(e) => setFormData(prev => ({ ...prev, screening_passed: e.target.checked }))}
-                  className="w-5 h-5 text-purple-600 rounded"
+                  className="w-5 h-5 text-blue-600 rounded"
                 />
                 <div>
                   <span className="font-medium">Скрининг</span>
@@ -378,7 +378,7 @@ export default function ProbationTermSheetFormModal({ candidate, branches, onClo
                   type="checkbox"
                   checked={formData.interview1_passed}
                   onChange={(e) => setFormData(prev => ({ ...prev, interview1_passed: e.target.checked }))}
-                  className="w-5 h-5 text-purple-600 rounded"
+                  className="w-5 h-5 text-blue-600 rounded"
                 />
                 <div>
                   <span className="font-medium">Интервью 1</span>
@@ -402,7 +402,7 @@ export default function ProbationTermSheetFormModal({ candidate, branches, onClo
                 <select
                   value={formData.probation_duration}
                   onChange={(e) => setFormData(prev => ({ ...prev, probation_duration: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="1 неделя">1 неделя</option>
                   <option value="2 недели">2 недели</option>
@@ -419,7 +419,7 @@ export default function ProbationTermSheetFormModal({ candidate, branches, onClo
                   type="text"
                   value={formData.working_hours}
                   onChange={(e) => setFormData(prev => ({ ...prev, working_hours: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   placeholder="9:00 - 18:00"
                 />
               </div>
@@ -432,7 +432,7 @@ export default function ProbationTermSheetFormModal({ candidate, branches, onClo
                   type="date"
                   value={formData.probation_start_date}
                   onChange={(e) => setFormData(prev => ({ ...prev, probation_start_date: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -442,7 +442,7 @@ export default function ProbationTermSheetFormModal({ candidate, branches, onClo
                   type="date"
                   value={formData.probation_end_date}
                   onChange={(e) => setFormData(prev => ({ ...prev, probation_end_date: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
@@ -453,7 +453,7 @@ export default function ProbationTermSheetFormModal({ candidate, branches, onClo
                 type="text"
                 value={formData.probation_salary}
                 onChange={(e) => setFormData(prev => ({ ...prev, probation_salary: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 placeholder="2 000 000 сум (на руки)"
               />
             </div>
@@ -467,7 +467,7 @@ export default function ProbationTermSheetFormModal({ candidate, branches, onClo
               <h3 className="text-lg font-semibold text-gray-900">4. Критерии оценки</h3>
               <button
                 onClick={addMetric}
-                className="flex items-center gap-1 text-sm text-purple-600 hover:text-purple-700"
+                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
               >
                 <Plus size={16} /> Добавить
               </button>
@@ -513,8 +513,8 @@ export default function ProbationTermSheetFormModal({ candidate, branches, onClo
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900">5. Финальное интервью</h3>
 
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-              <h4 className="font-medium text-purple-800 mb-3">ДЕТАЛИ ФИНАЛЬНОГО ИНТЕРВЬЮ</h4>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="font-medium text-blue-800 mb-3">ДЕТАЛИ ФИНАЛЬНОГО ИНТЕРВЬЮ</h4>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -523,7 +523,7 @@ export default function ProbationTermSheetFormModal({ candidate, branches, onClo
                     type="date"
                     value={formData.final_interview_date}
                     onChange={(e) => setFormData(prev => ({ ...prev, final_interview_date: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
@@ -533,7 +533,7 @@ export default function ProbationTermSheetFormModal({ candidate, branches, onClo
                     type="time"
                     value={formData.final_interview_time}
                     onChange={(e) => setFormData(prev => ({ ...prev, final_interview_time: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -544,7 +544,7 @@ export default function ProbationTermSheetFormModal({ candidate, branches, onClo
                   type="text"
                   value={formData.final_interview_interviewer}
                   onChange={(e) => setFormData(prev => ({ ...prev, final_interview_interviewer: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -553,7 +553,7 @@ export default function ProbationTermSheetFormModal({ candidate, branches, onClo
                 <textarea
                   value={formData.final_interview_purpose}
                   onChange={(e) => setFormData(prev => ({ ...prev, final_interview_purpose: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   rows={2}
                 />
               </div>
@@ -576,7 +576,7 @@ export default function ProbationTermSheetFormModal({ candidate, branches, onClo
                     </div>
                     <button
                       onClick={() => addOnboardingItem(weekIndex)}
-                      className="flex items-center gap-1 text-sm text-purple-600 hover:text-purple-700"
+                      className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
                     >
                       <Plus size={16} /> Добавить
                     </button>
@@ -614,7 +614,7 @@ export default function ProbationTermSheetFormModal({ candidate, branches, onClo
               <h3 className="text-lg font-semibold text-gray-900">7. Контактные лица</h3>
               <button
                 onClick={addContact}
-                className="flex items-center gap-1 text-sm text-purple-600 hover:text-purple-700"
+                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
               >
                 <Plus size={16} /> Добавить
               </button>
@@ -761,40 +761,52 @@ export default function ProbationTermSheetFormModal({ candidate, branches, onClo
 
   return (
     <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-4 flex justify-between items-center">
-          <div>
-            <h2 className="text-xl font-semibold">Условия испытательного срока</h2>
-            <p className="text-purple-200 text-sm">для {candidate.full_name}</p>
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+              <Briefcase size={20} className="text-blue-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">Условия испытательного срока</h2>
+              <p className="text-sm text-gray-500">для {candidate.full_name}</p>
+            </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-lg">
-            <X size={24} />
+          <button
+            onClick={onClose}
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X size={20} />
           </button>
         </div>
 
         {/* Progress Steps */}
-        <div className="bg-gray-50 px-4 py-3 border-b overflow-x-auto">
-          <div className="flex gap-2 min-w-max">
-            {STEPS.map((step) => {
+        <div className="px-6 py-4 border-b border-gray-100 overflow-x-auto bg-gray-50/50">
+          <div className="flex items-center gap-1 min-w-max">
+            {STEPS.map((step, index) => {
               const Icon = step.icon;
               const isActive = currentStep === step.id;
               const isCompleted = currentStep > step.id;
               return (
-                <button
-                  key={step.id}
-                  onClick={() => setCurrentStep(step.id)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm whitespace-nowrap transition-colors ${
-                    isActive
-                      ? 'bg-purple-600 text-white'
-                      : isCompleted
-                        ? 'bg-purple-100 text-purple-700'
-                        : 'bg-white text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  <Icon size={16} />
-                  <span>{step.title}</span>
-                </button>
+                <div key={step.id} className="flex items-center">
+                  <button
+                    onClick={() => setCurrentStep(step.id)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm whitespace-nowrap transition-all ${
+                      isActive
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : isCompleted
+                          ? 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                          : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
+                    }`}
+                  >
+                    <Icon size={16} />
+                    <span className="font-medium">{step.title}</span>
+                  </button>
+                  {index < STEPS.length - 1 && (
+                    <ChevronRight size={16} className="mx-1 text-gray-300" />
+                  )}
+                </div>
               );
             })}
           </div>
@@ -806,13 +818,13 @@ export default function ProbationTermSheetFormModal({ candidate, branches, onClo
         </div>
 
         {/* Footer */}
-        <div className="border-t p-4 flex justify-between">
+        <div className="border-t border-gray-200 p-4 flex justify-between bg-gray-50">
           <button
             onClick={() => setCurrentStep(prev => prev - 1)}
             disabled={currentStep === 1}
-            className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2.5 text-gray-600 hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200 rounded-lg transition-all disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:shadow-none disabled:hover:border-transparent"
           >
-            <ChevronLeft size={20} />
+            <ChevronLeft size={18} />
             Назад
           </button>
 
@@ -820,18 +832,18 @@ export default function ProbationTermSheetFormModal({ candidate, branches, onClo
             <button
               onClick={() => setCurrentStep(prev => prev + 1)}
               disabled={!canProceed()}
-              className="flex items-center gap-2 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+              className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:hover:bg-blue-600 transition-colors shadow-sm"
             >
               Далее
-              <ChevronRight size={20} />
+              <ChevronRight size={18} />
             </button>
           ) : (
             <button
               onClick={handleSubmit}
               disabled={!canProceed()}
-              className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+              className="flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:hover:bg-green-600 transition-colors shadow-sm"
             >
-              <CheckCircle size={20} />
+              <CheckCircle size={18} />
               Создать документ
             </button>
           )}
