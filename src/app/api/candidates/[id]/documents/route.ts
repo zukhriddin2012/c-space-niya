@@ -224,13 +224,12 @@ export async function DELETE(
       return NextResponse.json({ error: 'Document ID required' }, { status: 400 });
     }
 
-    // Delete the document (only if it belongs to this candidate and is not signed)
+    // Delete the document (only if it belongs to this candidate)
     const { error } = await supabaseAdmin!
       .from('candidate_documents')
       .delete()
       .eq('id', documentId)
-      .eq('candidate_id', id)
-      .is('signed_at', null);
+      .eq('candidate_id', id);
 
     if (error) {
       console.error('Error deleting document:', error);
