@@ -50,18 +50,18 @@ function TelegramCheckinContent() {
           }, 2000);
         }
       } else if (result.error === 'ip_not_matched') {
-        setStatus('gps_needed');
-        setMessage('Joylashuvingizni yuboring.');
-
-        // Tell Telegram to close and prompt for GPS
+        // IP not matched - close immediately and let bot ask for GPS
         if (window.Telegram?.WebApp) {
           window.Telegram.WebApp.sendData(JSON.stringify({
             success: false,
             action: 'need_gps',
           }));
-          setTimeout(() => {
-            window.Telegram?.WebApp?.close();
-          }, 2000);
+          // Close immediately for seamless transition to GPS prompt
+          window.Telegram.WebApp.close();
+        } else {
+          // Fallback if not in Telegram Web App
+          setStatus('gps_needed');
+          setMessage('Joylashuvingizni yuboring.');
         }
       } else if (result.error === 'active_checkin') {
         setStatus('error');
