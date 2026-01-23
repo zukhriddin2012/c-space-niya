@@ -114,3 +114,42 @@ export async function POST(
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
+
+// DELETE - Delete a document
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+
+  if (!isSupabaseAdminConfigured()) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
+  try {
+    const { searchParams } = new URL(request.url);
+    const documentId = searchParams.get('documentId');
+
+    if (!documentId) {
+      return NextResponse.json({ error: 'Document ID required' }, { status: 400 });
+    }
+
+    // Delete the document (only if it belongs to this candidate and is not signed)
+    const { error } = await supabaseAdmin!
+      .from('candidate_documents')
+      .delete()
+      .eq('id', documentId)
+      .eq('candidate_id', id)
+      .is('signed_at', null);
+
+    if (error) {
+      console.error('Error deleting document:', error);
+      return NextResponse.json({ error: 'Failed to delete document' }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+  }
+}
