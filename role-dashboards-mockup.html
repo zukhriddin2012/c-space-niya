@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C-Space HR - Role Dashboards</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .role-section { margin-bottom: 80px; border: 3px solid #7c3aed; border-radius: 12px; overflow: hidden; }
+    .role-header { background: #7c3aed; color: white; padding: 16px 24px; font-size: 20px; font-weight: bold; }
+    .sidebar { width: 220px; background: white; border-right: 1px solid #e5e7eb; }
+    .nav-item { padding: 10px 16px; display: flex; align-items: center; gap: 12px; font-size: 14px; color: #4b5563; }
+    .nav-item.active { background: #f3e8ff; color: #7c3aed; font-weight: 500; }
+    .nav-item:hover { background: #f9fafb; }
+    .stat-card { background: white; border-radius: 12px; padding: 20px; border: 1px solid #e5e7eb; }
+  </style>
+</head>
+<body class="bg-gray-100 p-8">
+  <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">C-Space HR Platform - Role-Based Dashboards</h1>
+
+  <!-- ============================================ -->
+  <!-- 1. GENERAL MANAGER -->
+  <!-- ============================================ -->
+  <div class="role-section">
+    <div class="role-header">1. General Manager (Full Access)</div>
+    <div class="flex" style="height: 600px;">
+      <!-- Sidebar -->
+      <div class="sidebar flex flex-col">
+        <div class="p-4 border-b">
+          <div class="font-semibold text-gray-900">C-Space People</div>
+          <div class="text-xs text-gray-500">People Management</div>
+        </div>
+        <nav class="flex-1 p-2 space-y-1 overflow-y-auto text-sm">
+          <div class="nav-item active">📊 Dashboard</div>
+          <div class="nav-item">👤 My Portal</div>
+          <div class="nav-item">👥 Employees</div>
+          <div class="nav-item">📍 Branches</div>
+          <div class="nav-item">⏰ Attendance</div>
+          <div class="nav-item">💰 Payroll</div>
+          <div class="nav-item">👔 Recruitment ▼</div>
+          <div class="nav-item ml-4 text-xs">📋 Table View</div>
+          <div class="nav-item ml-4 text-xs">📌 Board View</div>
+          <div class="nav-item">📈 Reports</div>
+          <div class="nav-item">🧮 Accounting ▼</div>
+          <div class="nav-item ml-4 text-xs">📝 My Requests</div>
+          <div class="nav-item ml-4 text-xs">📋 All Requests</div>
+          <div class="nav-item ml-4 text-xs">✅ Approvals</div>
+          <div class="nav-item">🏢 Departments</div>
+          <div class="nav-item">📥 Feedback Inbox</div>
+          <div class="nav-item">⚙️ Settings</div>
+        </nav>
+        <div class="p-4 border-t">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-700 font-medium">A</div>
+            <div>
+              <div class="text-sm font-medium">Admin User</div>
+              <div class="text-xs text-gray-500">General Manager</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="flex-1 p-6 overflow-y-auto bg-gray-50">
+        <h2 class="text-2xl font-semibold mb-6">Dashboard Overview</h2>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-4 gap-4 mb-6">
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">Total Employees</div>
+            <div class="text-2xl font-bold text-gray-900">156</div>
+            <div class="text-xs text-green-600">+3 this month</div>
+          </div>
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">Present Today</div>
+            <div class="text-2xl font-bold text-green-600">142</div>
+            <div class="text-xs text-gray-500">91% attendance</div>
+          </div>
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">Pending Approvals</div>
+            <div class="text-2xl font-bold text-amber-600">8</div>
+            <div class="text-xs text-amber-600">Requires attention</div>
+          </div>
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">Active Candidates</div>
+            <div class="text-2xl font-bold text-purple-600">24</div>
+            <div class="text-xs text-gray-500">In pipeline</div>
+          </div>
+        </div>
+
+        <!-- Pending Approvals -->
+        <div class="bg-white rounded-xl p-4 border mb-4">
+          <h3 class="font-semibold mb-3">🔔 Pending Approvals</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between p-2 bg-amber-50 rounded">
+              <span>Termination Request - John Doe</span>
+              <span class="text-amber-600">Awaiting</span>
+            </div>
+            <div class="flex justify-between p-2 bg-amber-50 rounded">
+              <span>Wage Change - Sarah Smith (+15%)</span>
+              <span class="text-amber-600">Awaiting</span>
+            </div>
+            <div class="flex justify-between p-2 bg-blue-50 rounded">
+              <span>Payment Request #PR-0045</span>
+              <span class="text-blue-600">Review</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Branch Overview -->
+        <div class="bg-white rounded-xl p-4 border">
+          <h3 class="font-semibold mb-3">📍 Branch Attendance</h3>
+          <div class="grid grid-cols-3 gap-3 text-sm">
+            <div class="p-3 bg-gray-50 rounded">
+              <div class="font-medium">C-Space Yunusabad</div>
+              <div class="text-green-600">45/48 present</div>
+            </div>
+            <div class="p-3 bg-gray-50 rounded">
+              <div class="font-medium">C-Space Muqimiy</div>
+              <div class="text-green-600">38/40 present</div>
+            </div>
+            <div class="p-3 bg-gray-50 rounded">
+              <div class="font-medium">C-Space Chilanzar</div>
+              <div class="text-amber-600">32/35 present</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- 2. CEO -->
+  <!-- ============================================ -->
+  <div class="role-section">
+    <div class="role-header">2. CEO (Executive View - Read-heavy, Approvals)</div>
+    <div class="flex" style="height: 500px;">
+      <div class="sidebar flex flex-col">
+        <div class="p-4 border-b">
+          <div class="font-semibold text-gray-900">C-Space People</div>
+        </div>
+        <nav class="flex-1 p-2 space-y-1 text-sm">
+          <div class="nav-item active">📊 Dashboard</div>
+          <div class="nav-item">👤 My Portal</div>
+          <div class="nav-item">👥 Employees</div>
+          <div class="nav-item">⏰ Attendance</div>
+          <div class="nav-item">💰 Payroll</div>
+          <div class="nav-item">📈 Reports</div>
+          <div class="nav-item">🧮 Accounting ▼</div>
+          <div class="nav-item ml-4 text-xs">📝 My Requests</div>
+          <div class="nav-item ml-4 text-xs">📋 All Requests</div>
+          <div class="nav-item ml-4 text-xs">✅ Approvals</div>
+          <div class="nav-item">📥 Feedback Inbox</div>
+        </nav>
+        <div class="p-4 border-t text-sm">
+          <div class="font-medium">CEO Name</div>
+          <div class="text-xs text-gray-500">CEO</div>
+        </div>
+      </div>
+
+      <div class="flex-1 p-6 bg-gray-50 overflow-y-auto">
+        <h2 class="text-2xl font-semibold mb-6">Executive Dashboard</h2>
+        <div class="grid grid-cols-3 gap-4 mb-6">
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">Total Employees</div>
+            <div class="text-2xl font-bold">156</div>
+          </div>
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">Monthly Payroll</div>
+            <div class="text-2xl font-bold">₴ 2.4B</div>
+          </div>
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">Pending Approvals</div>
+            <div class="text-2xl font-bold text-amber-600">3</div>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl p-4 border">
+          <h3 class="font-semibold mb-3">📊 Key Metrics</h3>
+          <div class="text-sm text-gray-600">
+            <p>• Average attendance rate: 94%</p>
+            <p>• Employee turnover: 5% (YTD)</p>
+            <p>• Open positions: 8</p>
+            <p>• Anonymous feedback pending: 5</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- 3. HR MANAGER -->
+  <!-- ============================================ -->
+  <div class="role-section">
+    <div class="role-header">3. HR Manager (Full HR Operations)</div>
+    <div class="flex" style="height: 550px;">
+      <div class="sidebar flex flex-col">
+        <div class="p-4 border-b">
+          <div class="font-semibold text-gray-900">C-Space People</div>
+        </div>
+        <nav class="flex-1 p-2 space-y-1 text-sm">
+          <div class="nav-item active">📊 Dashboard</div>
+          <div class="nav-item">👤 My Portal</div>
+          <div class="nav-item">👥 Employees</div>
+          <div class="nav-item">📍 Branches</div>
+          <div class="nav-item">⏰ Attendance</div>
+          <div class="nav-item">💰 Payroll</div>
+          <div class="nav-item">👔 Recruitment ▼</div>
+          <div class="nav-item ml-4 text-xs">📋 Table View</div>
+          <div class="nav-item ml-4 text-xs">📌 Board View</div>
+          <div class="nav-item">🧮 Accounting</div>
+          <div class="nav-item">🏢 Departments</div>
+          <div class="nav-item">💬 Send Feedback</div>
+        </nav>
+        <div class="p-4 border-t text-sm">
+          <div class="font-medium">HR Manager</div>
+          <div class="text-xs text-gray-500">HR</div>
+        </div>
+      </div>
+
+      <div class="flex-1 p-6 bg-gray-50 overflow-y-auto">
+        <h2 class="text-2xl font-semibold mb-6">HR Dashboard</h2>
+        <div class="grid grid-cols-4 gap-4 mb-6">
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">Total Employees</div>
+            <div class="text-2xl font-bold">156</div>
+          </div>
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">On Probation</div>
+            <div class="text-2xl font-bold text-amber-600">12</div>
+          </div>
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">Active Candidates</div>
+            <div class="text-2xl font-bold text-purple-600">24</div>
+          </div>
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">Today Absent</div>
+            <div class="text-2xl font-bold text-red-600">8</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="bg-white rounded-xl p-4 border">
+            <h3 class="font-semibold mb-3">👔 Recruitment Pipeline</h3>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between"><span>New Applications</span><span class="font-medium">15</span></div>
+              <div class="flex justify-between"><span>Screening</span><span class="font-medium">8</span></div>
+              <div class="flex justify-between"><span>Interview</span><span class="font-medium">5</span></div>
+              <div class="flex justify-between"><span>Probation</span><span class="font-medium">12</span></div>
+            </div>
+          </div>
+          <div class="bg-white rounded-xl p-4 border">
+            <h3 class="font-semibold mb-3">📋 Today's Tasks</h3>
+            <div class="space-y-2 text-sm">
+              <div class="p-2 bg-purple-50 rounded">Interview: Frontend Dev - 2:00 PM</div>
+              <div class="p-2 bg-yellow-50 rounded">Probation review: 3 employees</div>
+              <div class="p-2 bg-blue-50 rounded">Term sheet signing: 2 pending</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- 4. RECRUITER -->
+  <!-- ============================================ -->
+  <div class="role-section">
+    <div class="role-header">4. Recruiter (Recruitment Focused)</div>
+    <div class="flex" style="height: 500px;">
+      <div class="sidebar flex flex-col">
+        <div class="p-4 border-b">
+          <div class="font-semibold text-gray-900">C-Space People</div>
+        </div>
+        <nav class="flex-1 p-2 space-y-1 text-sm">
+          <div class="nav-item active">📊 Dashboard</div>
+          <div class="nav-item">👤 My Portal</div>
+          <div class="nav-item">👔 Recruitment ▼</div>
+          <div class="nav-item ml-4 text-xs">📋 Table View</div>
+          <div class="nav-item ml-4 text-xs">📌 Board View</div>
+          <div class="nav-item">🧮 Accounting</div>
+          <div class="nav-item">💬 Send Feedback</div>
+        </nav>
+        <div class="p-4 border-t text-sm">
+          <div class="font-medium">Recruiter Name</div>
+          <div class="text-xs text-gray-500">Recruiter</div>
+        </div>
+      </div>
+
+      <div class="flex-1 p-6 bg-gray-50">
+        <h2 class="text-2xl font-semibold mb-6">Recruitment Dashboard</h2>
+        <div class="grid grid-cols-4 gap-4 mb-6">
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">Total Candidates</div>
+            <div class="text-2xl font-bold">45</div>
+          </div>
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">Interviews Today</div>
+            <div class="text-2xl font-bold text-blue-600">3</div>
+          </div>
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">Pending Review</div>
+            <div class="text-2xl font-bold text-amber-600">8</div>
+          </div>
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">Hired This Month</div>
+            <div class="text-2xl font-bold text-green-600">5</div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-4 border">
+          <h3 class="font-semibold mb-3">📅 Today's Schedule</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between p-2 bg-blue-50 rounded">
+              <span>10:00 - Interview: John Doe (Backend Dev)</span>
+              <span class="text-blue-600">Confirmed</span>
+            </div>
+            <div class="flex justify-between p-2 bg-blue-50 rounded">
+              <span>14:00 - Interview: Jane Smith (Designer)</span>
+              <span class="text-blue-600">Confirmed</span>
+            </div>
+            <div class="flex justify-between p-2 bg-green-50 rounded">
+              <span>16:00 - Trial Day: Mike Wilson</span>
+              <span class="text-green-600">Active</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- 5. BRANCH MANAGER -->
+  <!-- ============================================ -->
+  <div class="role-section">
+    <div class="role-header">5. Branch Manager (Branch-Specific View)</div>
+    <div class="flex" style="height: 500px;">
+      <div class="sidebar flex flex-col">
+        <div class="p-4 border-b">
+          <div class="font-semibold text-gray-900">C-Space People</div>
+        </div>
+        <nav class="flex-1 p-2 space-y-1 text-sm">
+          <div class="nav-item active">📊 Dashboard</div>
+          <div class="nav-item">👤 My Portal</div>
+          <div class="nav-item">👥 Employees</div>
+          <div class="nav-item">⏰ Attendance</div>
+          <div class="nav-item">🧮 Accounting</div>
+          <div class="nav-item">💬 Send Feedback</div>
+        </nav>
+        <div class="p-4 border-t text-sm">
+          <div class="font-medium">Branch Manager</div>
+          <div class="text-xs text-gray-500">C-Space Yunusabad</div>
+        </div>
+      </div>
+
+      <div class="flex-1 p-6 bg-gray-50">
+        <h2 class="text-2xl font-semibold mb-2">Branch Dashboard</h2>
+        <p class="text-gray-500 mb-6">C-Space Yunusabad</p>
+
+        <div class="grid grid-cols-3 gap-4 mb-6">
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">Branch Employees</div>
+            <div class="text-2xl font-bold">48</div>
+          </div>
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">Present Today</div>
+            <div class="text-2xl font-bold text-green-600">45</div>
+          </div>
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">Absent/Late</div>
+            <div class="text-2xl font-bold text-red-600">3</div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-4 border">
+          <h3 class="font-semibold mb-3">👥 Today's Attendance</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between p-2 bg-red-50 rounded">
+              <span>Ali Karimov</span>
+              <span class="text-red-600">Absent</span>
+            </div>
+            <div class="flex justify-between p-2 bg-amber-50 rounded">
+              <span>Nilufar Azimova</span>
+              <span class="text-amber-600">Late (09:45)</span>
+            </div>
+            <div class="flex justify-between p-2 bg-amber-50 rounded">
+              <span>Sardor Toshev</span>
+              <span class="text-amber-600">Late (09:32)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- 6. CHIEF ACCOUNTANT -->
+  <!-- ============================================ -->
+  <div class="role-section">
+    <div class="role-header">6. Chief Accountant (Accounting + Approvals)</div>
+    <div class="flex" style="height: 500px;">
+      <div class="sidebar flex flex-col">
+        <div class="p-4 border-b">
+          <div class="font-semibold text-gray-900">C-Space People</div>
+        </div>
+        <nav class="flex-1 p-2 space-y-1 text-sm">
+          <div class="nav-item active">📊 Dashboard</div>
+          <div class="nav-item">👤 My Portal</div>
+          <div class="nav-item">🧮 Accounting ▼</div>
+          <div class="nav-item ml-4 text-xs">📝 My Requests</div>
+          <div class="nav-item ml-4 text-xs">📋 All Requests</div>
+          <div class="nav-item ml-4 text-xs">✅ Approvals</div>
+          <div class="nav-item">💬 Send Feedback</div>
+        </nav>
+        <div class="p-4 border-t text-sm">
+          <div class="font-medium">Chief Accountant</div>
+          <div class="text-xs text-gray-500">Chief Accountant</div>
+        </div>
+      </div>
+
+      <div class="flex-1 p-6 bg-gray-50">
+        <h2 class="text-2xl font-semibold mb-6">Accounting Dashboard</h2>
+
+        <div class="grid grid-cols-4 gap-4 mb-6">
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">Pending Requests</div>
+            <div class="text-2xl font-bold text-amber-600">12</div>
+          </div>
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">Awaiting My Approval</div>
+            <div class="text-2xl font-bold text-purple-600">5</div>
+          </div>
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">Processed Today</div>
+            <div class="text-2xl font-bold text-green-600">8</div>
+          </div>
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">Total This Month</div>
+            <div class="text-2xl font-bold">156</div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-4 border">
+          <h3 class="font-semibold mb-3">⏳ Pending Approvals</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between p-2 bg-amber-50 rounded">
+              <span>PR-0089 - Branch supplies - ₴ 5,500,000</span>
+              <button class="px-3 py-1 bg-purple-600 text-white rounded text-xs">Review</button>
+            </div>
+            <div class="flex justify-between p-2 bg-amber-50 rounded">
+              <span>PR-0090 - Marketing expense - ₴ 12,000,000</span>
+              <button class="px-3 py-1 bg-purple-600 text-white rounded text-xs">Review</button>
+            </div>
+            <div class="flex justify-between p-2 bg-amber-50 rounded">
+              <span>PR-0091 - Equipment - ₴ 8,000,000</span>
+              <button class="px-3 py-1 bg-purple-600 text-white rounded text-xs">Review</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- 7. ACCOUNTANT -->
+  <!-- ============================================ -->
+  <div class="role-section">
+    <div class="role-header">7. Accountant (Process Requests)</div>
+    <div class="flex" style="height: 450px;">
+      <div class="sidebar flex flex-col">
+        <div class="p-4 border-b">
+          <div class="font-semibold text-gray-900">C-Space People</div>
+        </div>
+        <nav class="flex-1 p-2 space-y-1 text-sm">
+          <div class="nav-item active">📊 Dashboard</div>
+          <div class="nav-item">👤 My Portal</div>
+          <div class="nav-item">🧮 Accounting ▼</div>
+          <div class="nav-item ml-4 text-xs">📝 My Requests</div>
+          <div class="nav-item ml-4 text-xs">📋 All Requests</div>
+          <div class="nav-item">💬 Send Feedback</div>
+        </nav>
+        <div class="p-4 border-t text-sm">
+          <div class="font-medium">Accountant Name</div>
+          <div class="text-xs text-gray-500">Accountant</div>
+        </div>
+      </div>
+
+      <div class="flex-1 p-6 bg-gray-50">
+        <h2 class="text-2xl font-semibold mb-6">Accountant Dashboard</h2>
+
+        <div class="grid grid-cols-3 gap-4 mb-6">
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">To Process</div>
+            <div class="text-2xl font-bold text-amber-600">7</div>
+          </div>
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">In Progress</div>
+            <div class="text-2xl font-bold text-blue-600">3</div>
+          </div>
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">Completed Today</div>
+            <div class="text-2xl font-bold text-green-600">12</div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-4 border">
+          <h3 class="font-semibold mb-3">📋 Assigned Requests</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between items-center p-2 bg-blue-50 rounded">
+              <span>PR-0085 - Office supplies</span>
+              <span class="text-blue-600">Processing</span>
+            </div>
+            <div class="flex justify-between items-center p-2 bg-amber-50 rounded">
+              <span>PR-0086 - Vendor payment</span>
+              <span class="text-amber-600">Pending</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- 8. LEGAL MANAGER -->
+  <!-- ============================================ -->
+  <div class="role-section">
+    <div class="role-header">8. Legal Manager (Limited View)</div>
+    <div class="flex" style="height: 400px;">
+      <div class="sidebar flex flex-col">
+        <div class="p-4 border-b">
+          <div class="font-semibold text-gray-900">C-Space People</div>
+        </div>
+        <nav class="flex-1 p-2 space-y-1 text-sm">
+          <div class="nav-item active">📊 Dashboard</div>
+          <div class="nav-item">👤 My Portal</div>
+          <div class="nav-item">🧮 Accounting</div>
+          <div class="nav-item">💬 Send Feedback</div>
+        </nav>
+        <div class="p-4 border-t text-sm">
+          <div class="font-medium">Legal Manager</div>
+          <div class="text-xs text-gray-500">Legal Manager</div>
+        </div>
+      </div>
+
+      <div class="flex-1 p-6 bg-gray-50">
+        <h2 class="text-2xl font-semibold mb-6">Legal Dashboard</h2>
+
+        <div class="grid grid-cols-2 gap-4 mb-6">
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">My Requests</div>
+            <div class="text-2xl font-bold">3</div>
+          </div>
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">Pending</div>
+            <div class="text-2xl font-bold text-amber-600">1</div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-4 border">
+          <h3 class="font-semibold mb-3">📝 My Recent Requests</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between p-2 bg-green-50 rounded">
+              <span>Legal consultation fee</span>
+              <span class="text-green-600">Approved</span>
+            </div>
+            <div class="flex justify-between p-2 bg-amber-50 rounded">
+              <span>Document processing</span>
+              <span class="text-amber-600">Pending</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- 9. EMPLOYEE (Regular Staff) -->
+  <!-- ============================================ -->
+  <div class="role-section">
+    <div class="role-header">9. Employee (Basic Access - Self-Service)</div>
+    <div class="flex" style="height: 450px;">
+      <div class="sidebar flex flex-col">
+        <div class="p-4 border-b">
+          <div class="font-semibold text-gray-900">C-Space People</div>
+        </div>
+        <nav class="flex-1 p-2 space-y-1 text-sm">
+          <div class="nav-item active">📊 Dashboard</div>
+          <div class="nav-item">👤 My Portal</div>
+          <div class="nav-item">🧮 Accounting</div>
+          <div class="nav-item">💬 Send Feedback</div>
+        </nav>
+        <div class="p-4 border-t text-sm">
+          <div class="font-medium">Employee Name</div>
+          <div class="text-xs text-gray-500">Designer</div>
+        </div>
+      </div>
+
+      <div class="flex-1 p-6 bg-gray-50">
+        <h2 class="text-2xl font-semibold mb-6">Welcome back, Employee!</h2>
+
+        <div class="grid grid-cols-3 gap-4 mb-6">
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">Today's Status</div>
+            <div class="text-lg font-bold text-green-600">✓ Checked In</div>
+            <div class="text-xs text-gray-500">09:00 AM</div>
+          </div>
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">This Month</div>
+            <div class="text-2xl font-bold">18 days</div>
+            <div class="text-xs text-gray-500">worked</div>
+          </div>
+          <div class="stat-card">
+            <div class="text-sm text-gray-500">Leave Balance</div>
+            <div class="text-2xl font-bold text-blue-600">12 days</div>
+            <div class="text-xs text-gray-500">remaining</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="bg-white rounded-xl p-4 border">
+            <h3 class="font-semibold mb-3">⏰ My Attendance This Week</h3>
+            <div class="space-y-1 text-sm">
+              <div class="flex justify-between"><span>Monday</span><span class="text-green-600">09:00 - 18:00</span></div>
+              <div class="flex justify-between"><span>Tuesday</span><span class="text-green-600">09:05 - 18:15</span></div>
+              <div class="flex justify-between"><span>Wednesday</span><span class="text-green-600">08:55 - 18:00</span></div>
+              <div class="flex justify-between"><span>Thursday</span><span class="text-amber-600">09:20 - 18:00</span></div>
+              <div class="flex justify-between"><span>Friday</span><span class="text-gray-400">Today</span></div>
+            </div>
+          </div>
+          <div class="bg-white rounded-xl p-4 border">
+            <h3 class="font-semibold mb-3">📝 Quick Actions</h3>
+            <div class="space-y-2">
+              <button class="w-full p-2 text-sm bg-purple-50 text-purple-700 rounded hover:bg-purple-100">📝 Submit Expense Request</button>
+              <button class="w-full p-2 text-sm bg-blue-50 text-blue-700 rounded hover:bg-blue-100">🏖️ Request Leave</button>
+              <button class="w-full p-2 text-sm bg-green-50 text-green-700 rounded hover:bg-green-100">💬 Send Feedback</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center text-gray-500 mt-8 mb-4">
+    <p>Generated for C-Space HR Platform Discussion</p>
+  </div>
+
+</body>
+</html>
