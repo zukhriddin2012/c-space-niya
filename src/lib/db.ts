@@ -759,27 +759,48 @@ export async function getEmployeeByEmail(email: string): Promise<Employee | null
 
 // Authenticate employee with email and password from database
 export async function authenticateEmployee(email: string, password: string): Promise<Employee | null> {
+  console.log('[AUTH] Starting authentication for email:', email);
+  console.log('[AUTH] Supabase configured:', isSupabaseAdminConfigured());
+
   if (!isSupabaseAdminConfigured()) {
-    // Fallback: no database configured
+    console.log('[AUTH] Supabase not configured, returning null');
     return null;
   }
 
-  // Find employee by email and password (don't filter by status to allow NULL status)
+  // First, let's check if employee exists by email only (case-insensitive)
+  const { data: emailCheck, error: emailError } = await supabaseAdmin!
+    .from('employees')
+    .select('id, email, password, status, full_name')
+    .ilike('email', email)
+    .single();
+
+  console.log('[AUTH] Email lookup result:', emailCheck ? 'Found' : 'Not found');
+  if (emailError) {
+    console.log('[AUTH] Email lookup error:', emailError.message);
+  }
+  if (emailCheck) {
+    console.log('[AUTH] Found employee:', emailCheck.full_name, 'Status:', emailCheck.status);
+    console.log('[AUTH] Password match:', emailCheck.password === password);
+  }
+
+  // Find employee by email (case-insensitive) and password
   const { data, error } = await supabaseAdmin!
     .from('employees')
     .select('*, branches(name)')
-    .eq('email', email)
+    .ilike('email', email)
     .eq('password', password)
     .single();
 
   if (error) {
-    console.error('Authentication error:', error);
+    console.error('[AUTH] Authentication error:', error.message, error.code);
     return null;
   }
 
+  console.log('[AUTH] Full auth result:', data ? 'Success' : 'No match');
+
   // Only block terminated employees
   if (data?.status === 'terminated') {
-    console.log('Employee account is terminated');
+    console.log('[AUTH] Employee account is terminated');
     return null;
   }
 

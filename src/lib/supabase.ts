@@ -4,6 +4,13 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || '';
 
+// Log configuration status at startup (only once)
+if (typeof window === 'undefined') {
+  console.log('[SUPABASE] URL configured:', !!supabaseUrl);
+  console.log('[SUPABASE] Anon key configured:', !!supabaseAnonKey);
+  console.log('[SUPABASE] Service key configured:', !!supabaseServiceKey);
+}
+
 // Client-side Supabase client (limited permissions)
 export const supabase = supabaseUrl && supabaseAnonKey
   ? createClient(supabaseUrl, supabaseAnonKey)
