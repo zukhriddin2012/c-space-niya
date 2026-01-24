@@ -7,8 +7,10 @@ import type { User, UserRole } from '@/types';
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();
+    console.log('[LOGIN] Attempting login for:', email);
 
     if (!email || !password) {
+      console.log('[LOGIN] Missing email or password');
       return NextResponse.json(
         { success: false, message: 'Email and password are required' },
         { status: 400 }
@@ -18,7 +20,9 @@ export async function POST(request: NextRequest) {
     let user: User | null = null;
 
     // Try database authentication first
+    console.log('[LOGIN] Calling authenticateEmployee...');
     const employee = await authenticateEmployee(email, password);
+    console.log('[LOGIN] authenticateEmployee result:', employee ? 'Found employee' : 'Not found');
 
     if (employee) {
       // Create user from database employee
@@ -33,12 +37,15 @@ export async function POST(request: NextRequest) {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
+      console.log('[LOGIN] Created user object with role:', user.role);
     } else if (process.env.ENABLE_DEMO_USERS === 'true') {
       // Fallback to DEMO_USERS only in test/development environments
+      console.log('[LOGIN] Trying demo users fallback...');
       user = validateCredentials(email, password);
     }
 
     if (!user) {
+      console.log('[LOGIN] Authentication failed - no user found');
       return NextResponse.json(
         { success: false, message: 'Invalid email or password' },
         { status: 401 }
