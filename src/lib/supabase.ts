@@ -17,9 +17,16 @@ export const supabase = supabaseUrl && supabaseAnonKey
   : null;
 
 // Server-side Supabase client (full permissions)
-export const supabaseAdmin = supabaseUrl && supabaseServiceKey
-  ? createClient(supabaseUrl, supabaseServiceKey)
+// Use service key if available, otherwise fall back to anon key for basic operations
+const adminKey = supabaseServiceKey || supabaseAnonKey;
+export const supabaseAdmin = supabaseUrl && adminKey
+  ? createClient(supabaseUrl, adminKey)
   : null;
+
+// Log which key is being used for admin
+if (typeof window === 'undefined') {
+  console.log('[SUPABASE] Admin client using:', supabaseServiceKey ? 'service_key' : (supabaseAnonKey ? 'anon_key_fallback' : 'none'));
+}
 
 export const isSupabaseConfigured = () => !!supabase;
 export const isSupabaseAdminConfigured = () => !!supabaseAdmin;
