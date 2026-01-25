@@ -17,6 +17,18 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+// CORS headers for external access
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+// Handle OPTIONS preflight
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 // GET - Read all tasks and recent comments
 export async function GET(request: NextRequest) {
   try {
@@ -37,7 +49,7 @@ export async function GET(request: NextRequest) {
         .eq('task_id', taskId)
         .order('created_at', { ascending: true });
 
-      return NextResponse.json({ task, comments });
+      return NextResponse.json({ task, comments }, { headers: corsHeaders });
     }
 
     // Get all tasks grouped by status
@@ -73,10 +85,10 @@ export async function GET(request: NextRequest) {
         testing: byStatus.testing.length,
         done: byStatus.done.length,
       }
-    });
+    }, { headers: corsHeaders });
   } catch (error) {
     console.error('AI Sync GET error:', error);
-    return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch' }, { status: 500, headers: corsHeaders });
   }
 }
 
@@ -99,7 +111,7 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (error) throw error;
-      return NextResponse.json({ success: true, comment: data });
+      return NextResponse.json({ success: true, comment: data }, { headers: corsHeaders });
     }
 
     if (action === 'update_status' && task_id && status) {
@@ -117,7 +129,7 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (error) throw error;
-      return NextResponse.json({ success: true, task: data });
+      return NextResponse.json({ success: true, task: data }, { headers: corsHeaders });
     }
 
     if (action === 'create_task' && title) {
@@ -136,12 +148,12 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (error) throw error;
-      return NextResponse.json({ success: true, task: data });
+      return NextResponse.json({ success: true, task: data }, { headers: corsHeaders });
     }
 
-    return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid action' }, { status: 400, headers: corsHeaders });
   } catch (error) {
     console.error('AI Sync POST error:', error);
-    return NextResponse.json({ error: 'Failed to process' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to process' }, { status: 500, headers: corsHeaders });
   }
 }
