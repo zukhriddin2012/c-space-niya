@@ -1,0 +1,233 @@
+{
+  "_meta": {
+    "exported_at": "2026-01-25T21:25:48.428Z",
+    "version": "1.0",
+    "format": "jarvis-devboard-export",
+    "instructions": "Add your responses to the jarvis_responses array for each task. Each response needs: content (your message). The import will create comments from Jarvis.",
+    "jarvis_processed_at": "2026-01-25T21:30:00.000Z"
+  },
+  "sprints": [
+    {
+      "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "name": "Sprint 1 - Jan 25",
+      "goal": "Quick wins & Dev Board setup",
+      "status": "completed",
+      "start_date": "2026-01-25",
+      "end_date": "2026-01-31"
+    },
+    {
+      "id": "10a8b2dd-146d-4bf8-ba92-b266a899c59d",
+      "name": "Sprint 2",
+      "goal": "Complete HR module and Accounting",
+      "status": "active",
+      "start_date": "2026-01-25",
+      "end_date": "2026-02-08"
+    }
+  ],
+  "projects": [
+    {
+      "id": "11111111-1111-1111-1111-111111111111",
+      "name": "People Platform",
+      "color": "#8B5CF6"
+    },
+    {
+      "id": "22222222-2222-2222-2222-222222222222",
+      "name": "Telegram Bot",
+      "color": "#10B981"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "b3f5002a-8c04-43aa-95de-86f6210d19b1",
+      "title": "Employee info can't be updated",
+      "status": "done",
+      "jarvis_responses": [],
+      "jarvis_suggested_status": null,
+      "jarvis_suggested_priority": null
+    },
+    {
+      "id": "fcd97f6d-6bb6-45dd-9e3b-49e18f0456c6",
+      "title": "Fix FK Ambiguity Error",
+      "status": "done",
+      "jarvis_responses": [],
+      "jarvis_suggested_status": null,
+      "jarvis_suggested_priority": null
+    },
+    {
+      "id": "e8ab7b45-ffe2-419d-8336-bfff3877714d",
+      "title": "Fix Present Count Bug",
+      "status": "done",
+      "jarvis_responses": [],
+      "jarvis_suggested_status": null,
+      "jarvis_suggested_priority": null
+    },
+    {
+      "id": "1e21f042-ce11-400b-bcb7-8879939204ef",
+      "title": "Branch Configuration UI",
+      "status": "done",
+      "jarvis_responses": [],
+      "jarvis_suggested_status": null,
+      "jarvis_suggested_priority": null
+    },
+    {
+      "id": "f59848c5-cac5-4fe5-9c7d-a18f1f0a1ce8",
+      "title": "Quick Switch Panel",
+      "status": "done",
+      "jarvis_responses": [],
+      "jarvis_suggested_status": null,
+      "jarvis_suggested_priority": null
+    },
+    {
+      "id": "6d84175a-b6c2-4bc6-8cb5-862549c51223",
+      "title": "Fix Bot Sessions Display",
+      "status": "done",
+      "jarvis_responses": [],
+      "jarvis_suggested_status": null,
+      "jarvis_suggested_priority": null
+    },
+    {
+      "id": "1b4ea2b9-a5b0-407c-8f82-7481fb60740c",
+      "title": "Dev Board Feature",
+      "status": "done",
+      "jarvis_responses": [],
+      "jarvis_suggested_status": null,
+      "jarvis_suggested_priority": null
+    },
+    {
+      "id": "b39a4003-a694-4b1b-8dc0-bbe830e52635",
+      "title": "Shift Notes",
+      "status": "backlog",
+      "jarvis_responses": [
+        {
+          "content": "📝 This is a quick win! Shift managers often need to communicate special instructions (dress code, training, events). I can implement this with a simple notes field on shifts + optional notification to assigned employees. Should be straightforward - just DB column + UI field. Want me to start this in Sprint 2? - Jarvis 🤖"
+        }
+      ],
+      "jarvis_suggested_status": null,
+      "jarvis_suggested_priority": null
+    },
+    {
+      "id": "e300ba48-0201-454e-a5ad-72e12130cb22",
+      "title": "Stage Duration Tracking",
+      "status": "backlog",
+      "jarvis_responses": [
+        {
+          "content": "📊 Great for recruitment analytics! We'd need: 1) stage_history table to log transitions with timestamps, 2) Calculate average time per stage, 3) Dashboard widget showing bottlenecks. This helps identify slow stages (e.g., 'Candidates stuck in Interview for 10+ days'). Pairs nicely with Pipeline Filters. - Jarvis 🤖"
+        }
+      ],
+      "jarvis_suggested_status": null,
+      "jarvis_suggested_priority": null
+    },
+    {
+      "id": "b468ced2-11c4-4843-b478-b4a3f7b94e7a",
+      "title": "1:1 Meetings Tracking",
+      "status": "backlog",
+      "jarvis_responses": [
+        {
+          "content": "🤝 Nice HR feature for manager-employee relationships! Key components: 1) Meeting scheduler with recurring option, 2) Private notes (manager-only), 3) Shared notes (both see), 4) Action items with due dates, 5) History timeline. Consider: Should integrate with calendar? Google Calendar sync would be 🔥 - Jarvis 🤖"
+        }
+      ],
+      "jarvis_suggested_status": null,
+      "jarvis_suggested_priority": null
+    },
+    {
+      "id": "819b3aa1-dcb5-4697-b505-5bb78a44d515",
+      "title": "No-Show Tracking",
+      "status": "backlog",
+      "jarvis_responses": [
+        {
+          "content": "⚠️ Important for attendance accountability! Logic: If shift_end_time passed + no check-in = No-Show. Features needed: 1) Auto-flag after shift ends, 2) Manager notification (Telegram bot alert?), 3) No-show counter per employee, 4) Grace period setting. Could trigger after X minutes past shift start. Integrates with existing attendance system. - Jarvis 🤖"
+        }
+      ],
+      "jarvis_suggested_status": null,
+      "jarvis_suggested_priority": null
+    },
+    {
+      "id": "a7fd9349-f71a-4fa5-93f8-8adcbb98dbad",
+      "title": "Engagement Surveys",
+      "status": "backlog",
+      "jarvis_responses": [
+        {
+          "content": "💬 Employee voice is crucial! Scope: 1) Survey builder (questions, rating scales, text), 2) Anonymous mode (no user tracking), 3) Schedule recurring (weekly pulse?), 4) Results dashboard with trends, 5) eNPS calculation. Could start simple: 'How are you feeling this week?' 1-5 scale + optional comment. Telegram bot could send reminders! - Jarvis 🤖"
+        }
+      ],
+      "jarvis_suggested_status": null,
+      "jarvis_suggested_priority": null
+    },
+    {
+      "id": "2a9db67f-8c4e-428c-bcda-bb81f555ebb9",
+      "title": "Pipeline Filters",
+      "status": "backlog",
+      "jarvis_responses": [
+        {
+          "content": "🎯 Ready to implement! Filter options: 1) Stage (Applied, Screening, Interview, Offer, Hired, Rejected), 2) Source (Job board, Referral, Direct, etc), 3) Date range (applied_at), 4) Recruiter/Assigned to. UI: Filter bar above pipeline with dropdowns + clear filters button. Should persist filters in URL for sharing. Want me to start? - Jarvis 🤖"
+        }
+      ],
+      "jarvis_suggested_status": "todo",
+      "jarvis_suggested_priority": null
+    },
+    {
+      "id": "200d1e3d-54a4-4497-b242-25c45b56faab",
+      "title": "Employee Timeline",
+      "status": "todo",
+      "jarvis_responses": [
+        {
+          "content": "📈 This pairs perfectly with Employee Directory! Timeline events: Hired, Position change, Salary adjustment, Branch transfer, Achievement/Award, Training completed, Performance review. Could show on employee profile as a visual timeline. We already track some of this in audit logs - just need to surface it nicely! - Jarvis 🤖"
+        }
+      ],
+      "jarvis_suggested_status": null,
+      "jarvis_suggested_priority": null
+    },
+    {
+      "id": "447a7204-f23a-493e-a890-18d2ac5925ec",
+      "title": "Visual Shift Calendar",
+      "status": "todo",
+      "jarvis_responses": [
+        {
+          "content": "📅 This is in Sprint 2 - let's prioritize! Options: 1) Week view (columns = days, rows = branches), 2) Month view (calendar grid), 3) Day view (detailed hourly). Color coding: by branch or by employee status (assigned/unassigned). Drag-drop to reassign shifts would be 🔥. Which view should we start with? - Jarvis 🤖"
+        }
+      ],
+      "jarvis_suggested_status": "in_progress",
+      "jarvis_suggested_priority": null
+    },
+    {
+      "id": "39a5c5aa-28ac-4f58-be6d-df258f2a167c",
+      "title": "Bulk Actions for Candidates",
+      "status": "backlog",
+      "jarvis_responses": [
+        {
+          "content": "✅ Let's discuss! Implementation plan: 1) Add checkboxes to candidate cards, 2) 'Select All' in header, 3) Floating action bar appears when 1+ selected, 4) Actions: Move to Stage, Reject (with reason template), Assign Recruiter, Send Email. For rejection - should we require a reason? Also, should we add email templates for bulk reject? Ready to build when you give the green light! 🚀 - Jarvis 🤖"
+        }
+      ],
+      "jarvis_suggested_status": "todo",
+      "jarvis_suggested_priority": null
+    },
+    {
+      "id": "0e2b31a6-6aa2-4810-b7aa-bbdc39da9264",
+      "title": "Employee Self-Service Profile Edit",
+      "status": "done",
+      "jarvis_responses": [],
+      "jarvis_suggested_status": null,
+      "jarvis_suggested_priority": null
+    },
+    {
+      "id": "11f5dc46-6e18-46a5-a850-9dc5a628ebe6",
+      "title": "Employee Directory & Org Chart",
+      "status": "todo",
+      "jarvis_responses": [
+        {
+          "content": "🏢 Big feature! Two parts: 1) Directory - searchable list with filters (branch, department, position). Card view with photo, name, role, contact. 2) Org Chart - hierarchical tree visualization. Challenge: We need manager_id on employees to build hierarchy. Do we have that field? If not, I can add it. Also: should Org Chart be interactive (click to drill down)? - Jarvis 🤖"
+        }
+      ],
+      "jarvis_suggested_status": null,
+      "jarvis_suggested_priority": null
+    }
+  ],
+  "jarvis_summary": "🤖 Sprint 1 was a HUGE success - 100% completion with 8 tasks done! Sprint 2 is underway with goal 'Complete HR module and Accounting'. You have 3 tasks in To Do (Visual Shift Calendar, Employee Timeline, Employee Directory), 7 in Backlog. I've added my thoughts on each backlog item. Priority focus for Sprint 2: Visual Shift Calendar (already assigned) + Bulk Actions for Candidates (you wanted to discuss). The recruitment features (Pipeline Filters, Bulk Actions) are P0 and should probably be tackled soon!",
+  "jarvis_recommendations": [
+    "🎯 Move 'Pipeline Filters' to Sprint 2 - it's P0 and only 1d estimate. Quick win!",
+    "📅 Start 'Visual Shift Calendar' first in Sprint 2 - it's already assigned and high impact",
+    "🔄 'Bulk Actions for Candidates' is ready to implement - just need your confirmation on the rejection flow",
+    "📊 Consider adding 'Stage Duration Tracking' after Pipeline Filters - they complement each other for recruitment analytics",
+    "⚡ 'Shift Notes' is a quick 1d task that could be squeezed in anytime - simple but useful"
+  ]
+}

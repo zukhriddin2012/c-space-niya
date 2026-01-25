@@ -214,6 +214,25 @@ export default function DevBoardClient({ userName }: DevBoardClientProps) {
   // Active sprint
   const activeSprint = sprints.find(s => s.status === 'active');
 
+  // Filter to hide completed sprint tasks by default
+  const [hideCompletedSprintTasks, setHideCompletedSprintTasks] = useState(true);
+
+  // Get tasks for a column (with completed sprint filter)
+  const getFilteredColumnTasks = (status: string) => {
+    let filtered = tasks.filter(t => t.status === status);
+
+    // If hiding completed sprint tasks and viewing Done column,
+    // only show tasks from active sprint or no sprint
+    if (hideCompletedSprintTasks && status === 'done') {
+      const completedSprintIds = sprints
+        .filter(s => s.status === 'completed')
+        .map(s => s.id);
+      filtered = filtered.filter(t => !t.sprint_id || !completedSprintIds.includes(t.sprint_id));
+    }
+
+    return filtered;
+  };
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -334,6 +353,18 @@ export default function DevBoardClient({ userName }: DevBoardClientProps) {
               )}
             </div>
           )}
+
+          {/* Hide archived toggle */}
+          <label className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 cursor-pointer hover:bg-gray-50 rounded-lg">
+            <input
+              type="checkbox"
+              checked={hideCompletedSprintTasks}
+              onChange={(e) => setHideCompletedSprintTasks(e.target.checked)}
+              className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+            />
+            <Archive size={14} />
+            <span>Hide archived</span>
+          </label>
         </div>
       </div>
 
@@ -346,7 +377,9 @@ export default function DevBoardClient({ userName }: DevBoardClientProps) {
         ) : (
           <div className="flex gap-4 h-full min-w-max pb-4">
             {COLUMNS.map(column => {
-              const columnTasks = getColumnTasks(column.id);
+              const columnTasks = getFilteredColumnTasks(column.id);
+              const totalColumnTasks = getColumnTasks(column.id);
+              const hiddenCount = totalColumnTasks.length - columnTasks.length;
               return (
                 <div
                   key={column.id}
@@ -363,6 +396,11 @@ export default function DevBoardClient({ userName }: DevBoardClientProps) {
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-gray-500 bg-white px-2 py-0.5 rounded-full">
                           {columnTasks.length}
+                          {hiddenCount > 0 && (
+                            <span className="text-gray-400 ml-1" title={`${hiddenCount} archived tasks hidden`}>
+                              (+{hiddenCount})
+                            </span>
+                          )}
                         </span>
                         <button
                           onClick={() => {
