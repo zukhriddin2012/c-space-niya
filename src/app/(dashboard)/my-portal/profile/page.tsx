@@ -1,6 +1,10 @@
 import { getSession } from '@/lib/auth-server';
 import { redirect } from 'next/navigation';
 import { getEmployeeByEmail, getEmployeeAttendanceSummary } from '@/lib/db';
+
+// Force dynamic rendering to ensure fresh data on every request
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 import {
   User,
   Mail,
