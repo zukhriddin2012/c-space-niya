@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Direct API for AI assistant to read/write to Dev Board
-// No auth required - this is for Claude to communicate quickly
+// Direct API for AI assistant (Jarvis) to read/write to Dev Board
+// No auth required - this is for Jarvis to communicate quickly
+
+// Jarvis Profile
+const JARVIS = {
+  name: 'Jarvis',
+  avatar: '🤖',
+  role: 'AI Development Assistant',
+  color: '#8B5CF6', // Purple
+};
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -85,7 +93,7 @@ export async function POST(request: NextRequest) {
         .insert({
           task_id,
           content: comment,
-          author: 'Claude (AI)', // Always mark as AI
+          author: JARVIS.name, // Jarvis - AI Assistant
         })
         .select()
         .single();

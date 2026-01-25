@@ -887,16 +887,21 @@ function TaskDetailModal({
           <div className="border-t pt-4">
             <h3 className="font-medium text-gray-900 mb-3">Comments</h3>
             <div className="space-y-3 mb-3">
-              {comments.map(comment => (
+              {comments.map(comment => {
+                const isJarvis = comment.author === 'Jarvis' || comment.author === 'Claude (AI)' || comment.author === 'claude';
+                return (
                 <div key={comment.id} className="flex gap-3">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
-                    comment.author === 'claude' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                    isJarvis ? 'bg-purple-500 text-white' : 'bg-blue-100 text-blue-700'
                   }`}>
-                    {comment.author === 'claude' ? '🤖' : comment.author.charAt(0).toUpperCase()}
+                    {isJarvis ? '🤖' : comment.author.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">{comment.author === 'claude' ? 'Claude' : comment.author}</span>
+                      <span className={`text-sm font-medium ${isJarvis ? 'text-purple-700' : ''}`}>
+                        {isJarvis ? 'Jarvis' : comment.author}
+                      </span>
+                      {isJarvis && <span className="text-xs bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded">AI</span>}
                       <span className="text-xs text-gray-400">
                         {new Date(comment.created_at).toLocaleString()}
                       </span>
@@ -904,7 +909,7 @@ function TaskDetailModal({
                     <p className="text-sm text-gray-600">{comment.content}</p>
                   </div>
                 </div>
-              ))}
+              );})}
             </div>
             <div className="flex gap-2">
               <input
