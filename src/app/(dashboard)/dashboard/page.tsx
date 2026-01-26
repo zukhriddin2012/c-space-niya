@@ -26,6 +26,12 @@ import {
   BarChart3,
 } from 'lucide-react';
 import {
+  GeneralManagerDashboard as GMDashboardClient,
+  CEODashboard as CEODashboardClient,
+  HRDashboard as HRDashboardClient,
+  EmployeeDashboard as EmployeeDashboardClient,
+} from './DashboardClient';
+import {
   getTodayAttendance,
   getBranches,
   getEmployees,
@@ -1488,154 +1494,18 @@ export default async function DashboardPage() {
         getBranchAttendanceSummaryForGM(),
       ]);
 
-      const presentToday = attendanceStats.present;
-      const lateToday = attendanceStats.late;
-      const absentToday = attendanceStats.absent;
-
       return (
-        <div>
-          {/* Header */}
-          <div className="mb-4 lg:mb-6">
-            <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">Dashboard Overview</h1>
-            <p className="text-sm lg:text-base text-gray-500 mt-1">
-              Welcome back, {user.name}!
-              <span className="hidden sm:inline"> Here&apos;s your overview as {getRoleLabel(user.role)}.</span>
-            </p>
-          </div>
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-4 lg:mb-6">
-            <StatCard
-              title="Total Employees"
-              value={stats.totalEmployees}
-              icon={Users}
-              trend={`${stats.fullTimeCount} full-time, ${stats.partTimeCount} part-time`}
-              color="purple"
-              href="/employees"
-            />
-            <StatCard
-              title="Present Today"
-              value={presentToday}
-              icon={UserCheck}
-              color="green"
-              href="/attendance"
-            />
-            <StatCard
-              title="Pending Approvals"
-              value={pendingApprovals.total}
-              icon={ClipboardCheck}
-              color="amber"
-            />
-            <StatCard
-              title="Active Candidates"
-              value={stats.probationStatusCount}
-              icon={UserPlus}
-              color="purple"
-              href="/recruitment"
-            />
-          </div>
-
-          {/* Additional Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 lg:gap-4 mb-4 lg:mb-6">
-            <StatCard
-              title="Active Branches"
-              value={stats.totalBranches}
-              icon={MapPin}
-              color="purple"
-              href="/branches"
-            />
-            <StatCard
-              title="Monthly Wage Budget"
-              value={formatCurrency(stats.totalSalaryBudget)}
-              icon={TrendingUp}
-              color="green"
-              href="/reports"
-            />
-            <StatCard
-              title="Absent Today"
-              value={absentToday}
-              icon={AlertCircle}
-              color="red"
-              href="/attendance"
-            />
-            <StatCard
-              title="Unread Feedback"
-              value={unreadFeedbackCount}
-              icon={Inbox}
-              color="blue"
-              href="/feedback/review"
-            />
-          </div>
-
-          {/* Pending Approvals Section */}
-          {(pendingHRApprovals.terminations.length > 0 || pendingHRApprovals.wageChanges.length > 0 || pendingApprovals.paymentRequests > 0) && (
-            <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
-              <div className="flex items-center gap-2 mb-4">
-                <AlertCircle size={20} className="text-amber-600" />
-                <h3 className="text-lg font-semibold text-gray-900">Pending Approvals</h3>
-              </div>
-              <div className="space-y-2">
-                {pendingHRApprovals.terminations.map((t) => (
-                  <div key={t.id} className="flex justify-between items-center p-3 bg-amber-50 rounded-lg">
-                    <span className="text-sm text-gray-700">Termination Request - {t.employee_name}</span>
-                    <span className="text-sm text-amber-600 font-medium">Awaiting</span>
-                  </div>
-                ))}
-                {pendingHRApprovals.wageChanges.map((w) => (
-                  <div key={w.id} className="flex justify-between items-center p-3 bg-amber-50 rounded-lg">
-                    <span className="text-sm text-gray-700">Wage Change - {w.employee_name} (+{w.change_percentage}%)</span>
-                    <span className="text-sm text-amber-600 font-medium">Awaiting</span>
-                  </div>
-                ))}
-                {pendingApprovals.paymentRequests > 0 && (
-                  <Link href="/accounting/approvals" className="flex justify-between items-center p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
-                    <span className="text-sm text-gray-700">Payment Requests ({pendingApprovals.paymentRequests})</span>
-                    <span className="text-sm text-blue-600 font-medium">Review</span>
-                  </Link>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Branch Attendance */}
-          {branchAttendance.length > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
-              <div className="flex items-center gap-2 mb-4">
-                <MapPin size={20} className="text-purple-600" />
-                <h3 className="text-lg font-semibold text-gray-900">Branch Attendance</h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {branchAttendance.map((branch) => (
-                  <div key={branch.id} className="p-3 bg-gray-50 rounded-lg">
-                    <div className="font-medium text-gray-900">{branch.name}</div>
-                    <div className={`text-sm ${branch.present === branch.total ? 'text-green-600' : 'text-amber-600'}`}>
-                      {branch.present}/{branch.total} present
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <BranchPresenceCard
-              branches={stats.branchStats}
-              totalEmployees={stats.totalEmployees}
-            />
-            <LevelDistributionCard
-              juniorCount={stats.juniorCount}
-              middleCount={stats.middleCount}
-              seniorCount={stats.seniorCount}
-              executiveCount={stats.executiveCount}
-            />
-          </div>
-
-          {/* Recent Activity */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <RecentActivityCard activities={recentActivity} />
-          </div>
-        </div>
+        <GMDashboardClient
+          userName={user.name}
+          role={user.role}
+          stats={stats}
+          attendanceStats={attendanceStats}
+          recentActivity={recentActivity}
+          unreadFeedbackCount={unreadFeedbackCount}
+          pendingApprovals={pendingApprovals}
+          pendingHRApprovals={pendingHRApprovals}
+          branchAttendance={branchAttendance}
+        />
       );
   }
 }

@@ -89,6 +89,103 @@ export interface Translations {
     openPositions: string;
     recentActivity: string;
     quickActions: string;
+    // Extended dashboard translations
+    overview: string;
+    heresYourOverview: string;
+    fullTime: string;
+    partTime: string;
+    presentToday: string;
+    absentToday: string;
+    lateArrivals: string;
+    hoursWorked: string;
+    daysPresent: string;
+    pendingApprovals: string;
+    activeBranches: string;
+    monthlyWageBudget: string;
+    monthlyPayroll: string;
+    unreadFeedback: string;
+    activeCandidates: string;
+    onProbation: string;
+    branchStaffing: string;
+    employeeLevels: string;
+    branchAttendance: string;
+    noActivityToday: string;
+    noBranchData: string;
+    checkedInAt: string;
+    checkedOutFrom: string;
+    arrivedLateAt: string;
+    employees: string;
+    junior: string;
+    middle: string;
+    senior: string;
+    executive: string;
+    viewAll: string;
+    // Role-specific
+    executiveDashboard: string;
+    hrDashboard: string;
+    recruitmentDashboard: string;
+    accountingDashboard: string;
+    accountantDashboard: string;
+    legalDashboard: string;
+    branchDashboard: string;
+    manageOperations: string;
+    companyOverview: string;
+    managePaymentRequests: string;
+    processPaymentRequests: string;
+    manageCandidates: string;
+    // Stats
+    keyMetrics: string;
+    toProcess: string;
+    inProgress: string;
+    completedToday: string;
+    processedToday: string;
+    totalThisMonth: string;
+    awaitingMyApproval: string;
+    pendingRequests: string;
+    // Quick links
+    reports: string;
+    feedbackInbox: string;
+    addEmployee: string;
+    recruitmentBoard: string;
+    kanbanBoard: string;
+    tableView: string;
+    giveFeedback: string;
+    myRequests: string;
+    myPortal: string;
+    leaveRequests: string;
+    allRequests: string;
+    // Employee dashboard
+    profileNotLinked: string;
+    contactHR: string;
+    recentAttendance: string;
+    noAttendanceRecords: string;
+    // Branch manager
+    branchEmployees: string;
+    absentLate: string;
+    todaysAttendance: string;
+    allPresentOnTime: string;
+    absent: string;
+    late: string;
+    // My recent requests
+    myRecentRequests: string;
+    noRecentRequests: string;
+    noPendingApprovals: string;
+    review: string;
+    awaiting: string;
+    terminationRequest: string;
+    wageChange: string;
+    paymentRequests: string;
+    interviewStage: string;
+    underReview: string;
+    hiredThisMonth: string;
+    pipelineOverview: string;
+    openBoard: string;
+    screening: string;
+    interview: string;
+    probation: string;
+    hired: string;
+    recruitmentPipeline: string;
+    totalCandidates: string;
   };
 
   // Employees
