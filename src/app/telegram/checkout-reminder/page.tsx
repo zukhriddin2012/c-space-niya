@@ -102,10 +102,11 @@ function CheckoutReminderContent() {
     }
 
     const baseUrl = getBaseUrl();
-    setDebugInfo(`tid=${telegramId}, url=${baseUrl}`);
+    const apiUrl = `${baseUrl}/api/tg-check`;
+    setDebugInfo(`tid=${telegramId}, url=${apiUrl}`);
 
     try {
-      const response = await fetch(`${baseUrl}/api/tg-check`, {
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -120,7 +121,7 @@ function CheckoutReminderContent() {
       if (!response.ok) {
         setStatus('error');
         setMessage(`HTTP xato: ${response.status}`);
-        setDebugInfo(`tid=${telegramId}, status=${response.status}`);
+        setDebugInfo(`tid=${telegramId}, url=${apiUrl}, status=${response.status}`);
         return;
       }
 

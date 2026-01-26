@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase';
 
-// Force Node.js runtime (not Edge) to avoid issues with Telegram WebView
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-
 // CORS headers for Telegram WebApp
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase';
 
-// Force Node.js runtime (not Edge) to avoid issues with Telegram WebView
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-
 // CORS headers for Telegram WebApp
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Accept, X-Requested-With',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept',
+  'Access-Control-Max-Age': '86400',
 };
 
 type ResponseType = 'im_at_work' | 'i_left' | '45min' | '2hours' | 'all_day';
