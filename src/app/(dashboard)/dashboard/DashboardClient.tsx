@@ -2,6 +2,7 @@
 
 import { useTranslation } from '@/contexts/LanguageContext';
 import { getRoleLabel } from '@/lib/auth';
+import type { UserRole } from '@/types';
 import Link from 'next/link';
 import {
   Users,
@@ -261,7 +262,7 @@ export function DashboardHeader({
   subtitle,
 }: {
   userName: string;
-  role: string;
+  role: UserRole;
   title?: string;
   subtitle?: string;
 }) {
@@ -287,7 +288,7 @@ export function DashboardHeader({
 // ============= GENERAL MANAGER DASHBOARD =============
 interface GeneralManagerDashboardProps {
   userName: string;
-  role: string;
+  role: UserRole;
   stats: {
     totalEmployees: number;
     fullTimeCount: number;
