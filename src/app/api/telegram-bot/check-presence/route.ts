@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase';
 
+// CORS headers for Telegram WebApp
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+  'Access-Control-Max-Age': '86400',
+};
+
 // Get client IP address from request
 function getClientIp(request: NextRequest): string {
   // Check various headers for the real IP
@@ -63,33 +71,42 @@ async function checkIpAgainstBranches(ipAddress: string) {
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
+    headers: corsHeaders,
   });
 }
 
-// Handle GET requests (for debugging or if called incorrectly)
-export async function GET() {
-  return NextResponse.json({
+// Handle GET requests (for debugging)
+export async function GET(request: NextRequest) {
+  console.log('[CheckPresence] GET request received - should be POST');
+  const response = NextResponse.json({
     error: 'Use POST method with telegramId and attendanceId in body',
-    method: 'GET not supported - use POST'
+    method: 'GET not supported - use POST',
+    headers: Object.fromEntries(request.headers.entries()),
   }, { status: 405 });
+
+  // Add CORS headers to error response too
+  Object.entries(corsHeaders).forEach(([key, value]) => {
+    response.headers.set(key, value);
+  });
+
+  return response;
 }
 
 export async function POST(request: NextRequest) {
+  console.log('[CheckPresence] POST request received');
+
   try {
     const body = await request.json();
     const { telegramId, attendanceId } = body;
 
+    console.log('[CheckPresence] Body:', { telegramId, attendanceId });
+
     if (!telegramId) {
-      return NextResponse.json({ success: false, error: 'Missing telegramId' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Missing telegramId' }, { status: 400, headers: corsHeaders });
     }
 
     if (!isSupabaseAdminConfigured()) {
-      return NextResponse.json({ success: false, error: 'Database not configured' }, { status: 500 });
+      return NextResponse.json({ success: false, error: 'Database not configured' }, { status: 500, headers: corsHeaders });
     }
 
     // Get client IP
@@ -104,7 +121,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (empError || !employee) {
-      return NextResponse.json({ success: false, error: 'Employee not found' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Employee not found' }, { status: 404, headers: corsHeaders });
     }
 
     // Find active attendance record
@@ -133,7 +150,7 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (error || !data) {
-        return NextResponse.json({ success: false, error: 'No active check-in found' }, { status: 404 });
+        return NextResponse.json({ success: false, error: 'No active check-in found' }, { status: 404, headers: corsHeaders });
       }
       attendance = data;
     }
@@ -179,7 +196,7 @@ export async function POST(request: NextRequest) {
 
       if (reminderError || !newReminder) {
         console.error('Failed to create reminder:', reminderError);
-        return NextResponse.json({ success: false, error: 'Failed to create reminder' }, { status: 500 });
+        return NextResponse.json({ success: false, error: 'Failed to create reminder' }, { status: 500, headers: corsHeaders });
       }
       reminderId = newReminder.id;
     }
@@ -191,9 +208,9 @@ export async function POST(request: NextRequest) {
       attendanceId: attendance.id,
       reminderId,
       clientIp, // For debugging
-    });
+    }, { headers: corsHeaders });
   } catch (error) {
     console.error('Check presence error:', error);
-    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500, headers: corsHeaders });
   }
 }

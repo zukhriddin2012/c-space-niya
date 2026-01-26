@@ -3,6 +3,14 @@
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
+// Get base URL for API calls - important for Telegram WebApp
+const getApiBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  return process.env.NEXT_PUBLIC_APP_URL || 'https://c-space-hr.vercel.app';
+};
+
 type ReminderStatus = 'loading' | 'ip_matched' | 'ip_not_matched' | 'at_work_confirmed' | 'checkout_done' | 'reminder_set' | 'error';
 
 interface CheckResult {
@@ -99,17 +107,25 @@ function CheckoutReminderContent() {
     }
 
     try {
-      const response = await fetch('/api/telegram-bot/check-presence', {
+      const apiUrl = `${getApiBaseUrl()}/api/telegram-bot/check-presence`;
+      console.log('[CheckoutReminder] Calling API:', apiUrl);
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
         body: JSON.stringify({ telegramId, attendanceId }),
       });
+
+      console.log('[CheckoutReminder] Response status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
         console.error('API error:', response.status, errorText);
         setStatus('error');
-        setMessage(`API Error: ${response.status}`);
+        setMessage(`API Error: ${response.status} - ${errorText.substring(0, 100)}`);
         return;
       }
 
@@ -137,9 +153,15 @@ function CheckoutReminderContent() {
   // Handle action buttons
   const handleAction = async (action: 'im_at_work' | 'i_left' | '45min' | '2hours' | 'all_day') => {
     try {
-      const response = await fetch('/api/telegram-bot/reminder-response', {
+      const apiUrl = `${getApiBaseUrl()}/api/telegram-bot/reminder-response`;
+      console.log('[CheckoutReminder] Calling action API:', apiUrl, action);
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
         body: JSON.stringify({
           telegramId,
           attendanceId,
