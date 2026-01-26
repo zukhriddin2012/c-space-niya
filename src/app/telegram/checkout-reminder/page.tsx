@@ -111,22 +111,8 @@ function CheckoutReminderContent() {
       const baseUrl = getApiBaseUrl();
       console.log('[CheckoutReminder] Base URL:', baseUrl);
 
-      // First test with a simple endpoint
-      try {
-        const testUrl = `${baseUrl}/api/telegram-bot/test-method`;
-        console.log('[CheckoutReminder] Testing with:', testUrl);
-        const testRes = await fetch(testUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ test: true }),
-        });
-        const testData = await testRes.text();
-        console.log('[CheckoutReminder] Test response:', testRes.status, testData);
-      } catch (testErr) {
-        console.error('[CheckoutReminder] Test error:', testErr);
-      }
-
-      const apiUrl = `${baseUrl}/api/telegram-bot/check-presence`;
+      // Use shorter API path to avoid redirect issues
+      const apiUrl = `${baseUrl}/api/tg-check`;
       console.log('[CheckoutReminder] Calling API:', apiUrl);
 
       const response = await fetch(apiUrl, {
