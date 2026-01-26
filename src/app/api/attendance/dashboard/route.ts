@@ -78,19 +78,27 @@ export const GET = withAuth(async () => {
       earlyLeave: allAttendance.filter((a) => a.status === 'early_leave').length,
     };
 
-    // Branch data for map
+    // Branch data for map - only show people currently in office (not checked out)
     const branchData = branches.map(branch => {
       const branchAttendance = allAttendance.filter(a => a.branchId === branch.id);
+      const currentlyInOffice = branchAttendance.filter(a =>
+        (a.status === 'present' || a.status === 'late') && !a.checkOutTime
+      );
       return {
         id: branch.id,
         name: branch.name,
         address: branch.address,
         latitude: branch.latitude,
         longitude: branch.longitude,
-        present: branchAttendance.filter(a => (a.status === 'present' || a.status === 'late') && !a.checkOutTime).length,
-        late: branchAttendance.filter(a => a.status === 'late').length,
+        // Present now (on time, still in office)
+        present: currentlyInOffice.filter(a => a.status === 'present').length,
+        // Late but still in office
+        late: currentlyInOffice.filter(a => a.status === 'late').length,
+        // Absent (never checked in)
         absent: branchAttendance.filter(a => a.status === 'absent').length,
+        // Left early
         earlyLeave: branchAttendance.filter(a => a.status === 'early_leave').length,
+        // Total for this branch who should be working
         total: branchAttendance.length,
       };
     });
