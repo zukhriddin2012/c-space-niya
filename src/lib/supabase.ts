@@ -57,6 +57,7 @@ export interface Employee {
   hire_date: string;
   system_role?: string; // Role for access control: general_manager, ceo, hr, branch_manager, recruiter, employee
   password?: string; // For authentication (demo only - use hashing in production)
+  preferred_language?: 'uz' | 'ru' | 'en'; // Language preference for bot messages
   branches?: Branch;
 }
 

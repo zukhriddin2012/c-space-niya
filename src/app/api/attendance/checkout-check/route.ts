@@ -2,7 +2,29 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const WEBAPP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://c-space-hr.vercel.app';
+
+type Lang = 'uz' | 'ru' | 'en';
+
+// Translations for bot messages
+const messages = {
+  ipMatched: {
+    uz: (name: string, branch: string) => `✅ Ajoyib, ${name}! Siz hali ${branch}dasiz.\n\nQachon yana tekshiraylik?`,
+    ru: (name: string, branch: string) => `✅ Отлично, ${name}! Вы всё ещё в ${branch}.\n\nКогда напомнить снова?`,
+    en: (name: string, branch: string) => `✅ Great, ${name}! You're still at ${branch}.\n\nWhen should we check again?`,
+  },
+  ipNotMatched: {
+    uz: (name: string) => `❓ ${name}, sizni ofisda aniqlay olmadik.\n\nHali ishdamisiz?`,
+    ru: (name: string) => `❓ ${name}, мы не обнаружили вас в офисе.\n\nВы ещё на работе?`,
+    en: (name: string) => `❓ ${name}, we couldn't detect you at the office.\n\nAre you still at work?`,
+  },
+  buttons: {
+    in45min: { uz: '⏱️ 45 daq', ru: '⏱️ 45 мин', en: '⏱️ 45 min' },
+    in2hours: { uz: '🕐 2 soat', ru: '🕐 2 часа', en: '🕐 2 hours' },
+    allDay: { uz: '🌙 Bugun ketmayman', ru: '🌙 Сегодня не уйду', en: '🌙 Not leaving today' },
+    imAtWork: { uz: '🏢 Men ishdaman', ru: '🏢 Я на работе', en: '🏢 I\'m at work' },
+    iLeft: { uz: '🚪 Men chiqdim', ru: '🚪 Я ушёл', en: '🚪 I left' },
+  },
+};
 
 // Send Telegram message based on IP verification result
 async function sendFollowUpMessage(
@@ -11,7 +33,8 @@ async function sendFollowUpMessage(
   branchName: string,
   reminderId: string,
   attendanceId: string,
-  employeeName: string
+  employeeName: string,
+  lang: Lang = 'uz'
 ) {
   if (!BOT_TOKEN) return;
 
@@ -20,29 +43,27 @@ async function sendFollowUpMessage(
     let replyMarkup: object;
 
     if (ipMatched) {
-      // IP matched - employee is at office
-      text = `✅ Ajoyib, ${employeeName}! Siz hali ${branchName}dasiz.\n\nQachon yana tekshiraylik?`;
+      text = messages.ipMatched[lang](employeeName, branchName);
       replyMarkup = {
         inline_keyboard: [
           [
-            { text: '⏱️ 45 daq', callback_data: `reminder:45min:${reminderId}` },
-            { text: '🕐 2 soat', callback_data: `reminder:2hours:${reminderId}` },
+            { text: messages.buttons.in45min[lang], callback_data: `reminder:45min:${reminderId}` },
+            { text: messages.buttons.in2hours[lang], callback_data: `reminder:2hours:${reminderId}` },
           ],
           [
-            { text: '🌙 Bugun ketmayman', callback_data: `reminder:all_day:${reminderId}` },
+            { text: messages.buttons.allDay[lang], callback_data: `reminder:all_day:${reminderId}` },
           ],
         ],
       };
     } else {
-      // IP not matched - ask if still at work
-      text = `❓ ${employeeName}, sizni ofisda aniqlay olmadik.\n\nHali ishdamisiz?`;
+      text = messages.ipNotMatched[lang](employeeName);
       replyMarkup = {
         inline_keyboard: [
           [
-            { text: '🏢 Men ishdaman', callback_data: `reminder:im_at_work:${reminderId}` },
+            { text: messages.buttons.imAtWork[lang], callback_data: `reminder:im_at_work:${reminderId}` },
           ],
           [
-            { text: '🚪 Men chiqdim', callback_data: `reminder:i_left:${reminderId}:${attendanceId}` },
+            { text: messages.buttons.iLeft[lang], callback_data: `reminder:i_left:${reminderId}:${attendanceId}` },
           ],
         ],
       };
@@ -89,16 +110,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Database not configured' }, { status: 500 });
     }
 
-    // Get employee by telegram ID
+    // Get employee by telegram ID (including preferred_language)
     const { data: employee, error: empError } = await supabaseAdmin
       .from('employees')
-      .select('id, full_name, branch_id')
+      .select('id, full_name, branch_id, preferred_language')
       .eq('telegram_id', telegramId.toString())
       .single();
 
     if (empError || !employee) {
       return NextResponse.json({ success: false, error: 'Employee not found' }, { status: 404 });
     }
+
+    const lang = (employee.preferred_language as Lang) || 'uz';
 
     // Find active attendance record
     let attendance;
@@ -206,14 +229,15 @@ export async function POST(request: NextRequest) {
 
     const branchName = ipMatched ? matchedBranch?.name : (attendance.check_in_branch?.name || '');
 
-    // Send follow-up message via bot
+    // Send follow-up message via bot in employee's preferred language
     await sendFollowUpMessage(
       telegramId,
       ipMatched,
       branchName,
       reminderId,
       attendance.id,
-      employee.full_name
+      employee.full_name,
+      lang
     );
 
     return NextResponse.json({

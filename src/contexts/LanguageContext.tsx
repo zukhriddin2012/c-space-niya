@@ -26,12 +26,23 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     setMounted(true);
   }, []);
 
-  // Save language to localStorage when it changes
-  const setLanguage = useCallback((lang: Language) => {
+  // Save language to localStorage and database when it changes
+  const setLanguage = useCallback(async (lang: Language) => {
     setLanguageState(lang);
     localStorage.setItem(STORAGE_KEY, lang);
     // Update HTML lang attribute
     document.documentElement.lang = lang;
+
+    // Save to database for Telegram bot messages
+    try {
+      await fetch('/api/employees/language', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ language: lang }),
+      });
+    } catch (err) {
+      console.error('Failed to save language to database:', err);
+    }
   }, []);
 
   // Set initial HTML lang

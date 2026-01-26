@@ -36,10 +36,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Database not configured' }, { status: 500 });
     }
 
-    // Get employee by telegram ID
+    // Get employee by telegram ID (including preferred_language)
     const { data: employee, error: empError } = await supabaseAdmin
       .from('employees')
-      .select('id, full_name, position, branch_id')
+      .select('id, full_name, position, branch_id, preferred_language')
       .eq('telegram_id', telegramId.toString())
       .single();
 
@@ -156,6 +156,7 @@ export async function POST(request: NextRequest) {
       isLate: late,
       shiftId,
       employeeName: employee.full_name,
+      language: employee.preferred_language || 'uz',
     };
 
     // Notify Telegram bot via webhook (must await for Vercel serverless)
