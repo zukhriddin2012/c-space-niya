@@ -17,13 +17,33 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>(defaultLanguage);
   const [mounted, setMounted] = useState(false);
 
-  // Load language from localStorage on mount
+  // Load language from database (via /api/auth/me) on mount, fallback to localStorage
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as Language | null;
-    if (stored && (stored === 'en' || stored === 'ru' || stored === 'uz')) {
-      setLanguageState(stored);
-    }
-    setMounted(true);
+    const loadLanguage = async () => {
+      // First check localStorage for immediate display
+      const stored = localStorage.getItem(STORAGE_KEY) as Language | null;
+      if (stored && (stored === 'en' || stored === 'ru' || stored === 'uz')) {
+        setLanguageState(stored);
+      }
+
+      // Then try to load from database (if user is logged in)
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const data = await res.json();
+          const dbLang = data.employee?.preferred_language as Language | null;
+          if (dbLang && (dbLang === 'en' || dbLang === 'ru' || dbLang === 'uz')) {
+            setLanguageState(dbLang);
+            localStorage.setItem(STORAGE_KEY, dbLang); // Sync localStorage with DB
+          }
+        }
+      } catch (err) {
+        // Ignore - user might not be logged in
+      }
+
+      setMounted(true);
+    };
+    loadLanguage();
   }, []);
 
   // Save language to localStorage and database when it changes

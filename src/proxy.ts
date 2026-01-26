@@ -14,6 +14,7 @@ const publicPaths = [
   '/api/attendance/checkout-check', // Telegram mini app checkout reminder
   '/api/attendance/checkout-action', // Telegram mini app checkout action
   '/api/telegram-bot', // All telegram bot APIs
+  '/api/employees/language', // Language preference API (for bot)
   '/sign', // Document signing page for candidates (no auth required)
   '/api/documents/sign', // Document signing API (no auth required)
 ];
