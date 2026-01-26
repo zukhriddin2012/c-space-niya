@@ -96,7 +96,7 @@ function CheckoutReminderContent() {
     setDebugInfo(`tid=${telegramId}, checking...`);
 
     try {
-      const response = await fetch('/api/telegram-bot/check-presence', {
+      const response = await fetch('/api/attendance/checkout-check', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -145,7 +145,7 @@ function CheckoutReminderContent() {
   // Handle action buttons - using same pattern as working check-in page
   const handleAction = async (action: 'im_at_work' | 'i_left' | '45min' | '2hours' | 'all_day') => {
     try {
-      const response = await fetch('/api/telegram-bot/reminder-response', {
+      const response = await fetch('/api/attendance/checkout-action', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
