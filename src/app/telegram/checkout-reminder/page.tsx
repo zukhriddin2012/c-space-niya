@@ -31,6 +31,7 @@ function CheckoutReminderContent() {
   const [branchName, setBranchName] = useState('');
   const [reminderId, setReminderId] = useState<string | null>(null);
   const [telegramId, setTelegramId] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string>('');
 
   // Translations
   const t = {
@@ -233,22 +234,59 @@ function CheckoutReminderContent() {
   };
 
   useEffect(() => {
-    // Initialize Telegram Web App
-    if (window.Telegram?.WebApp) {
-      window.Telegram.WebApp.ready();
-      window.Telegram.WebApp.expand();
+    // Function to initialize Telegram WebApp
+    const initTelegram = () => {
+      console.log('[CheckoutReminder] Initializing...');
+      const hasTelegram = !!window.Telegram;
+      const hasWebApp = !!window.Telegram?.WebApp;
+      const initData = window.Telegram?.WebApp?.initDataUnsafe;
+      const userId = initData?.user?.id;
 
-      // Get Telegram user ID from initDataUnsafe
-      const userId = window.Telegram.WebApp.initDataUnsafe?.user?.id;
-      if (userId) {
-        setTelegramId(userId.toString());
+      const debug = `Telegram: ${hasTelegram}, WebApp: ${hasWebApp}, UserID: ${userId || 'none'}`;
+      console.log('[CheckoutReminder]', debug);
+      setDebugInfo(debug);
+
+      if (hasWebApp) {
+        window.Telegram!.WebApp!.ready();
+        window.Telegram!.WebApp!.expand();
+
+        if (userId) {
+          setTelegramId(userId.toString());
+          return true;
+        }
       }
-    }
+      return false;
+    };
+
+    // Try immediately
+    if (initTelegram()) return;
+
+    // If Telegram not available yet, wait and retry
+    let attempts = 0;
+    const maxAttempts = 10;
+    const interval = setInterval(() => {
+      attempts++;
+      console.log(`[CheckoutReminder] Retry attempt ${attempts}/${maxAttempts}`);
+
+      if (initTelegram()) {
+        clearInterval(interval);
+        return;
+      }
+
+      if (attempts >= maxAttempts) {
+        clearInterval(interval);
+        setStatus('error');
+        setMessage('Could not connect to Telegram. Please reopen from Telegram app.');
+      }
+    }, 500);
+
+    return () => clearInterval(interval);
   }, []);
 
   // Check presence when telegramId is available
   useEffect(() => {
     if (telegramId) {
+      console.log('[CheckoutReminder] telegramId set, calling checkPresence:', telegramId);
       checkPresence();
     }
   }, [telegramId, checkPresence]);
@@ -266,6 +304,9 @@ function CheckoutReminderContent() {
               </svg>
             </div>
             <h1 className="text-xl font-bold text-gray-900 mb-2">{texts.checking}</h1>
+            {debugInfo && (
+              <p className="text-xs text-gray-400 mt-2 break-all">{debugInfo}</p>
+            )}
           </div>
         )}
 
