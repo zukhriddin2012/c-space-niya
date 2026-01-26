@@ -83,20 +83,28 @@ CREATE INDEX IF NOT EXISTS idx_checkout_reminders_created ON checkout_reminders(
 INSERT INTO bot_settings (key, value, description) VALUES
   ('day_shift_reminder_time', '18:30', 'When to send checkout reminders for day shift employees'),
   ('night_shift_reminder_time', '10:00', 'When to send checkout reminders for night shift employees (next day)'),
-  ('auto_checkout_delay_minutes', '45', 'How long to wait after reminder before auto-checkout'),
-  ('day_shift_cutoff_hour', '12', 'Check-ins before this hour are considered day shift')
+  ('day_shift_cutoff_time', '15:30', 'Check-ins at or before this time are day shift, after this time are night shift')
 ON CONFLICT (key) DO NOTHING;
 
 -- Insert default message templates
 INSERT INTO bot_message_templates (key, description, content, available_placeholders) VALUES
-  ('checkout_reminder', 'Reminder sent when employees should check out',
-   '{"en": "Hi {employee_name}! 👋 Time to wrap up your day. Please confirm your checkout.", "ru": "Привет, {employee_name}! 👋 Пора завершать рабочий день. Пожалуйста, подтвердите выход.", "uz": "Salom {employee_name}! 👋 Ish kunini yakunlash vaqti keldi. Iltimos, chiqishni tasdiqlang."}',
-   ARRAY['employee_name', 'time']),
-  ('auto_checkout_notice', 'Notice sent when auto-checkout occurs',
-   '{"en": "Your checkout was automatically recorded at {time}. See you tomorrow! 🌙", "ru": "Ваш выход был автоматически зафиксирован в {time}. До завтра! 🌙", "uz": "Sizning chiqishingiz {time} da avtomatik qayd etildi. Ertaga ko''rishamiz! 🌙"}',
-   ARRAY['time']),
+  ('presence_check', 'Initial reminder to check if employee is still at work',
+   '{"en": "Hi {employee_name}! 👋 Just checking in - are you still at work?", "ru": "Привет, {employee_name}! 👋 Проверяем - вы ещё на работе?", "uz": "Salom {employee_name}! 👋 Tekshirib turibmiz - hali ishdamisiz?"}',
+   ARRAY['employee_name']),
+  ('still_at_office_confirmed', 'Message when IP matches - employee is still at office',
+   '{"en": "Great! You''re still at {branch_name}. When should we check again?", "ru": "Отлично! Вы всё ещё в {branch_name}. Когда напомнить снова?", "uz": "Ajoyib! Siz hali {branch_name}dasiz. Qachon yana tekshiraylik?"}',
+   ARRAY['branch_name']),
   ('ip_mismatch_question', 'Question sent when IP does not match branch',
-   '{"en": "Your location doesn''t match your branch''s network. Where are you right now?", "ru": "Ваше местоположение не совпадает с сетью филиала. Где вы сейчас находитесь?", "uz": "Joylashuvingiz filial tarmog''iga mos kelmaydi. Hozir qayerdasiz?"}',
+   '{"en": "We couldn''t detect you at the office. Are you still at work?", "ru": "Мы не обнаружили вас в офисе. Вы ещё на работе?", "uz": "Sizni ofisda aniqlay olmadik. Hali ishdamisiz?"}',
+   ARRAY[]::TEXT[]),
+  ('checkout_confirmed', 'Message when checkout is recorded',
+   '{"en": "Got it! Your checkout has been recorded. See you next time! 👋", "ru": "Понял! Ваш выход зафиксирован. До встречи! 👋", "uz": "Tushundim! Chiqishingiz qayd etildi. Keyingi safar ko''rishguncha! 👋"}',
+   ARRAY[]::TEXT[]),
+  ('reminder_set', 'Confirmation that reminder is set',
+   '{"en": "Alright! I''ll check again {reminder_time}. Keep up the great work! 💪", "ru": "Хорошо! Проверю снова {reminder_time}. Так держать! 💪", "uz": "Xop! {reminder_time} yana tekshiraman. Davom eting! 💪"}',
+   ARRAY['reminder_time']),
+  ('staying_all_day', 'Message when employee chooses to stay all day',
+   '{"en": "Understood! You''re staying late today. Don''t forget to checkout when you leave! 🌙", "ru": "Понял! Вы сегодня задерживаетесь. Не забудьте отметить выход! 🌙", "uz": "Tushundim! Bugun kech qolasiz. Chiqishni qayd etishni unutmang! 🌙"}',
    ARRAY[]::TEXT[])
 ON CONFLICT (key) DO NOTHING;
 
@@ -104,10 +112,16 @@ ON CONFLICT (key) DO NOTHING;
 INSERT INTO bot_button_labels (key, description, label, emoji) VALUES
   ('confirm_checkout', 'Button to confirm checkout',
    '{"en": "Confirm Checkout", "ru": "Подтвердить выход", "uz": "Chiqishni tasdiqlash"}', '✅'),
-  ('im_in_office', 'Button to indicate still in office',
-   '{"en": "I''m in the office", "ru": "Я в офисе", "uz": "Men ofisdaman"}', '🏢'),
-  ('i_left', 'Button to indicate already left',
+  ('im_at_work', 'Button to indicate still at work (IP mismatch)',
+   '{"en": "I''m at work", "ru": "Я на работе", "uz": "Men ishdaman"}', '🏢'),
+  ('i_already_left', 'Button to indicate already left',
    '{"en": "I already left", "ru": "Я уже ушёл", "uz": "Men allaqachon chiqdim"}', '🚪'),
+  ('reminder_45_min', 'Button to set reminder in 45 minutes',
+   '{"en": "In 45 minutes", "ru": "Через 45 минут", "uz": "45 daqiqadan keyin"}', '⏱️'),
+  ('reminder_2_hours', 'Button to set reminder in 2 hours',
+   '{"en": "In 2 hours", "ru": "Через 2 часа", "uz": "2 soatdan keyin"}', '🕐'),
+  ('reminder_all_day', 'Button when employee won''t leave today',
+   '{"en": "I won''t leave today", "ru": "Сегодня не уйду", "uz": "Bugun ketmayman"}', '🌙'),
   ('start_quiz', 'Button to start a quiz',
    '{"en": "Start Quiz", "ru": "Начать тест", "uz": "Testni boshlash"}', '🎯'),
   ('next', 'Button for next action',
