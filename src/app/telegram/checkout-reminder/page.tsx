@@ -102,6 +102,20 @@ function CheckoutReminderContent() {
     }
 
     const baseUrl = getBaseUrl();
+
+    // First test if POST works at all
+    try {
+      const testResponse = await fetch(`${baseUrl}/api/test-post`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ test: true }),
+      });
+      const testResult = await testResponse.json();
+      console.log('Test POST result:', testResult);
+    } catch (e) {
+      console.log('Test POST failed:', e);
+    }
+
     const apiUrl = `${baseUrl}/api/tg-check`;
     setDebugInfo(`tid=${telegramId}, url=${apiUrl}`);
 
