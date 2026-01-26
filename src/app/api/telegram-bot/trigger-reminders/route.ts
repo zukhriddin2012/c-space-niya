@@ -24,15 +24,24 @@ interface AttendanceWithEmployee {
   };
 }
 
-// Convert UTC time to Tashkent time (UTC+5) and get hour:minute
-function getTimeInTashkent(utcDateStr: string): string {
-  const date = new Date(utcDateStr);
-  // Add 5 hours for Tashkent timezone
-  const tashkentTime = new Date(date.getTime() + 5 * 60 * 60 * 1000);
-  const hours = tashkentTime.getUTCHours().toString().padStart(2, '0');
-  const minutes = tashkentTime.getUTCMinutes().toString().padStart(2, '0');
-  const seconds = tashkentTime.getUTCSeconds().toString().padStart(2, '0');
-  return `${hours}:${minutes}:${seconds}`;
+// Get time string for comparison - check_in is stored as HH:MM:SS format already in Tashkent time
+function normalizeTimeString(timeStr: string): string {
+  // If it's already in HH:MM:SS format, return as is
+  if (/^\d{2}:\d{2}:\d{2}$/.test(timeStr)) {
+    return timeStr;
+  }
+  // If it's a full ISO datetime, extract time part and convert to Tashkent
+  if (timeStr.includes('T') || timeStr.includes('-')) {
+    const date = new Date(timeStr);
+    if (isNaN(date.getTime())) return timeStr;
+    // Add 5 hours for Tashkent timezone
+    const tashkentTime = new Date(date.getTime() + 5 * 60 * 60 * 1000);
+    const hours = tashkentTime.getUTCHours().toString().padStart(2, '0');
+    const minutes = tashkentTime.getUTCMinutes().toString().padStart(2, '0');
+    const seconds = tashkentTime.getUTCSeconds().toString().padStart(2, '0');
+    return `${hours}:${minutes}:${seconds}`;
+  }
+  return timeStr;
 }
 
 // Get employees who need checkout reminder based on shift type
@@ -86,7 +95,7 @@ async function getEmployeesForCheckoutReminder(shiftType: 'day' | 'night'): Prom
       return false;
     }
 
-    const checkInTime = getTimeInTashkent(att.check_in);
+    const checkInTime = normalizeTimeString(att.check_in);
     const passesFilter = shiftType === 'day' ? checkInTime <= cutoffTime : checkInTime > cutoffTime;
 
     debugInfo.push({
