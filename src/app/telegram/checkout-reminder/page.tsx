@@ -105,6 +105,14 @@ function CheckoutReminderContent() {
         body: JSON.stringify({ telegramId, attendanceId }),
       });
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API error:', response.status, errorText);
+        setStatus('error');
+        setMessage(`API Error: ${response.status}`);
+        return;
+      }
+
       const result = await response.json();
 
       if (result.success) {
@@ -122,7 +130,7 @@ function CheckoutReminderContent() {
     } catch (error) {
       console.error('Presence check error:', error);
       setStatus('error');
-      setMessage('Network error');
+      setMessage(error instanceof Error ? error.message : 'Network error');
     }
   }, [telegramId, attendanceId]);
 
