@@ -43,7 +43,7 @@ async function getEmployeesForCheckoutReminder(shiftType: 'day' | 'night'): Prom
       employee_id,
       check_in,
       check_out,
-      employees!inner(
+      employees(
         id,
         full_name,
         telegram_id,
@@ -51,22 +51,30 @@ async function getEmployeesForCheckoutReminder(shiftType: 'day' | 'night'): Prom
       )
     `)
     .eq('date', dateStr)
-    .is('check_out', null)
-    .not('employees.telegram_id', 'is', null);
+    .is('check_out', null);
 
   if (error || !data) {
     console.error('Error fetching employees for reminder:', error);
     return [];
   }
 
+  console.log(`📊 Found ${data.length} attendance records without checkout for ${dateStr}`);
+
   const typedData = data as unknown as AttendanceWithEmployee[];
 
-  // Filter by shift type based on check-in time
+  // Filter by shift type based on check-in time and ensure telegram_id exists
   const filtered = typedData.filter(att => {
+    // Skip if no employee or no telegram_id
+    if (!att.employees || !att.employees.telegram_id) {
+      return false;
+    }
+
     const checkInTime = new Date(att.check_in).toLocaleTimeString('en-US', {
       hour12: false,
       timeZone: 'Asia/Tashkent'
     });
+
+    console.log(`  - ${att.employees.full_name}: check-in ${checkInTime}, cutoff ${cutoffTime}`);
 
     if (shiftType === 'day') {
       return checkInTime <= cutoffTime;
@@ -74,6 +82,8 @@ async function getEmployeesForCheckoutReminder(shiftType: 'day' | 'night'): Prom
       return checkInTime > cutoffTime;
     }
   });
+
+  console.log(`📋 Filtered to ${filtered.length} ${shiftType} shift employees with telegram_id`);
 
   return filtered.map(att => ({
     employeeId: att.employees.id,
