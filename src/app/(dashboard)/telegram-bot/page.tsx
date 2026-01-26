@@ -232,6 +232,8 @@ export default function TelegramBotPage() {
   const [isSendingTest, setIsSendingTest] = useState(false);
   const [isRetryingFailed, setIsRetryingFailed] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isTriggeringDay, setIsTriggeringDay] = useState(false);
+  const [isTriggeringNight, setIsTriggeringNight] = useState(false);
 
   const handleSendTestReminder = async () => {
     setIsSendingTest(true);
@@ -273,6 +275,33 @@ export default function TelegramBotPage() {
       alert('Failed to retry reminders');
     } finally {
       setIsRetryingFailed(false);
+    }
+  };
+
+  const handleTriggerReminders = async (shiftType: 'day' | 'night') => {
+    const setLoading = shiftType === 'day' ? setIsTriggeringDay : setIsTriggeringNight;
+    setLoading(true);
+    try {
+      const res = await fetch('/api/telegram-bot/trigger-reminders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shiftType }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (data.sent === 0) {
+          alert(`ℹ️ ${data.message}`);
+        } else {
+          alert(`✅ ${data.message}`);
+        }
+        fetchData(); // Refresh stats
+      } else {
+        alert(data.error || 'Failed to trigger reminders');
+      }
+    } catch {
+      alert('Failed to trigger reminders');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -593,6 +622,35 @@ export default function TelegramBotPage() {
                             <p className="text-xs text-gray-500">Download as CSV</p>
                           </div>
                         </button>
+                        <div className="border-t border-gray-200 pt-2 mt-2">
+                          <p className="text-xs text-gray-500 mb-2 font-medium">Manual Triggers</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              onClick={() => handleTriggerReminders('day')}
+                              disabled={isTriggeringDay}
+                              className="flex flex-col items-center gap-1 px-3 py-2 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {isTriggeringDay ? (
+                                <RefreshCw size={18} className="text-yellow-600 animate-spin" />
+                              ) : (
+                                <span className="text-lg">☀️</span>
+                              )}
+                              <span className="text-xs font-medium text-gray-700">Day 6:30 PM</span>
+                            </button>
+                            <button
+                              onClick={() => handleTriggerReminders('night')}
+                              disabled={isTriggeringNight}
+                              className="flex flex-col items-center gap-1 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {isTriggeringNight ? (
+                                <RefreshCw size={18} className="text-indigo-600 animate-spin" />
+                              ) : (
+                                <span className="text-lg">🌙</span>
+                              )}
+                              <span className="text-xs font-medium text-gray-700">Night 10 AM</span>
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
