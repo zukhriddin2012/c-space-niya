@@ -185,16 +185,4 @@ export default function TelegramCheckinPage() {
   );
 }
 
-// Extend window with Telegram type
-declare global {
-  interface Window {
-    Telegram?: {
-      WebApp: {
-        ready: () => void;
-        expand: () => void;
-        close: () => void;
-        sendData: (data: string) => void;
-      };
-    };
-  }
-}
+// Telegram WebApp types are defined in @/types/telegram.d.ts

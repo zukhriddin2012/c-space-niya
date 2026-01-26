@@ -3,37 +3,6 @@
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-// Declare Telegram WebApp types
-declare global {
-  interface Window {
-    Telegram?: {
-      WebApp?: {
-        ready: () => void;
-        expand: () => void;
-        close: () => void;
-        sendData: (data: string) => void;
-        initData: string;
-        initDataUnsafe?: {
-          user?: {
-            id: number;
-            first_name?: string;
-            last_name?: string;
-            username?: string;
-            language_code?: string;
-          };
-          start_param?: string;
-        };
-        MainButton?: {
-          show: () => void;
-          hide: () => void;
-          setText: (text: string) => void;
-          onClick: (callback: () => void) => void;
-        };
-      };
-    };
-  }
-}
-
 type ReminderStatus = 'loading' | 'ip_matched' | 'ip_not_matched' | 'at_work_confirmed' | 'checkout_done' | 'reminder_set' | 'error';
 
 interface CheckResult {
