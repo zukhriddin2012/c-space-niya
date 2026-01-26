@@ -14,12 +14,13 @@ export async function GET() {
     }
 
     // Fetch additional employee data including telegram_id
+    // user.id is the employee UUID, user.employeeId is the human-readable ID (e.g., "EMP001")
     let employee = null;
-    if (user.employeeId && supabaseAdmin) {
+    if (user.id && supabaseAdmin) {
       const { data } = await supabaseAdmin
         .from('employees')
         .select('id, telegram_id, preferred_language')
-        .eq('id', user.employeeId)
+        .eq('id', user.id)
         .single();
       employee = data;
     }
