@@ -180,7 +180,8 @@ async function sendCheckoutReminder(emp: Employee): Promise<boolean> {
     };
 
     const msg = messages[lang] || messages.uz;
-    const webAppUrl = `${WEBAPP_URL}/telegram/checkout-reminder?attendanceId=${emp.attendanceId}&lang=${lang}`;
+    // Include tid (telegramId) in URL for more reliable identification
+    const webAppUrl = `${WEBAPP_URL}/telegram/checkout-reminder?tid=${emp.telegramId}&aid=${emp.attendanceId}&lang=${lang}`;
 
     const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',

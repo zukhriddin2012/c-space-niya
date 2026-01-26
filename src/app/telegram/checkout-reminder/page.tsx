@@ -3,26 +3,12 @@
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-// Get base URL for API calls - important for Telegram WebApp
-const getApiBaseUrl = () => {
-  if (typeof window !== 'undefined') {
-    return window.location.origin;
-  }
-  return process.env.NEXT_PUBLIC_APP_URL || 'https://c-space-hr.vercel.app';
-};
-
 type ReminderStatus = 'loading' | 'ip_matched' | 'ip_not_matched' | 'at_work_confirmed' | 'checkout_done' | 'reminder_set' | 'error';
-
-interface CheckResult {
-  ipMatched: boolean;
-  branchName?: string;
-  attendanceId?: string;
-  reminderId?: string;
-}
 
 function CheckoutReminderContent() {
   const searchParams = useSearchParams();
-  // Support both 'aid' short form and 'attendanceId' full form
+  // Get telegramId from URL (tid) - same pattern as checkin page
+  const telegramId = searchParams.get('tid');
   const attendanceId = searchParams.get('aid') || searchParams.get('attendanceId');
   const lang = searchParams.get('lang') || 'uz';
 
@@ -30,8 +16,6 @@ function CheckoutReminderContent() {
   const [message, setMessage] = useState('');
   const [branchName, setBranchName] = useState('');
   const [reminderId, setReminderId] = useState<string | null>(null);
-  const [telegramId, setTelegramId] = useState<string | null>(null);
-  const [debugInfo, setDebugInfo] = useState<string>('');
 
   // Translations
   const t = {
@@ -99,40 +83,23 @@ function CheckoutReminderContent() {
 
   const texts = t[lang as keyof typeof t] || t.uz;
 
-  // Check presence on load
+  // Check presence on load - similar to checkin page pattern
   const checkPresence = useCallback(async () => {
     if (!telegramId) {
       setStatus('error');
-      setMessage('Missing Telegram ID');
+      setMessage('Telegram ID topilmadi');
       return;
     }
 
     try {
-      const baseUrl = getApiBaseUrl();
-      console.log('[CheckoutReminder] Base URL:', baseUrl);
-
-      // Use shorter API path to avoid redirect issues
-      const apiUrl = `${baseUrl}/api/tg-check`;
-      console.log('[CheckoutReminder] Calling API:', apiUrl);
-
-      const response = await fetch(apiUrl, {
+      // Use relative URL like checkin page does
+      const response = await fetch('/api/tg-check', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
         },
         body: JSON.stringify({ telegramId, attendanceId }),
       });
-
-      console.log('[CheckoutReminder] Response status:', response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API error:', response.status, errorText);
-        setStatus('error');
-        setMessage(`API Error: ${response.status} - ${errorText.substring(0, 100)}`);
-        return;
-      }
 
       const result = await response.json();
 
@@ -146,32 +113,28 @@ function CheckoutReminderContent() {
         }
       } else {
         setStatus('error');
-        setMessage(result.error || 'Check failed');
+        setMessage(result.error || 'Xatolik yuz berdi');
       }
     } catch (error) {
       console.error('Presence check error:', error);
       setStatus('error');
-      setMessage(error instanceof Error ? error.message : 'Network error');
+      setMessage('Tarmoq xatosi');
     }
   }, [telegramId, attendanceId]);
 
   // Handle action buttons
   const handleAction = async (action: 'im_at_work' | 'i_left' | '45min' | '2hours' | 'all_day') => {
     try {
-      const apiUrl = `${getApiBaseUrl()}/api/telegram-bot/reminder-response`;
-      console.log('[CheckoutReminder] Calling action API:', apiUrl, action);
-
-      const response = await fetch(apiUrl, {
+      const response = await fetch('/api/tg-action', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
         },
         body: JSON.stringify({
           telegramId,
           attendanceId,
           reminderId,
-          responseType: action, // API expects 'responseType'
+          responseType: action,
         }),
       });
 
@@ -180,19 +143,16 @@ function CheckoutReminderContent() {
       if (result.success) {
         if (action === 'i_left') {
           setStatus('checkout_done');
-          // Close the web app after short delay
           setTimeout(() => {
             if (window.Telegram?.WebApp) {
               window.Telegram.WebApp.close();
             }
           }, 2000);
         } else if (action === 'im_at_work') {
-          // Show time options
           setStatus('at_work_confirmed');
         } else if (action === 'all_day') {
           setStatus('reminder_set');
           setMessage('all_day');
-          // Close the web app after short delay
           setTimeout(() => {
             if (window.Telegram?.WebApp) {
               window.Telegram.WebApp.close();
@@ -201,7 +161,6 @@ function CheckoutReminderContent() {
         } else {
           setStatus('reminder_set');
           setMessage(action);
-          // Close the web app after short delay
           setTimeout(() => {
             if (window.Telegram?.WebApp) {
               window.Telegram.WebApp.close();
@@ -210,72 +169,25 @@ function CheckoutReminderContent() {
         }
       } else {
         setStatus('error');
-        setMessage(result.error || 'Action failed');
+        setMessage(result.error || 'Xatolik yuz berdi');
       }
     } catch (error) {
       console.error('Action error:', error);
       setStatus('error');
-      setMessage('Network error');
+      setMessage('Tarmoq xatosi');
     }
   };
 
   useEffect(() => {
-    // Function to initialize Telegram WebApp
-    const initTelegram = () => {
-      console.log('[CheckoutReminder] Initializing...');
-      const hasTelegram = !!window.Telegram;
-      const hasWebApp = !!window.Telegram?.WebApp;
-      const initData = window.Telegram?.WebApp?.initDataUnsafe;
-      const userId = initData?.user?.id;
-
-      const debug = `Telegram: ${hasTelegram}, WebApp: ${hasWebApp}, UserID: ${userId || 'none'}`;
-      console.log('[CheckoutReminder]', debug);
-      setDebugInfo(debug);
-
-      if (hasWebApp) {
-        window.Telegram!.WebApp!.ready();
-        window.Telegram!.WebApp!.expand();
-
-        if (userId) {
-          setTelegramId(userId.toString());
-          return true;
-        }
-      }
-      return false;
-    };
-
-    // Try immediately
-    if (initTelegram()) return;
-
-    // If Telegram not available yet, wait and retry
-    let attempts = 0;
-    const maxAttempts = 10;
-    const interval = setInterval(() => {
-      attempts++;
-      console.log(`[CheckoutReminder] Retry attempt ${attempts}/${maxAttempts}`);
-
-      if (initTelegram()) {
-        clearInterval(interval);
-        return;
-      }
-
-      if (attempts >= maxAttempts) {
-        clearInterval(interval);
-        setStatus('error');
-        setMessage('Could not connect to Telegram. Please reopen from Telegram app.');
-      }
-    }, 500);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Check presence when telegramId is available
-  useEffect(() => {
-    if (telegramId) {
-      console.log('[CheckoutReminder] telegramId set, calling checkPresence:', telegramId);
-      checkPresence();
+    // Initialize Telegram Web App
+    if (window.Telegram?.WebApp) {
+      window.Telegram.WebApp.ready();
+      window.Telegram.WebApp.expand();
     }
-  }, [telegramId, checkPresence]);
+
+    // Perform check immediately - same as checkin page
+    checkPresence();
+  }, [checkPresence]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-500 to-indigo-600 flex items-center justify-center p-4">
@@ -290,9 +202,6 @@ function CheckoutReminderContent() {
               </svg>
             </div>
             <h1 className="text-xl font-bold text-gray-900 mb-2">{texts.checking}</h1>
-            {debugInfo && (
-              <p className="text-xs text-gray-400 mt-2 break-all">{debugInfo}</p>
-            )}
           </div>
         )}
 
@@ -308,32 +217,21 @@ function CheckoutReminderContent() {
               {texts.stillAtOffice(branchName)}
             </h1>
             <p className="text-gray-500 text-sm mb-6">{texts.whenToCheck}</p>
-
-            {/* Reminder time buttons */}
             <div className="space-y-3">
-              <button
-                onClick={() => handleAction('45min')}
-                className="w-full py-3 px-4 bg-green-50 hover:bg-green-100 text-green-700 rounded-xl font-medium transition-colors"
-              >
+              <button onClick={() => handleAction('45min')} className="w-full py-3 px-4 bg-green-50 hover:bg-green-100 text-green-700 rounded-xl font-medium transition-colors">
                 {texts.in45min}
               </button>
-              <button
-                onClick={() => handleAction('2hours')}
-                className="w-full py-3 px-4 bg-green-50 hover:bg-green-100 text-green-700 rounded-xl font-medium transition-colors"
-              >
+              <button onClick={() => handleAction('2hours')} className="w-full py-3 px-4 bg-green-50 hover:bg-green-100 text-green-700 rounded-xl font-medium transition-colors">
                 {texts.in2hours}
               </button>
-              <button
-                onClick={() => handleAction('all_day')}
-                className="w-full py-3 px-4 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-xl font-medium transition-colors"
-              >
+              <button onClick={() => handleAction('all_day')} className="w-full py-3 px-4 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-xl font-medium transition-colors">
                 {texts.allDay}
               </button>
             </div>
           </div>
         )}
 
-        {/* At Work Confirmed (after clicking "I'm at work" when IP didn't match) */}
+        {/* At Work Confirmed */}
         {status === 'at_work_confirmed' && (
           <div className="text-center">
             <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
@@ -343,32 +241,21 @@ function CheckoutReminderContent() {
             </div>
             <h1 className="text-xl font-bold text-gray-900 mb-2">👍</h1>
             <p className="text-gray-500 text-sm mb-6">{texts.whenToCheck}</p>
-
-            {/* Reminder time buttons */}
             <div className="space-y-3">
-              <button
-                onClick={() => handleAction('45min')}
-                className="w-full py-3 px-4 bg-green-50 hover:bg-green-100 text-green-700 rounded-xl font-medium transition-colors"
-              >
+              <button onClick={() => handleAction('45min')} className="w-full py-3 px-4 bg-green-50 hover:bg-green-100 text-green-700 rounded-xl font-medium transition-colors">
                 {texts.in45min}
               </button>
-              <button
-                onClick={() => handleAction('2hours')}
-                className="w-full py-3 px-4 bg-green-50 hover:bg-green-100 text-green-700 rounded-xl font-medium transition-colors"
-              >
+              <button onClick={() => handleAction('2hours')} className="w-full py-3 px-4 bg-green-50 hover:bg-green-100 text-green-700 rounded-xl font-medium transition-colors">
                 {texts.in2hours}
               </button>
-              <button
-                onClick={() => handleAction('all_day')}
-                className="w-full py-3 px-4 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-xl font-medium transition-colors"
-              >
+              <button onClick={() => handleAction('all_day')} className="w-full py-3 px-4 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-xl font-medium transition-colors">
                 {texts.allDay}
               </button>
             </div>
           </div>
         )}
 
-        {/* IP Not Matched - Ask if at work */}
+        {/* IP Not Matched */}
         {status === 'ip_not_matched' && (
           <div className="text-center">
             <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-orange-100 flex items-center justify-center">
@@ -378,19 +265,11 @@ function CheckoutReminderContent() {
             </div>
             <h1 className="text-lg font-bold text-gray-900 mb-2">{texts.ipMismatch}</h1>
             <p className="text-gray-500 text-sm mb-6">{texts.areYouAtWork}</p>
-
-            {/* Yes/No buttons */}
             <div className="space-y-3">
-              <button
-                onClick={() => handleAction('im_at_work')}
-                className="w-full py-3 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-medium transition-colors"
-              >
+              <button onClick={() => handleAction('im_at_work')} className="w-full py-3 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-medium transition-colors">
                 {texts.imAtWork}
               </button>
-              <button
-                onClick={() => handleAction('i_left')}
-                className="w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors"
-              >
+              <button onClick={() => handleAction('i_left')} className="w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors">
                 {texts.iLeft}
               </button>
             </div>
