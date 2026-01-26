@@ -93,7 +93,7 @@ function CheckoutReminderContent() {
       return;
     }
 
-    setDebugInfo(`tid=${telegramId}`);
+    setDebugInfo(`tid=${telegramId}, checking...`);
 
     try {
       const response = await fetch('/api/telegram-bot/check-presence', {
@@ -107,7 +107,20 @@ function CheckoutReminderContent() {
         }),
       });
 
-      const result = await response.json();
+      // Get raw text first to debug what we actually receive
+      const text = await response.text();
+      setDebugInfo(`tid=${telegramId}, status=${response.status}, len=${text.length}`);
+
+      // Try to parse as JSON
+      let result;
+      try {
+        result = JSON.parse(text);
+      } catch (parseError) {
+        setStatus('error');
+        setMessage(`JSON parse xato`);
+        setDebugInfo(`tid=${telegramId}, status=${response.status}, body=${text.substring(0, 150)}`);
+        return;
+      }
 
       if (result.success) {
         setReminderId(result.reminderId);
@@ -125,6 +138,7 @@ function CheckoutReminderContent() {
       console.error('Presence check error:', error);
       setStatus('error');
       setMessage(`Tarmoq xatosi: ${error?.message || 'unknown'}`);
+      setDebugInfo(`tid=${telegramId}, err=${error?.name || 'unknown'}`);
     }
   }, [telegramId, attendanceId]);
 
