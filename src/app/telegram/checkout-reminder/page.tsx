@@ -96,8 +96,11 @@ function CheckoutReminderContent() {
     }
 
     try {
-      // Use relative URL like checkin page does
-      const response = await fetch('/api/tg-check', {
+      // Use absolute URL for Telegram WebApp compatibility
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://c-space-hr.vercel.app';
+      const apiUrl = `${baseUrl}/api/tg-check`;
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -129,7 +132,10 @@ function CheckoutReminderContent() {
   // Handle action buttons
   const handleAction = async (action: 'im_at_work' | 'i_left' | '45min' | '2hours' | 'all_day') => {
     try {
-      const response = await fetch('/api/tg-action', {
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://c-space-hr.vercel.app';
+      const apiUrl = `${baseUrl}/api/tg-action`;
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
