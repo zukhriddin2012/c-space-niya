@@ -234,6 +234,50 @@ export default function TelegramBotPage() {
   const [isExporting, setIsExporting] = useState(false);
   const [isTriggeringDay, setIsTriggeringDay] = useState(false);
   const [isTriggeringNight, setIsTriggeringNight] = useState(false);
+  const [isSendingToMe, setIsSendingToMe] = useState(false);
+  const [myTelegramId, setMyTelegramId] = useState<string | null>(null);
+
+  // Fetch current user's telegram ID
+  useEffect(() => {
+    const fetchMyTelegramId = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+        if (data.employee?.telegram_id) {
+          setMyTelegramId(data.employee.telegram_id);
+        }
+      } catch (err) {
+        console.error('Failed to fetch current user:', err);
+      }
+    };
+    fetchMyTelegramId();
+  }, []);
+
+  const handleSendToMe = async () => {
+    if (!myTelegramId) {
+      alert('Your Telegram ID is not configured. Please link your Telegram account first.');
+      return;
+    }
+    setIsSendingToMe(true);
+    try {
+      const res = await fetch('/api/telegram-bot/trigger-reminders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telegramId: myTelegramId }),
+      });
+      const data = await res.json();
+      if (res.ok && data.sent > 0) {
+        alert(`✅ ${data.message}`);
+        fetchData();
+      } else {
+        alert(`ℹ️ ${data.error || data.message || 'No active check-in found'}`);
+      }
+    } catch {
+      alert('Failed to send reminder');
+    } finally {
+      setIsSendingToMe(false);
+    }
+  };
 
   const handleSendTestReminder = async () => {
     setIsSendingTest(true);
@@ -623,7 +667,7 @@ export default function TelegramBotPage() {
                           </div>
                         </button>
                         <div className="border-t border-gray-200 pt-2 mt-2">
-                          <p className="text-xs text-gray-500 mb-2 font-medium">Manual Triggers</p>
+                          <p className="text-xs text-gray-500 mb-2 font-medium">Send to All</p>
                           <div className="grid grid-cols-2 gap-2">
                             <button
                               onClick={() => handleTriggerReminders('day')}
@@ -635,7 +679,7 @@ export default function TelegramBotPage() {
                               ) : (
                                 <span className="text-lg">☀️</span>
                               )}
-                              <span className="text-xs font-medium text-gray-700">Day 6:30 PM</span>
+                              <span className="text-xs font-medium text-gray-700">Day Shift</span>
                             </button>
                             <button
                               onClick={() => handleTriggerReminders('night')}
@@ -647,9 +691,29 @@ export default function TelegramBotPage() {
                               ) : (
                                 <span className="text-lg">🌙</span>
                               )}
-                              <span className="text-xs font-medium text-gray-700">Night 10 AM</span>
+                              <span className="text-xs font-medium text-gray-700">Night Shift</span>
                             </button>
                           </div>
+                        </div>
+                        <div className="border-t border-gray-200 pt-2 mt-2">
+                          <p className="text-xs text-gray-500 mb-2 font-medium">Test (Send to Me)</p>
+                          <button
+                            onClick={handleSendToMe}
+                            disabled={isSendingToMe || !myTelegramId}
+                            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isSendingToMe ? (
+                              <RefreshCw size={18} className="text-purple-600 animate-spin" />
+                            ) : (
+                              <Send size={18} className="text-purple-600" />
+                            )}
+                            <span className="text-sm font-medium text-purple-700">
+                              {isSendingToMe ? 'Sending...' : 'Send Reminder to Me'}
+                            </span>
+                          </button>
+                          {!myTelegramId && (
+                            <p className="text-xs text-gray-400 mt-1 text-center">Telegram not linked</p>
+                          )}
                         </div>
                       </div>
                     </div>

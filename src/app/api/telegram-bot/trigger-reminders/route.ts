@@ -221,6 +221,49 @@ async function sendCheckoutReminder(emp: Employee): Promise<boolean> {
   }
 }
 
+// Get a single employee by telegram ID for self-reminder
+async function getEmployeeForSelfReminder(telegramId: string): Promise<Employee | null> {
+  if (!isSupabaseAdminConfigured()) return null;
+
+  const today = new Date();
+  const dateStr = today.toISOString().split('T')[0];
+
+  const { data, error } = await supabaseAdmin!
+    .from('attendance')
+    .select(`
+      id,
+      employee_id,
+      check_in,
+      check_out,
+      employees(
+        id,
+        full_name,
+        telegram_id,
+        preferred_language
+      )
+    `)
+    .eq('date', dateStr)
+    .is('check_out', null);
+
+  if (error || !data) return null;
+
+  const typedData = data as unknown as (AttendanceWithEmployee & { employees: { preferred_language?: string } })[];
+
+  for (const att of typedData) {
+    if (att.employees?.telegram_id === telegramId) {
+      return {
+        employeeId: att.employees.id,
+        employeeName: att.employees.full_name,
+        telegramId: att.employees.telegram_id,
+        attendanceId: att.id,
+        preferredLanguage: (att.employees as any).preferred_language || 'uz',
+      };
+    }
+  }
+
+  return null;
+}
+
 export async function POST(request: NextRequest) {
   try {
     if (!isSupabaseAdminConfigured()) {
@@ -232,8 +275,35 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { shiftType } = body;
+    const { shiftType, telegramId } = body;
 
+    // If telegramId is provided, send reminder to that specific person only
+    if (telegramId) {
+      console.log(`📤 Sending reminder to specific user: ${telegramId}`);
+
+      const employee = await getEmployeeForSelfReminder(telegramId);
+
+      if (!employee) {
+        return NextResponse.json({
+          success: false,
+          error: 'No active check-in found for this user today',
+          sent: 0,
+        });
+      }
+
+      const success = await sendCheckoutReminder(employee);
+
+      return NextResponse.json({
+        success,
+        message: success
+          ? `Reminder sent to ${employee.employeeName}`
+          : `Failed to send reminder to ${employee.employeeName}`,
+        sent: success ? 1 : 0,
+        total: 1,
+      });
+    }
+
+    // Original logic: send to all employees of a shift type
     if (!shiftType || !['day', 'night'].includes(shiftType)) {
       return NextResponse.json({ error: 'Invalid shift type. Use "day" or "night".' }, { status: 400 });
     }
