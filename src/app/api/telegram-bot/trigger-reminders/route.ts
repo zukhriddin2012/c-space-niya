@@ -48,8 +48,7 @@ function normalizeTimeString(timeStr: string): string {
 async function getEmployeesForCheckoutReminder(shiftType: 'day' | 'night'): Promise<{ employees: Employee[], debug: object }> {
   if (!isSupabaseAdminConfigured()) return { employees: [], debug: { error: 'Supabase not configured' } };
 
-  const today = new Date();
-  const dateStr = today.toISOString().split('T')[0];
+  const dateStr = getTashkentDateString();
 
   // Day shift: checked in before 3:30 PM
   // Night shift: checked in after 3:30 PM
@@ -221,12 +220,18 @@ async function sendCheckoutReminder(emp: Employee): Promise<boolean> {
   }
 }
 
+// Get Tashkent date string (UTC+5)
+function getTashkentDateString(): string {
+  const now = new Date();
+  const tashkentTime = new Date(now.getTime() + 5 * 60 * 60 * 1000);
+  return tashkentTime.toISOString().split('T')[0];
+}
+
 // Get a single employee by telegram ID for self-reminder
 async function getEmployeeForSelfReminder(telegramId: string): Promise<Employee | null> {
   if (!isSupabaseAdminConfigured()) return null;
 
-  const today = new Date();
-  const dateStr = today.toISOString().split('T')[0];
+  const dateStr = getTashkentDateString();
 
   const { data, error } = await supabaseAdmin!
     .from('attendance')
