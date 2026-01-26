@@ -84,43 +84,19 @@ function CheckoutReminderContent() {
 
   const texts = t[lang as keyof typeof t] || t.uz;
 
-  // Get base URL dynamically
-  const getBaseUrl = () => {
-    if (typeof window !== 'undefined') {
-      return window.location.origin;
-    }
-    return '';
-  };
-
-  // Check presence on load - using fetch like the check-in page
+  // Check presence on load - using same pattern as working check-in page
   const checkPresence = useCallback(async () => {
     if (!telegramId) {
       setStatus('error');
       setMessage('Telegram ID topilmadi');
-      setDebugInfo(`tid=null, aid=${attendanceId}`);
+      setDebugInfo(`tid=null`);
       return;
     }
 
-    const baseUrl = getBaseUrl();
-
-    // First test if POST works at all
-    try {
-      const testResponse = await fetch(`${baseUrl}/api/test-post`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ test: true }),
-      });
-      const testResult = await testResponse.json();
-      console.log('Test POST result:', testResult);
-    } catch (e) {
-      console.log('Test POST failed:', e);
-    }
-
-    const apiUrl = `${baseUrl}/api/tg-check`;
-    setDebugInfo(`tid=${telegramId}, url=${apiUrl}`);
+    setDebugInfo(`tid=${telegramId}`);
 
     try {
-      const response = await fetch(apiUrl, {
+      const response = await fetch('/api/telegram-bot/check-presence', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -130,24 +106,6 @@ function CheckoutReminderContent() {
           attendanceId: attendanceId ? String(attendanceId) : null
         }),
       });
-
-      // Check if response is OK
-      if (!response.ok) {
-        setStatus('error');
-        setMessage(`HTTP xato: ${response.status}`);
-        setDebugInfo(`tid=${telegramId}, url=${apiUrl}, status=${response.status}`);
-        return;
-      }
-
-      // Check content type
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        setStatus('error');
-        setMessage('Server JSON qaytarmadi');
-        setDebugInfo(`tid=${telegramId}, ct=${contentType}, body=${text.substring(0, 100)}`);
-        return;
-      }
 
       const result = await response.json();
 
@@ -170,11 +128,10 @@ function CheckoutReminderContent() {
     }
   }, [telegramId, attendanceId]);
 
-  // Handle action buttons - using fetch like the check-in page
+  // Handle action buttons - using same pattern as working check-in page
   const handleAction = async (action: 'im_at_work' | 'i_left' | '45min' | '2hours' | 'all_day') => {
-    const baseUrl = getBaseUrl();
     try {
-      const response = await fetch(`${baseUrl}/api/tg-action`, {
+      const response = await fetch('/api/telegram-bot/reminder-response', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
