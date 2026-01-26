@@ -228,6 +228,79 @@ export default function TelegramBotPage() {
     }
   };
 
+  // Quick Action handlers
+  const [isSendingTest, setIsSendingTest] = useState(false);
+  const [isRetryingFailed, setIsRetryingFailed] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleSendTestReminder = async () => {
+    setIsSendingTest(true);
+    try {
+      const res = await fetch('/api/telegram-bot/send-test-reminder', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        alert('✅ Test reminder sent successfully! Check your Telegram.');
+      } else {
+        alert(data.error || 'Failed to send test reminder');
+      }
+    } catch {
+      alert('Failed to send test reminder');
+    } finally {
+      setIsSendingTest(false);
+    }
+  };
+
+  const handleRetryFailed = async () => {
+    if (!reminderStats?.pendingReminders) {
+      alert('No pending reminders to retry');
+      return;
+    }
+    setIsRetryingFailed(true);
+    try {
+      const res = await fetch('/api/telegram-bot/reminders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'retry-all-pending' }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(`✅ Retried ${data.count || 0} pending reminders`);
+        fetchData(); // Refresh stats
+      } else {
+        alert(data.error || 'Failed to retry reminders');
+      }
+    } catch {
+      alert('Failed to retry reminders');
+    } finally {
+      setIsRetryingFailed(false);
+    }
+  };
+
+  const handleExportReport = async () => {
+    setIsExporting(true);
+    try {
+      const res = await fetch(`/api/telegram-bot/reminders?date=${reminderDate}&format=csv`);
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `checkout-reminders-${reminderDate}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to export report');
+      }
+    } catch {
+      alert('Failed to export report');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const tabs = [
     { id: 'dashboard' as TabId, label: 'Dashboard', icon: LayoutDashboard },
     { id: 'reminders' as TabId, label: 'Reminders', icon: Bell },
@@ -481,30 +554,42 @@ export default function TelegramBotPage() {
                     <div className="bg-white rounded-xl border border-gray-200 p-5">
                       <h3 className="font-semibold text-gray-900 mb-3">Quick Actions</h3>
                       <div className="space-y-2">
-                        <button className="w-full flex items-center gap-3 px-4 py-3 bg-purple-50 hover:bg-purple-100 rounded-lg text-left transition-colors">
+                        <button
+                          onClick={handleSendTestReminder}
+                          disabled={isSendingTest}
+                          className="w-full flex items-center gap-3 px-4 py-3 bg-purple-50 hover:bg-purple-100 rounded-lg text-left transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
                           <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
-                            <Send size={16} className="text-white" />
+                            {isSendingTest ? <RefreshCw size={16} className="text-white animate-spin" /> : <Send size={16} className="text-white" />}
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-900">Send Test Reminder</p>
+                            <p className="text-sm font-medium text-gray-900">{isSendingTest ? 'Sending...' : 'Send Test Reminder'}</p>
                             <p className="text-xs text-gray-500">To your Telegram</p>
                           </div>
                         </button>
-                        <button className="w-full flex items-center gap-3 px-4 py-3 bg-blue-50 hover:bg-blue-100 rounded-lg text-left transition-colors">
+                        <button
+                          onClick={handleRetryFailed}
+                          disabled={isRetryingFailed || !reminderStats?.pendingReminders}
+                          className="w-full flex items-center gap-3 px-4 py-3 bg-blue-50 hover:bg-blue-100 rounded-lg text-left transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
                           <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                            <RotateCcw size={16} className="text-white" />
+                            {isRetryingFailed ? <RefreshCw size={16} className="text-white animate-spin" /> : <RotateCcw size={16} className="text-white" />}
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-900">Retry Failed</p>
+                            <p className="text-sm font-medium text-gray-900">{isRetryingFailed ? 'Retrying...' : 'Retry Failed'}</p>
                             <p className="text-xs text-gray-500">{reminderStats?.pendingReminders || 0} pending reminders</p>
                           </div>
                         </button>
-                        <button className="w-full flex items-center gap-3 px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg text-left transition-colors">
+                        <button
+                          onClick={handleExportReport}
+                          disabled={isExporting}
+                          className="w-full flex items-center gap-3 px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg text-left transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
                           <div className="w-8 h-8 bg-gray-500 rounded-lg flex items-center justify-center">
-                            <Download size={16} className="text-white" />
+                            {isExporting ? <RefreshCw size={16} className="text-white animate-spin" /> : <Download size={16} className="text-white" />}
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-900">Export Report</p>
+                            <p className="text-sm font-medium text-gray-900">{isExporting ? 'Exporting...' : 'Export Report'}</p>
                             <p className="text-xs text-gray-500">Download as CSV</p>
                           </div>
                         </button>
