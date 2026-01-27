@@ -137,14 +137,21 @@ async function handleCallbackQuery(callbackQuery: any): Promise<void> {
   const lang = (employee.preferred_language as Lang) || 'uz';
 
   // Find reminder by short ID prefix
-  const { data: reminder } = await supabaseAdmin
+  console.log('[Webhook] Looking up reminder with short ID:', shortReminderId);
+  const { data: reminder, error: reminderError } = await supabaseAdmin
     .from('checkout_reminders')
     .select('id, attendance_id')
     .ilike('id', `${shortReminderId}%`)
     .single();
 
+  if (reminderError) {
+    console.error('[Webhook] Reminder lookup error:', reminderError);
+  }
+
   const reminderId = reminder?.id;
   let attendanceId = reminder?.attendance_id;
+
+  console.log('[Webhook] Found reminder:', { reminderId, attendanceId });
 
   // For i_left, try to get attendance from callback data too
   if (action === 'il' && shortAttendanceId) {
@@ -154,6 +161,24 @@ async function handleCallbackQuery(callbackQuery: any): Promise<void> {
       .ilike('id', `${shortAttendanceId}%`)
       .single();
     if (att) attendanceId = att.id;
+  }
+
+  // If still no attendanceId, try to find active attendance for employee
+  if (!attendanceId) {
+    console.log('[Webhook] No attendanceId from reminder, looking up active attendance for employee:', employee.id);
+    const { data: activeAtt } = await supabaseAdmin
+      .from('attendance')
+      .select('id')
+      .eq('employee_id', employee.id)
+      .is('check_out', null)
+      .order('date', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (activeAtt) {
+      attendanceId = activeAtt.id;
+      console.log('[Webhook] Found active attendance:', attendanceId);
+    }
   }
 
   const now = new Date();
