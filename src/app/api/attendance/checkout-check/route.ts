@@ -102,10 +102,13 @@ async function editReminderMessage(
       });
 
       const result = await response.json();
-      console.log('[Checkout Reminder] Edit message result:', result);
+      console.log('[Checkout Reminder] Edit message result:', JSON.stringify(result));
+      console.log('[Checkout Reminder] Message text was:', text.substring(0, 50));
+      console.log('[Checkout Reminder] Reply markup was:', JSON.stringify(replyMarkup));
 
       if (!result.ok) {
         console.error('[Checkout Reminder] Failed to edit message:', result.description);
+        console.log('[Checkout Reminder] Trying fallback sendMessage...');
         // If edit fails, try sending new message
         const sendResponse = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
           method: 'POST',
@@ -117,7 +120,7 @@ async function editReminderMessage(
           }),
         });
         const sendResult = await sendResponse.json();
-        console.log('[Checkout Reminder] Fallback send message result:', sendResult);
+        console.log('[Checkout Reminder] Fallback send message result:', JSON.stringify(sendResult));
         return { success: sendResult.ok, error: sendResult.ok ? undefined : sendResult.description };
       }
 
