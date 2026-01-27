@@ -4964,3 +4964,33 @@ export async function getCheckoutRemindersMap(date: string): Promise<Map<string,
 
   return map;
 }
+
+// Get reminders for specific attendance IDs (useful for overnight records)
+export async function getCheckoutRemindersByAttendanceIds(attendanceIds: string[]): Promise<Map<string, CheckoutReminder[]>> {
+  if (!isSupabaseAdminConfigured() || attendanceIds.length === 0) {
+    return new Map();
+  }
+
+  const { data, error } = await supabaseAdmin!
+    .from('checkout_reminders')
+    .select(`
+      *,
+      employees(full_name)
+    `)
+    .in('attendance_id', attendanceIds)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching checkout reminders by IDs:', error);
+    return new Map();
+  }
+
+  const map = new Map<string, CheckoutReminder[]>();
+  for (const reminder of (data || [])) {
+    const existing = map.get(reminder.attendance_id) || [];
+    existing.push(reminder);
+    map.set(reminder.attendance_id, existing);
+  }
+
+  return map;
+}

@@ -57,6 +57,7 @@ interface AttendanceRecord {
   totalHours: number | null;
   isOvernight?: boolean;
   overnightFromDate?: string;
+  shiftType?: 'day' | 'night'; // Based on check-in time: <= 15:30 = day, > 15:30 = night
   // Multi-session support
   sessions?: AttendanceSession[];
   sessionCount?: number;
@@ -93,7 +94,7 @@ function VerificationBadge({ source, t }: { source: string | null; t: any }) {
   );
 }
 
-function StatusBadge({ status, isOvernight, t }: { status: string; isOvernight?: boolean; t: any }) {
+function StatusBadge({ status, isOvernight, shiftType, t }: { status: string; isOvernight?: boolean; shiftType?: 'day' | 'night'; t: any }) {
   const statusConfig: Record<
     string,
     { labelKey: string; className: string; icon: React.ComponentType<{ size?: number }> }
@@ -105,7 +106,11 @@ function StatusBadge({ status, isOvernight, t }: { status: string; isOvernight?:
     overnight: { labelKey: 'overnight', className: 'bg-indigo-50 text-indigo-700', icon: Moon },
   };
 
-  const displayStatus = isOvernight ? 'overnight' : status;
+  // Show "overnight/night shift" badge only if:
+  // 1. It's from a previous day (isOvernight) AND
+  // 2. The check-in time was after 15:30 (shiftType === 'night')
+  // Day shift workers from previous days (who forgot to checkout) should show their regular status
+  const displayStatus = (isOvernight && shiftType === 'night') ? 'overnight' : status;
   const config = statusConfig[displayStatus] || statusConfig.absent;
   const Icon = config.icon;
 
@@ -457,7 +462,7 @@ export default function AttendanceTable({ records, canEditAttendance }: Attendan
                         )}
                       </td>
                       <td className="px-3 lg:px-4 xl:px-6 py-3 lg:py-4">
-                        <StatusBadge status={record.status} isOvernight={record.isOvernight} t={t} />
+                        <StatusBadge status={record.status} isOvernight={record.isOvernight} shiftType={record.shiftType} t={t} />
                       </td>
                       <td className="px-3 lg:px-4 py-3 lg:py-4 bg-amber-50/30">
                         <ReminderStatusCell
@@ -573,7 +578,7 @@ export default function AttendanceTable({ records, canEditAttendance }: Attendan
                     <p className="text-xs text-gray-500">{record.position}</p>
                   </div>
                 </div>
-                <StatusBadge status={record.status} isOvernight={record.isOvernight} t={t} />
+                <StatusBadge status={record.status} isOvernight={record.isOvernight} shiftType={record.shiftType} t={t} />
               </div>
 
               <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">

@@ -1,7 +1,7 @@
 import { getSession } from '@/lib/auth-server';
 import { redirect } from 'next/navigation';
 import { Download } from 'lucide-react';
-import { getBranches, getEmployees, getAttendanceByDate, getCheckoutRemindersMap, CheckoutReminder } from '@/lib/db';
+import { getBranches, getEmployees, getAttendanceByDate, getCheckoutRemindersByAttendanceIds, CheckoutReminder } from '@/lib/db';
 import { hasPermission, PERMISSIONS } from '@/lib/permissions';
 import AttendanceFilters from '../AttendanceFilters';
 import AttendanceTable from '../AttendanceTable';
@@ -68,6 +68,7 @@ interface AttendanceRecord {
   totalHours: number | null;
   isOvernight?: boolean;
   overnightFromDate?: string;
+  shiftType?: 'day' | 'night'; // Based on check-in time: <= 15:30 = day, > 15:30 = night
   // Multi-session support
   sessions: AttendanceSession[];
   sessionCount: number;
@@ -84,11 +85,13 @@ async function getAttendanceForDate(
   employees: Awaited<ReturnType<typeof getEmployees>>,
   branches: Awaited<ReturnType<typeof getBranches>>
 ): Promise<AttendanceRecord[]> {
-  // Fetch attendance and reminders in parallel
-  const [attendance, remindersMap] = await Promise.all([
-    getAttendanceByDate(date),
-    getCheckoutRemindersMap(date),
-  ]);
+  // Fetch attendance first
+  const attendance = await getAttendanceByDate(date);
+
+  // Collect all attendance IDs (including overnight records which have different dates)
+  // This ensures we get reminders for overnight records displayed on today's page
+  const allAttendanceIds = attendance.map(a => a.id);
+  const remindersMap = await getCheckoutRemindersByAttendanceIds(allAttendanceIds);
 
   const branchMap = new Map(branches.map(b => [b.id, b.name]));
   const employeeMap = new Map(employees.map(e => [e.id, e]));
@@ -165,6 +168,8 @@ async function getAttendanceForDate(
       totalHours: latestSession.total_hours,
       isOvernight: latestSession.is_overnight || false,
       overnightFromDate: latestSession.overnight_from_date,
+      // Determine shift type based on check-in time: <= 15:30 = day shift, > 15:30 = night shift
+      shiftType: latestSession.check_in && latestSession.check_in.substring(0, 5) <= '15:30' ? 'day' : 'night',
       // Multi-session data
       sessions: sessionsList,
       sessionCount: sessions.length,
