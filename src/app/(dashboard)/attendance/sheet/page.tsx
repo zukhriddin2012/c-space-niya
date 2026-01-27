@@ -1,7 +1,7 @@
 import { getSession } from '@/lib/auth-server';
 import { redirect } from 'next/navigation';
 import { Download } from 'lucide-react';
-import { getBranches, getEmployees, getAttendanceByDate } from '@/lib/db';
+import { getBranches, getEmployees, getAttendanceByDate, getCheckoutRemindersMap, CheckoutReminder } from '@/lib/db';
 import { hasPermission, PERMISSIONS } from '@/lib/permissions';
 import AttendanceFilters from '../AttendanceFilters';
 import AttendanceTable from '../AttendanceTable';
@@ -42,6 +42,16 @@ interface AttendanceSession {
   source: 'telegram' | 'web' | 'manual' | null;
 }
 
+interface ReminderInfo {
+  status: 'pending' | 'sent' | 'scheduled' | 'responded' | 'completed' | 'auto_completed';
+  sentAt: string | null;
+  responseType: string | null;
+  responseAt: string | null;
+  nextReminder: string | null;
+  ipVerified: boolean | null;
+  reminderCount: number;
+}
+
 interface AttendanceRecord {
   id: string;
   attendanceDbId: string | null;
@@ -63,6 +73,8 @@ interface AttendanceRecord {
   sessionCount: number;
   totalSessionHours: number;
   hasActiveSession: boolean;
+  // Reminder info
+  reminder?: ReminderInfo;
 }
 
 // Fetch attendance data for a specific date (uses pre-fetched branches/employees)
@@ -72,7 +84,11 @@ async function getAttendanceForDate(
   employees: Awaited<ReturnType<typeof getEmployees>>,
   branches: Awaited<ReturnType<typeof getBranches>>
 ): Promise<AttendanceRecord[]> {
-  const attendance = await getAttendanceByDate(date);
+  // Fetch attendance and reminders in parallel
+  const [attendance, remindersMap] = await Promise.all([
+    getAttendanceByDate(date),
+    getCheckoutRemindersMap(date),
+  ]);
 
   const branchMap = new Map(branches.map(b => [b.id, b.name]));
   const employeeMap = new Map(employees.map(e => [e.id, e]));
@@ -111,6 +127,28 @@ async function getAttendanceForDate(
     // Use the latest session for main display, but include all sessions
     const recordDate = latestSession.is_overnight ? latestSession.overnight_from_date : date;
 
+    // Get reminder info for the active session (or latest session)
+    const attendanceIdForReminder = activeSession?.id || latestSession.id;
+    const reminders = remindersMap.get(attendanceIdForReminder) || [];
+    let reminderInfo: ReminderInfo | undefined;
+
+    if (reminders.length > 0) {
+      // Get the latest reminder
+      const latestReminder = reminders[0]; // Already sorted by created_at desc
+      // Find next scheduled reminder
+      const scheduledReminder = reminders.find(r => r.status === 'scheduled');
+
+      reminderInfo = {
+        status: latestReminder.status as ReminderInfo['status'],
+        sentAt: latestReminder.sent_at,
+        responseType: latestReminder.response_type,
+        responseAt: latestReminder.response_received_at,
+        nextReminder: scheduledReminder?.scheduled_for || null,
+        ipVerified: latestReminder.ip_verified,
+        reminderCount: reminders.filter(r => r.status === 'sent' || r.status === 'responded').length,
+      };
+    }
+
     return {
       id: latestSession.id,
       attendanceDbId: activeSession?.id || latestSession.id,
@@ -132,6 +170,8 @@ async function getAttendanceForDate(
       sessionCount: sessions.length,
       totalSessionHours: Math.round(totalSessionHours * 10) / 10,
       hasActiveSession: !!activeSession,
+      // Reminder info
+      reminder: reminderInfo,
     };
   });
 

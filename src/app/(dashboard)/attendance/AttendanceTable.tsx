@@ -13,6 +13,8 @@ import {
   ArrowDown,
   ChevronDown,
   ChevronUp,
+  Bell,
+  BellOff,
 } from 'lucide-react';
 import ManualCheckoutButton from './ManualCheckoutButton';
 import ReminderButton from './ReminderButton';
@@ -27,6 +29,16 @@ interface AttendanceSession {
   status: 'present' | 'late' | 'early_leave';
   isActive: boolean;
   source?: 'telegram' | 'web' | 'manual' | null;
+}
+
+interface ReminderInfo {
+  status: 'pending' | 'sent' | 'scheduled' | 'responded' | 'completed' | 'auto_completed';
+  sentAt: string | null;
+  responseType: string | null;
+  responseAt: string | null;
+  nextReminder: string | null;
+  ipVerified: boolean | null;
+  reminderCount: number;
 }
 
 interface AttendanceRecord {
@@ -50,6 +62,8 @@ interface AttendanceRecord {
   sessionCount?: number;
   totalSessionHours?: number;
   hasActiveSession?: boolean;
+  // Reminder info
+  reminder?: ReminderInfo;
 }
 
 type SortField = 'employeeName' | 'branchName' | 'checkInTime' | 'checkOutTime' | 'status' | 'hours';
@@ -100,6 +114,120 @@ function StatusBadge({ status, isOvernight, t }: { status: string; isOvernight?:
       <Icon size={12} />
       {t.attendance[config.labelKey]}
     </span>
+  );
+}
+
+// Response type labels mapping
+const responseTypeLabels: Record<string, { emoji: string; labelRu: string; labelUz: string; labelEn: string }> = {
+  'i_left': { emoji: '👋', labelRu: 'Ушёл', labelUz: 'Ketdim', labelEn: 'Left' },
+  'im_at_work': { emoji: '🏢', labelRu: 'На работе', labelUz: 'Ishdaman', labelEn: 'At work' },
+  '45min': { emoji: '⏰', labelRu: '+45 мин', labelUz: '+45 daq', labelEn: '+45 min' },
+  '2hours': { emoji: '⏰', labelRu: '+2 часа', labelUz: '+2 soat', labelEn: '+2 hours' },
+  'left': { emoji: '👋', labelRu: 'Ушёл', labelUz: 'Ketdim', labelEn: 'Left' },
+};
+
+function ReminderStatusCell({ reminder, hasActiveSession, t }: { reminder?: ReminderInfo; hasActiveSession: boolean; t: any }) {
+  if (!reminder) {
+    // No reminder yet
+    if (hasActiveSession) {
+      return (
+        <div className="flex items-center gap-1.5 text-gray-400">
+          <BellOff size={14} />
+          <span className="text-xs">-</span>
+        </div>
+      );
+    }
+    return <span className="text-gray-300">-</span>;
+  }
+
+  const formatTimeOnly = (dateStr: string | null) => {
+    if (!dateStr) return '-';
+    const date = new Date(dateStr);
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+  };
+
+  // Get response label based on language
+  const getResponseLabel = (responseType: string | null) => {
+    if (!responseType) return null;
+    const config = responseTypeLabels[responseType];
+    if (!config) return responseType;
+    // Use current language from t - simplified approach
+    return `${config.emoji} ${config.labelRu}`;
+  };
+
+  // Determine the status color and content
+  const getStatusColor = () => {
+    switch (reminder.status) {
+      case 'completed':
+      case 'auto_completed':
+        return 'bg-green-50';
+      case 'responded':
+        return 'bg-blue-50';
+      case 'sent':
+        return 'bg-amber-50';
+      case 'scheduled':
+        return 'bg-gray-50';
+      default:
+        return 'bg-gray-50';
+    }
+  };
+
+  const getDotColor = () => {
+    switch (reminder.status) {
+      case 'completed':
+        return 'bg-green-500';
+      case 'auto_completed':
+        return 'bg-purple-500';
+      case 'responded':
+        return 'bg-blue-500';
+      case 'sent':
+        return 'bg-amber-500 animate-pulse';
+      case 'scheduled':
+        return 'bg-gray-400';
+      default:
+        return 'bg-gray-300';
+    }
+  };
+
+  return (
+    <div className={`flex flex-col gap-1 px-2 py-1.5 rounded-lg ${getStatusColor()}`}>
+      {/* Status line */}
+      <div className="flex items-center gap-1.5">
+        <span className={`w-2 h-2 rounded-full ${getDotColor()}`}></span>
+        <span className="text-xs text-gray-600">
+          {reminder.status === 'sent' && `Sent ${formatTimeOnly(reminder.sentAt)}`}
+          {reminder.status === 'responded' && `${formatTimeOnly(reminder.responseAt)}`}
+          {reminder.status === 'scheduled' && `Sched. ${formatTimeOnly(reminder.nextReminder)}`}
+          {reminder.status === 'completed' && 'Completed'}
+          {reminder.status === 'auto_completed' && 'Auto checkout'}
+        </span>
+      </div>
+
+      {/* Response type if exists */}
+      {reminder.responseType && (
+        <div className={`text-xs font-medium ${
+          reminder.responseType === 'i_left' || reminder.responseType === 'left'
+            ? 'text-green-600'
+            : 'text-blue-600'
+        }`}>
+          {getResponseLabel(reminder.responseType)}
+        </div>
+      )}
+
+      {/* Next reminder time if scheduled */}
+      {reminder.nextReminder && reminder.status !== 'completed' && reminder.status !== 'auto_completed' && (
+        <div className="text-xs text-gray-400">
+          Next: {formatTimeOnly(reminder.nextReminder)}
+        </div>
+      )}
+
+      {/* IP verification status */}
+      {reminder.ipVerified !== null && (
+        <div className={`text-[10px] ${reminder.ipVerified ? 'text-green-600' : 'text-orange-500'}`}>
+          IP: {reminder.ipVerified ? '✓' : '✗'}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -237,6 +365,12 @@ export default function AttendanceTable({ records, canEditAttendance }: Attendan
                 <SortableHeader field="checkOutTime">{t.attendance.checkOut}</SortableHeader>
                 <SortableHeader field="hours">{t.attendance.workingHours}</SortableHeader>
                 <SortableHeader field="status">{t.common.status}</SortableHeader>
+                <th className="text-left px-3 lg:px-4 py-2.5 lg:py-3 text-xs font-medium text-gray-500 uppercase tracking-wider bg-amber-50/50">
+                  <div className="flex items-center gap-1.5">
+                    <Bell size={14} />
+                    {t.attendance?.reminder || 'Reminder'}
+                  </div>
+                </th>
                 {canEditAttendance && (
                   <th className="text-left px-4 lg:px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     {t.common.actions}
@@ -325,6 +459,13 @@ export default function AttendanceTable({ records, canEditAttendance }: Attendan
                       <td className="px-3 lg:px-4 xl:px-6 py-3 lg:py-4">
                         <StatusBadge status={record.status} isOvernight={record.isOvernight} t={t} />
                       </td>
+                      <td className="px-3 lg:px-4 py-3 lg:py-4 bg-amber-50/30">
+                        <ReminderStatusCell
+                          reminder={record.reminder}
+                          hasActiveSession={record.hasActiveSession || false}
+                          t={t}
+                        />
+                      </td>
                       {canEditAttendance && (
                         <td className="px-3 lg:px-4 xl:px-6 py-3 lg:py-4">
                           <div className="flex items-center gap-2">
@@ -349,7 +490,7 @@ export default function AttendanceTable({ records, canEditAttendance }: Attendan
                     {/* Expanded sessions row */}
                     {hasMultipleSessions && isExpanded && (
                       <tr className="bg-gray-50">
-                        <td colSpan={canEditAttendance ? 7 : 6} className="px-3 lg:px-4 xl:px-6 py-3">
+                        <td colSpan={canEditAttendance ? 8 : 7} className="px-3 lg:px-4 xl:px-6 py-3">
                           <div className="space-y-2 ml-11">
                             {record.sessions?.map((session, idx) => (
                               <div

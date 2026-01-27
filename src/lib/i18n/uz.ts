@@ -240,6 +240,13 @@ export const uz: Translations = {
     sending: 'Yuborilmoqda...',
     manualCheckout: "Qo'lda chiqish",
     confirmCheckout: 'Chiqishni tasdiqlash',
+    // Reminder column
+    reminder: 'Eslatma',
+    reminderSent: 'Yuborildi',
+    reminderScheduled: 'Rejalashtirilgan',
+    reminderResponded: 'Javob berdi',
+    reminderCompleted: 'Tugallandi',
+    reminderAutoCheckout: 'Avto-chiqish',
   },
 
   // Branches

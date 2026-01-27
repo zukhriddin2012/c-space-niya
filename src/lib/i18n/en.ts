@@ -240,6 +240,13 @@ export const en: Translations = {
     sending: 'Sending...',
     manualCheckout: 'Manual Check-Out',
     confirmCheckout: 'Confirm Check-Out',
+    // Reminder column
+    reminder: 'Reminder',
+    reminderSent: 'Sent',
+    reminderScheduled: 'Scheduled',
+    reminderResponded: 'Responded',
+    reminderCompleted: 'Completed',
+    reminderAutoCheckout: 'Auto checkout',
   },
 
   // Branches

@@ -240,6 +240,13 @@ export interface Translations {
     sending: string;
     manualCheckout: string;
     confirmCheckout: string;
+    // Reminder column
+    reminder: string;
+    reminderSent: string;
+    reminderScheduled: string;
+    reminderResponded: string;
+    reminderCompleted: string;
+    reminderAutoCheckout: string;
   };
 
   // Branches

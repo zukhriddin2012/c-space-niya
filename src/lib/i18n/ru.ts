@@ -240,6 +240,13 @@ export const ru: Translations = {
     sending: 'Отправка...',
     manualCheckout: 'Ручной уход',
     confirmCheckout: 'Подтвердить уход',
+    // Reminder column
+    reminder: 'Напоминание',
+    reminderSent: 'Отправлено',
+    reminderScheduled: 'Запланировано',
+    reminderResponded: 'Ответил',
+    reminderCompleted: 'Завершено',
+    reminderAutoCheckout: 'Авто-уход',
   },
 
   // Branches
