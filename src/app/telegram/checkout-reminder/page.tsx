@@ -15,12 +15,12 @@ function CheckoutReminderContent() {
   const [errorMsg, setErrorMsg] = useState('');
 
   // Check IP and close - bot will send appropriate message
-  const checkAndClose = useCallback(async () => {
+  // Using XMLHttpRequest for better WebView compatibility
+  const checkAndClose = useCallback(() => {
     console.log('[Checkout Reminder WebApp] Starting check with params:', {
       telegramId,
       attendanceId,
       messageId,
-      allParams: Object.fromEntries(searchParams.entries()),
     });
 
     if (!telegramId) {
@@ -30,42 +30,56 @@ function CheckoutReminderContent() {
     }
 
     try {
-      const baseUrl = window.location.origin;
-      console.log('[Checkout Reminder WebApp] Calling API:', `${baseUrl}/api/attendance/checkout-check`);
+      const apiUrl = 'https://c-space-hr.vercel.app/api/attendance/checkout-check';
 
-      const response = await fetch(`${baseUrl}/api/attendance/checkout-check`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telegramId, attendanceId, messageId }),
-      });
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', apiUrl, true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
 
-      const text = await response.text();
-      let result;
-      try {
-        result = JSON.parse(text);
-      } catch {
-        setStatus('error');
-        setErrorMsg(`Xatolik: ${response.status}`);
-        return;
-      }
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+          console.log('[Checkout Reminder] XHR response:', xhr.status, xhr.responseText?.substring(0, 200));
 
-      console.log('[Checkout Reminder WebApp] API Response:', result);
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const result = JSON.parse(xhr.responseText);
 
-      if (result.success) {
-        setStatus('done');
-        // Close after a short delay to show success
-        setTimeout(() => {
-          if (window.Telegram?.WebApp) {
-            window.Telegram.WebApp.close();
+              if (result.success) {
+                setStatus('done');
+                // Close after a short delay to show success
+                setTimeout(() => {
+                  if (window.Telegram?.WebApp) {
+                    window.Telegram.WebApp.close();
+                  }
+                }, 800);
+              } else {
+                setStatus('error');
+                setErrorMsg(result.error || 'API xatolik');
+              }
+            } catch (e) {
+              setStatus('error');
+              setErrorMsg('JSON parse xatosi');
+            }
+          } else {
+            setStatus('error');
+            setErrorMsg(`HTTP ${xhr.status}`);
           }
-        }, 800);
-      } else {
+        }
+      };
+
+      xhr.onerror = function() {
         setStatus('error');
-        setErrorMsg(result.error || 'Xatolik');
-      }
+        setErrorMsg('Tarmoq xatosi');
+      };
+
+      xhr.send(JSON.stringify({
+        telegramId: String(telegramId),
+        attendanceId: attendanceId ? String(attendanceId) : null,
+        messageId: messageId ? String(messageId) : null
+      }));
     } catch (error: any) {
       setStatus('error');
-      setErrorMsg(error?.message || 'Tarmoq xatosi');
+      setErrorMsg(error?.message || 'Xatolik');
     }
   }, [telegramId, attendanceId, messageId]);
 
