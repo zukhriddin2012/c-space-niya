@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ChevronDown, ChevronRight, Phone, Mail, MessageCircle, Search, Loader2, AlertCircle, Users, Minus } from 'lucide-react';
+import { ChevronDown, ChevronRight, Search, Loader2, AlertCircle, Users, Minus } from 'lucide-react';
 
 interface OrgNode {
   id: string;
@@ -67,7 +67,6 @@ function OrgNodeCard({
   toggleNode: (id: string) => void;
   allEmployees: OrgNode[];
 }) {
-  const [showContact, setShowContact] = useState(false);
   const hasChildren = node.children && node.children.length > 0;
   const isExpanded = expandedNodes.has(node.id);
   const colors = getLevelColor(depth, isRoot);
@@ -93,8 +92,6 @@ function OrgNodeCard({
           ? 'bg-gradient-to-br from-purple-600 to-purple-700 text-white rounded-2xl p-4 shadow-xl min-w-[240px]'
           : `bg-white rounded-xl p-3 shadow-lg border-2 ${colors.border} min-w-[200px] hover:shadow-xl transition-all`
         } ${isHighlighted ? 'ring-2 ring-yellow-400' : ''}`}
-        onMouseEnter={() => setShowContact(true)}
-        onMouseLeave={() => setShowContact(false)}
       >
         <div className="flex items-center gap-3">
           {/* Avatar */}
@@ -127,30 +124,6 @@ function OrgNodeCard({
             </div>
           )}
         </div>
-
-        {/* Contact buttons on hover */}
-        {showContact && (node.phone || node.email || node.telegramId) && (
-          <div className={`flex items-center gap-1 mt-2 pt-2 ${isRoot ? 'border-t border-white/20' : 'border-t border-gray-100'}`}>
-            {node.phone && (
-              <a href={`tel:${node.phone}`} className={`flex-1 flex items-center justify-center gap-1 py-1.5 text-xs rounded-lg transition-colors ${isRoot ? 'text-purple-200 hover:bg-white/10' : 'text-gray-500 hover:text-green-600 hover:bg-green-50'}`}>
-                <Phone size={12} />
-                <span>Call</span>
-              </a>
-            )}
-            {node.email && (
-              <a href={`mailto:${node.email}`} className={`flex-1 flex items-center justify-center gap-1 py-1.5 text-xs rounded-lg transition-colors ${isRoot ? 'text-purple-200 hover:bg-white/10' : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'}`}>
-                <Mail size={12} />
-                <span>Email</span>
-              </a>
-            )}
-            {node.telegramId && (
-              <a href={`https://t.me/${node.telegramId}`} target="_blank" rel="noopener noreferrer" className={`flex-1 flex items-center justify-center gap-1 py-1.5 text-xs rounded-lg transition-colors ${isRoot ? 'text-purple-200 hover:bg-white/10' : 'text-gray-500 hover:text-purple-600 hover:bg-purple-50'}`}>
-                <MessageCircle size={12} />
-                <span>TG</span>
-              </a>
-            )}
-          </div>
-        )}
 
         {/* Expand/Collapse button */}
         {hasChildren && (
