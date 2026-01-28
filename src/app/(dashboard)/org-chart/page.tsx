@@ -234,7 +234,7 @@ export default function OrgChartPage() {
       setStats(data.stats || { totalEmployees: 0, departments: 0, managers: 0, roots: 0 });
 
       // Auto-expand root nodes
-      const rootIds = new Set((data.tree || []).map((n: OrgNode) => n.id));
+      const rootIds = new Set<string>((data.tree || []).map((n: OrgNode) => n.id));
       setExpandedNodes(rootIds);
     } catch (err) {
       setError('Failed to load organization data');
