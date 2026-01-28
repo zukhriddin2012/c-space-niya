@@ -57,6 +57,15 @@ interface Department {
   color: string;
 }
 
+interface Position {
+  id: string;
+  name: string;
+  name_uz: string | null;
+  name_ru: string | null;
+  description: string | null;
+  level: string | null;
+}
+
 interface LegalEntity {
   id: string;
   name: string;
@@ -90,7 +99,8 @@ interface Employee {
   id: string;
   employee_id: string;
   full_name: string;
-  position: string;
+  position: string; // Legacy text field
+  position_id: string | null; // Reference to positions table
   level: string;
   branch_id: string | null;
   department_id: string | null;
@@ -106,6 +116,7 @@ interface Employee {
   telegram_id?: string | null;
   branches?: { name: string };
   departments?: { name: string };
+  positions?: Position;
   system_role?: UserRole;
   is_growth_team?: boolean;
 }
@@ -114,6 +125,7 @@ interface PageData {
   employee: Employee;
   branches: Branch[];
   departments: Department[];
+  positions: Position[];
   canEditSalary: boolean;
   canAssignRoles: boolean;
 }
@@ -196,7 +208,8 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
   // Form state
   const [formData, setFormData] = useState({
     full_name: '',
-    position: '',
+    position: '', // Legacy text field
+    position_id: '', // Reference to positions table
     level: 'junior',
     branch_id: '',
     department_id: '',
@@ -300,7 +313,8 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
         // Initialize form with employee data
         setFormData({
           full_name: data.employee.full_name,
-          position: data.employee.position,
+          position: data.employee.position, // Legacy text field
+          position_id: data.employee.position_id || '', // Position from positions table
           level: data.employee.level || 'junior',
           branch_id: data.employee.branch_id || '',
           department_id: data.employee.department_id || '',
@@ -700,6 +714,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
           ...formData,
           branch_id: formData.branch_id || null,
           department_id: formData.department_id || null,
+          position_id: formData.position_id || null,
           salary: totalSalary,
           system_role: pageData.canAssignRoles ? formData.system_role : undefined,
           hire_date: formData.hire_date || null,
@@ -862,7 +877,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
     );
   }
 
-  const { employee, branches, departments, canEditSalary, canAssignRoles } = pageData;
+  const { employee, branches, departments, positions, canEditSalary, canAssignRoles } = pageData;
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -922,13 +937,29 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Position
                 </label>
-                <input
-                  type="text"
-                  value={formData.position}
-                  onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                <select
+                  value={formData.position_id}
+                  onChange={(e) => {
+                    const selectedPosition = positions?.find(p => p.id === e.target.value);
+                    setFormData({
+                      ...formData,
+                      position_id: e.target.value,
+                      // Also update legacy position field for backwards compatibility
+                      position: selectedPosition?.name || formData.position,
+                      // Auto-set level if position has one
+                      level: selectedPosition?.level?.toLowerCase() || formData.level
+                    });
+                  }}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
                   required
-                />
+                >
+                  <option value="">Select Position</option>
+                  {positions?.map((pos) => (
+                    <option key={pos.id} value={pos.id}>
+                      {pos.name} {pos.level ? `(${pos.level})` : ''}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
