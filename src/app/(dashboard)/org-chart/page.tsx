@@ -155,15 +155,15 @@ function OrgNodeCard({
               const hasMultiple = node.children!.length > 1;
 
               return (
-                <div key={child.id} className="flex flex-col items-center px-2.5">
+                <div key={child.id} className="flex flex-col items-center" style={{ padding: '0 10px' }}>
                   {/* Connector area */}
-                  <div className="relative h-6 w-full flex justify-center">
-                    {/* Horizontal line segments */}
+                  <div className="relative h-6 w-full flex justify-center" style={{ margin: '0 -10px', width: 'calc(100% + 20px)' }}>
+                    {/* Horizontal line segments - extend beyond edges to cover gaps */}
                     {hasMultiple && !isFirst && (
-                      <div className={`absolute top-0 left-0 right-1/2 border-t-2 border-dashed ${colors.line}`}></div>
+                      <div className={`absolute top-0 border-t-2 border-dashed ${colors.line}`} style={{ left: 0, right: '50%' }}></div>
                     )}
                     {hasMultiple && !isLast && (
-                      <div className={`absolute top-0 left-1/2 right-0 border-t-2 border-dashed ${colors.line}`}></div>
+                      <div className={`absolute top-0 border-t-2 border-dashed ${colors.line}`} style={{ left: '50%', right: 0 }}></div>
                     )}
                     {/* Dot at connection point */}
                     <div className={`w-2.5 h-2.5 ${childColors.dot} rounded-full absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10`}></div>
