@@ -966,7 +966,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
                   <option value="">Select Position</option>
                   {positions?.map((pos) => (
                     <option key={pos.id} value={pos.id}>
-                      {pos.name} {pos.level ? `(${pos.level})` : ''}
+                      {pos.name}
                     </option>
                   ))}
                 </select>
