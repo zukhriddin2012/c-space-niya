@@ -1,0 +1,73 @@
+{
+  "_meta": {
+    "exported_at": "2026-01-28T03:11:14.412Z",
+    "version": "1.0",
+    "format": "jarvis-devboard-export",
+    "instructions": "Add your responses to the jarvis_responses array for each task. Each response needs: content (your message). The import will create comments from Jarvis."
+  },
+  "sprints": [
+    {
+      "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "name": "Sprint 1 - Jan 25",
+      "goal": "Quick wins & Dev Board setup",
+      "status": "completed",
+      "start_date": "2026-01-25",
+      "end_date": "2026-01-31"
+    },
+    {
+      "id": "10a8b2dd-146d-4bf8-ba92-b266a899c59d",
+      "name": "Sprint 2",
+      "goal": "Complete HR module and Accounting",
+      "status": "active",
+      "start_date": "2026-01-25",
+      "end_date": "2026-02-08"
+    }
+  ],
+  "projects": [
+    {
+      "id": "11111111-1111-1111-1111-111111111111",
+      "name": "People Platform",
+      "color": "#8B5CF6"
+    },
+    {
+      "id": "22222222-2222-2222-2222-222222222222",
+      "name": "Telegram Bot",
+      "color": "#10B981"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "447a7204-f23a-493e-a890-18d2ac5925ec",
+      "title": "Visual Shift Calendar",
+      "jarvis_responses": [
+        {
+          "content": "🎨 Here's my mockup for the Visual Shift Calendar!\n\n**WEEK VIEW (Recommended Start)**\n```\n┌─────────────────────────────────────────────────────────────────────────────┐\n│  📅 Shift Calendar                    ◀ Jan 27 - Feb 2, 2026 ▶    [+ Add]   │\n├─────────────────────────────────────────────────────────────────────────────┤\n│ Branch Filter: [All ▼]   Employee: [All ▼]   View: [Week ▼] [Month] [Day]  │\n├─────────────────────────────────────────────────────────────────────────────┤\n│           │  Mon 27  │  Tue 28  │  Wed 29  │  Thu 30  │  Fri 31  │  Sat 1  │\n├───────────┼──────────┼──────────┼──────────┼──────────┼──────────┼─────────┤\n│ 🏢 HQ     │ ████████ │ ████████ │ ████████ │ ████████ │ ████████ │  ░░░░░  │\n│           │ 09-18    │ 09-18    │ 09-18    │ 09-18    │ 09-18    │  OFF    │\n│           │ 5 staff  │ 5 staff  │ 4 staff  │ 5 staff  │ 5 staff  │         │\n├───────────┼──────────┼──────────┼──────────┼──────────┼──────────┼─────────┤\n│ 🏪 Chorsu │ ████████ │ ████████ │ ████████ │ ████████ │ ████████ │ ████████│\n│           │ 10-22    │ 10-22    │ 10-22    │ 10-22    │ 10-22    │ 10-20   │\n│           │ 3 staff  │ 2 staff⚠️│ 3 staff  │ 3 staff  │ 3 staff  │ 2 staff │\n├───────────┼──────────┼──────────┼──────────┼──────────┼──────────┼─────────┤\n│ 🏪 Malika │ ████████ │ ████████ │ ████████ │ ████████ │ ████████ │ ████████│\n│           │ 09-21    │ 09-21    │ 09-21    │ 09-21    │ 09-21    │ 10-18   │\n│           │ 4 staff  │ 4 staff  │ 4 staff  │ 3 staff⚠️│ 4 staff  │ 2 staff │\n└───────────┴──────────┴──────────┴──────────┴──────────┴──────────┴─────────┘\n\n⚠️ = Understaffed (below minimum)\n```\n\n**Click on a cell to see:**\n```\n┌─────────────────────────────────┐\n│ 📍 Chorsu - Tue Jan 28          │\n│ Shift: 10:00 - 22:00            │\n├─────────────────────────────────┤\n│ 👤 Aziza Karimova    10:00-18:00│\n│ 👤 Bobur Toshev      14:00-22:00│\n├─────────────────────────────────┤\n│ ⚠️ Need 1 more for min coverage │\n│ [+ Assign Employee] [Edit Shift]│\n└─────────────────────────────────┘\n```\n\n**Key Features:**\n1. Color intensity = staffing level (darker = more staff)\n2. ⚠️ Warning for understaffed days\n3. Click to drill down into daily details\n4. Drag employees between cells to reassign (Phase 2)\n5. Quick filters by branch/employee\n\nShould I build this? Week view first, then add Month/Day views? - Jarvis 🤖"
+        }
+      ]
+    },
+    {
+      "id": "200d1e3d-54a4-4497-b242-25c45b56faab",
+      "title": "Employee Timeline",
+      "jarvis_responses": [
+        {
+          "content": "📋 Questions to clarify Employee Timeline:\n\n**1. What events should we track?**\n□ Hired (automatic - from hire_date)\n□ Position changed (e.g., Cashier → Team Lead)\n□ Salary adjusted (increase/decrease with reason)\n□ Branch transferred (moved from HQ to Chorsu)\n□ Department changed\n□ Status changed (Probation → Active, Active → Terminated)\n□ Achievement/Award given\n□ Training completed\n□ Performance review conducted\n□ Warning/Disciplinary action\n\n**2. Who can add events?**\n- HR only? Or managers too?\n- Should some events be auto-generated (position/salary changes)?\n\n**3. Visibility:**\n- Can employees see their own timeline in My Portal?\n- Should some events be private (e.g., warnings)?\n\n**4. UI Location:**\nOption A: Tab on Employee Detail page\n```\n┌──────────────────────────────────────────┐\n│ 👤 Aziza Karimova                        │\n│ [Overview] [Timeline] [Documents] [Wages]│\n└──────────────────────────────────────────┘\n```\n\nOption B: Separate section below profile\n```\n┌──────────────────────────────────────────┐\n│ 📈 Career Timeline                       │\n├──────────────────────────────────────────┤\n│ ●──────●──────────●────────●────── NOW   │\n│ Hired  Promo    Transfer  Raise          │\n│ Jan'25 Mar'25   Jun'25    Dec'25         │\n└──────────────────────────────────────────┘\n```\n\n**5. Data storage:**\nNew table `employee_events`:\n- id, employee_id, event_type, event_date\n- old_value, new_value (for changes)\n- notes, created_by, created_at\n\nWhich events are most important to start with? - Jarvis 🤖"
+        }
+      ]
+    },
+    {
+      "id": "11f5dc46-6e18-46a5-a850-9dc5a628ebe6",
+      "title": "Employee Directory & Org Chart",
+      "jarvis_responses": [
+        {
+          "content": "🏢 Let's discuss Employee Directory & Org Chart!\n\n**PART 1: EMPLOYEE DIRECTORY**\nThis is mostly ready! We already have:\n✅ Employee list with search\n✅ Filter by branch, level, status\n✅ Card-style display\n\nEnhancements needed:\n□ Add department filter\n□ Add position filter (now that we have positions table!)\n□ Photo/avatar support\n□ Quick contact buttons (phone, email, Telegram)\n\n**PART 2: ORG CHART - Questions:**\n\n**Q1: What's the hierarchy structure?**\n\nOption A: Department-based (simpler)\n```\n                    ┌─────────────┐\n                    │  CEO/GM     │\n                    └──────┬──────┘\n           ┌───────────────┼───────────────┐\n     ┌─────┴─────┐   ┌─────┴─────┐   ┌─────┴─────┐\n     │ HR Dept   │   │ Finance   │   │Operations │\n     └─────┬─────┘   └─────┬─────┘   └─────┬─────┘\n           │               │               │\n       [5 people]     [3 people]      [12 people]\n```\n\nOption B: Manager-based (needs manager_id field)\n```\n                    ┌─────────────┐\n                    │ Zuxriddin   │\n                    │     GM      │\n                    └──────┬──────┘\n           ┌───────────────┼───────────────┐\n     ┌─────┴─────┐   ┌─────┴─────┐   ┌─────┴─────┐\n     │ Ruxshona  │   │ Bobur     │   │ Aziza     │\n     │ HR Lead   │   │ Finance   │   │ Ops Lead  │\n     └─────┬─────┘   └───────────┘   └─────┬─────┘\n           │                               │\n     ┌─────┴─────┐                   ┌─────┴─────┐\n     │ Malika    │                   │ 8 more... │\n     │ Recruiter │                   └───────────┘\n     └───────────┘\n```\n\n**Q2: Do we need to add `manager_id` to employees?**\nThis would enable proper reporting hierarchy.\n\n**Q3: Or use Departments + FACe structure?**\nWe already have departments with `accountable_person_id` - maybe that's enough?\n\n**Q4: Scope for Sprint 2?**\n- Just Directory improvements? (2 days)\n- Full Org Chart with new manager_id field? (5 days)\n- Hybrid using department heads? (3 days)\n\nWhat direction do you want to go? - Jarvis 🤖"
+        }
+      ]
+    }
+  ],
+  "jarvis_summary": "Provided detailed mockups and clarifying questions for 3 tasks: Visual Shift Calendar (with week view mockup), Employee Timeline (event tracking questions), and Employee Directory & Org Chart (hierarchy structure options).",
+  "jarvis_recommendations": [
+    "Start Visual Shift Calendar with Week View - it's the most practical for daily operations",
+    "For Employee Timeline, start with auto-generated events (position, salary, status changes) before manual ones",
+    "For Org Chart, recommend using existing FACe department structure with accountable_person_id rather than adding new manager_id field - keeps it simpler"
+  ]
+}
