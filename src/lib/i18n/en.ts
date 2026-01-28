@@ -56,6 +56,7 @@ export const en: Translations = {
   // Navigation
   nav: {
     dashboard: 'Dashboard',
+    peopleManagement: 'People Management',
     employees: 'Employees',
     attendance: 'Attendance',
     payroll: 'Payroll',

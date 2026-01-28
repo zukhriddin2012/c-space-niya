@@ -56,6 +56,7 @@ export const ru: Translations = {
   // Navigation
   nav: {
     dashboard: 'Главная',
+    peopleManagement: 'Управление персоналом',
     employees: 'Сотрудники',
     attendance: 'Посещаемость',
     payroll: 'Зарплата',

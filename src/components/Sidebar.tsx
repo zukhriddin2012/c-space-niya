@@ -59,30 +59,40 @@ const navItems: NavItem[] = [
     icon: UserCircle,
     roles: ['general_manager', 'ceo', 'hr', 'recruiter', 'branch_manager', 'employee', 'accountant', 'chief_accountant', 'legal_manager'],
   },
+  // People Management group
   {
-    nameKey: 'employees',
+    nameKey: 'peopleManagement',
     href: '/employees',
     icon: Users,
     roles: ['general_manager', 'ceo', 'hr', 'branch_manager'],
+    children: [
+      {
+        nameKey: 'employees',
+        href: '/employees',
+        icon: Users,
+        roles: ['general_manager', 'ceo', 'hr', 'branch_manager'],
+      },
+      {
+        nameKey: 'attendance',
+        href: '/attendance',
+        icon: Clock,
+        roles: ['general_manager', 'ceo', 'hr', 'branch_manager'],
+      },
+      {
+        nameKey: 'payroll',
+        href: '/payroll',
+        icon: Wallet,
+        roles: ['general_manager', 'ceo', 'hr'],
+      },
+      {
+        nameKey: 'departments',
+        href: '/departments',
+        icon: Building2,
+        roles: ['general_manager', 'hr'],
+      },
+    ],
   },
-  {
-    nameKey: 'branches',
-    href: '/branches',
-    icon: MapPin,
-    roles: ['general_manager', 'hr'],
-  },
-  {
-    nameKey: 'attendance',
-    href: '/attendance',
-    icon: Clock,
-    roles: ['general_manager', 'ceo', 'hr', 'branch_manager'],
-  },
-  {
-    nameKey: 'payroll',
-    href: '/payroll',
-    icon: Wallet,
-    roles: ['general_manager', 'ceo', 'hr'],
-  },
+  // Recruitment group
   {
     nameKey: 'recruitment',
     href: '/recruitment',
@@ -91,7 +101,7 @@ const navItems: NavItem[] = [
     children: [
       {
         nameKey: 'tableView',
-        href: '/recruitment/table',
+        href: '/recruitment',
         icon: Table,
         roles: ['general_manager', 'hr', 'recruiter'],
       },
@@ -103,12 +113,7 @@ const navItems: NavItem[] = [
       },
     ],
   },
-  {
-    nameKey: 'reports',
-    href: '/reports',
-    icon: BarChart3,
-    roles: ['general_manager', 'ceo'],
-  },
+  // Accounting group
   {
     nameKey: 'accounting',
     href: '/accounting',
@@ -127,19 +132,19 @@ const navItems: NavItem[] = [
         icon: ListTodo,
         roles: ['general_manager', 'ceo', 'chief_accountant', 'accountant'],
       },
-      {
-        nameKey: 'approvals',
-        href: '/accounting/approvals',
-        icon: ClipboardCheck,
-        roles: ['general_manager', 'ceo', 'chief_accountant'],
-      },
     ],
   },
   {
-    nameKey: 'departments',
-    href: '/departments',
-    icon: Building2,
+    nameKey: 'branches',
+    href: '/branches',
+    icon: MapPin,
     roles: ['general_manager', 'hr'],
+  },
+  {
+    nameKey: 'reports',
+    href: '/reports',
+    icon: BarChart3,
+    roles: ['general_manager', 'ceo'],
   },
   {
     nameKey: 'feedback',
@@ -193,6 +198,7 @@ export default function Sidebar({ user }: SidebarProps) {
     const labels: Record<string, string> = {
       dashboard: t.nav.dashboard,
       myPortal: t.nav.myPortal,
+      peopleManagement: t.nav.peopleManagement || 'People Management',
       employees: t.nav.employees,
       branches: t.nav.branches,
       attendance: t.nav.attendance,

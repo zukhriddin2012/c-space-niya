@@ -77,6 +77,7 @@ export interface Translations {
     tableView: string;
     boardView: string;
     devBoard: string;
+    peopleManagement: string;
   };
 
   // Dashboard

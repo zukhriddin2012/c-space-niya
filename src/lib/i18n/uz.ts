@@ -56,6 +56,7 @@ export const uz: Translations = {
   // Navigation
   nav: {
     dashboard: 'Bosh sahifa',
+    peopleManagement: 'Xodimlar boshqaruvi',
     employees: 'Xodimlar',
     attendance: 'Davomat',
     payroll: 'Ish haqi',
