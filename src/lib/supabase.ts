@@ -46,6 +46,7 @@ export interface Employee {
   position: string;
   level: string;
   branch_id: string | null;
+  department_id: string | null;
   salary: number | null;
   phone: string | null;
   email: string | null;
@@ -59,6 +60,7 @@ export interface Employee {
   password?: string; // For authentication (demo only - use hashing in production)
   preferred_language?: 'uz' | 'ru' | 'en'; // Language preference for bot messages
   branches?: Branch;
+  departments?: Department;
 }
 
 export interface Attendance {
@@ -98,6 +100,19 @@ export interface LeaveRequest {
   reviewed_at: string | null;
   review_note: string | null;
   employees?: Employee;
+}
+
+export interface Department {
+  id: string;
+  name: string;
+  description: string | null;
+  color: string;
+  manager_id: string | null;
+  created_at: string;
+  updated_at: string;
+  // Joined data
+  manager?: Employee;
+  employee_count?: number;
 }
 
 // ============================================
