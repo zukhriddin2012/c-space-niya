@@ -54,9 +54,9 @@ export async function GET() {
       level: emp.level,
       managerId: emp.manager_id,
       departmentId: emp.department_id,
-      departmentName: (emp.departments as { name: string } | null)?.name || null,
+      departmentName: (emp.departments as unknown as { name: string } | null)?.name || null,
       branchId: emp.branch_id,
-      branchName: (emp.branches as { name: string } | null)?.name || null,
+      branchName: (emp.branches as unknown as { name: string } | null)?.name || null,
     })) || [];
 
     // Build hierarchy tree
