@@ -43,7 +43,8 @@ export interface Employee {
   id: string;
   employee_id: string;
   full_name: string;
-  position: string;
+  position: string; // Legacy text field - kept for backwards compatibility
+  position_id: string | null; // Reference to positions table
   level: string;
   branch_id: string | null;
   department_id: string | null;
@@ -61,6 +62,7 @@ export interface Employee {
   preferred_language?: 'uz' | 'ru' | 'en'; // Language preference for bot messages
   branches?: Branch;
   departments?: Department;
+  positions?: Position;
 }
 
 export interface Attendance {
@@ -119,6 +121,23 @@ export interface Department {
   manager?: Employee;
   accountable_person?: Employee;
   employee_count?: number;
+}
+
+export interface Position {
+  id: string;
+  name: string;
+  name_uz: string | null;
+  name_ru: string | null;
+  description: string | null;
+  department_id: string | null;
+  level: string | null;
+  min_salary: number | null;
+  max_salary: number | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  // Joined data
+  department?: Department;
 }
 
 // ============================================
