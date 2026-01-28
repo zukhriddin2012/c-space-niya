@@ -264,14 +264,14 @@ export default function Sidebar({ user }: SidebarProps) {
           <li key={item.href}>
             <Link
               href={item.children[0]?.href || item.href}
-              className={`flex items-center justify-center p-2.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex items-center justify-center p-2.5 rounded-xl transition-all duration-200 ${
                 isActive || isChildActive
-                  ? 'bg-purple-50 text-purple-700'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  ? 'bg-purple-100 text-purple-700 shadow-sm'
+                  : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
               }`}
               title={itemName}
             >
-              <Icon size={20} className={isActive || isChildActive ? 'text-purple-600' : 'text-gray-400'} />
+              <Icon size={20} className={isActive || isChildActive ? 'text-purple-600' : ''} />
             </Link>
           </li>
         );
@@ -281,24 +281,24 @@ export default function Sidebar({ user }: SidebarProps) {
         <li key={item.href}>
           <button
             onClick={() => toggleExpand(item.href)}
-            className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+            className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
               isActive || isChildActive
-                ? 'bg-purple-50 text-purple-700'
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                ? 'bg-purple-100 text-purple-700 shadow-sm font-semibold'
+                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-800'
             }`}
           >
             <div className="flex items-center gap-3">
               <Icon size={20} className={isActive || isChildActive ? 'text-purple-600' : 'text-gray-400'} />
-              {itemName}
+              <span className="text-[15px] tracking-tight">{itemName}</span>
             </div>
             {isExpanded ? (
-              <ChevronDown size={16} className="text-gray-400" />
+              <ChevronDown size={16} className={isActive || isChildActive ? 'text-purple-500' : 'text-gray-400'} />
             ) : (
-              <ChevronRight size={16} className="text-gray-400" />
+              <ChevronRight size={16} className={isActive || isChildActive ? 'text-purple-500' : 'text-gray-400'} />
             )}
           </button>
           {isExpanded && (
-            <ul className="mt-1 ml-6 space-y-1 border-l border-gray-200 pl-3">
+            <ul className="mt-1.5 ml-7 space-y-1 border-l-2 border-purple-100 pl-3">
               {item.children
                 ?.filter(child => child.roles.includes(user.role))
                 .map(child => renderNavItem(child, true))}
@@ -313,14 +313,14 @@ export default function Sidebar({ user }: SidebarProps) {
         <li key={item.href}>
           <Link
             href={item.href}
-            className={`flex items-center justify-center p-2.5 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex items-center justify-center p-2.5 rounded-xl transition-all duration-200 ${
               pathname === item.href
-                ? 'bg-purple-50 text-purple-700'
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                ? 'bg-purple-100 text-purple-700 shadow-sm'
+                : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
             }`}
             title={itemName}
           >
-            <Icon size={20} className={pathname === item.href ? 'text-purple-600' : 'text-gray-400'} />
+            <Icon size={20} className={pathname === item.href ? 'text-purple-600' : ''} />
           </Link>
         </li>
       );
@@ -330,25 +330,25 @@ export default function Sidebar({ user }: SidebarProps) {
       <li key={item.href}>
         <Link
           href={item.href}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-            isChild ? 'py-2' : ''
+          className={`flex items-center gap-3 px-3 rounded-xl transition-all duration-200 ${
+            isChild ? 'py-2' : 'py-2.5'
           } ${
             pathname === item.href
-              ? 'bg-purple-50 text-purple-700'
-              : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              ? 'bg-purple-100 text-purple-700 shadow-sm font-semibold'
+              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-800'
           }`}
         >
           <Icon size={isChild ? 16 : 20} className={pathname === item.href ? 'text-purple-600' : 'text-gray-400'} />
-          {itemName}
+          <span className={`${isChild ? 'text-[14px]' : 'text-[15px]'} tracking-tight`}>{itemName}</span>
         </Link>
       </li>
     );
   };
 
   return (
-    <aside className={`${isCollapsed ? 'w-16' : 'w-56 xl:w-64'} bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0 transition-all duration-300`}>
+    <aside className={`${isCollapsed ? 'w-16' : 'w-60 xl:w-64'} bg-white border-r border-gray-100 flex flex-col h-screen sticky top-0 transition-all duration-300`}>
       {/* Logo */}
-      <div className={`p-4 border-b border-gray-200 ${isCollapsed ? 'flex justify-center' : ''}`}>
+      <div className={`p-4 border-b border-gray-100 ${isCollapsed ? 'flex justify-center' : ''}`}>
         <Link href="/dashboard" className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
           <Image
             src="/logo-icon.svg"
@@ -359,35 +359,35 @@ export default function Sidebar({ user }: SidebarProps) {
           />
           {!isCollapsed && (
             <div>
-              <h1 className="font-semibold text-gray-900">C-Space People</h1>
-              <p className="text-xs text-gray-500">People Management</p>
+              <h1 className="font-bold text-gray-900 text-base tracking-tight">C-Space People</h1>
+              <p className="text-xs text-gray-400 font-medium">People Management</p>
             </div>
           )}
         </Link>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-2 overflow-y-auto">
+      <nav className="flex-1 p-3 overflow-y-auto">
         <ul className="space-y-1">
           {filteredNavItems.map((item) => renderNavItem(item))}
         </ul>
       </nav>
 
       {/* User Section */}
-      <div className={`p-4 border-t border-gray-200 ${isCollapsed ? 'flex flex-col items-center' : ''}`}>
+      <div className={`p-4 border-t border-gray-100 ${isCollapsed ? 'flex flex-col items-center' : ''}`}>
         {!isCollapsed && (
           <Link
             href="/my-portal/profile"
-            className="flex items-center gap-3 mb-3 p-2 -m-2 rounded-lg hover:bg-purple-50 transition-colors cursor-pointer group"
+            className="flex items-center gap-3 mb-3 p-2 -m-2 rounded-xl hover:bg-purple-50 transition-all duration-200 cursor-pointer group"
           >
-            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center group-hover:bg-purple-200 transition-colors">
-              <span className="text-purple-700 font-medium">
+            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-200">
+              <span className="text-white font-semibold text-sm">
                 {user.name.charAt(0).toUpperCase()}
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate group-hover:text-purple-700 transition-colors">{user.name}</p>
-              <p className="text-xs text-gray-500 truncate">{user.position || getRoleLabel(user.role)}</p>
+              <p className="text-[15px] font-semibold text-gray-800 truncate group-hover:text-purple-700 transition-colors tracking-tight">{user.name}</p>
+              <p className="text-xs text-gray-400 truncate font-medium">{user.position || getRoleLabel(user.role)}</p>
             </div>
           </Link>
         )}
@@ -395,16 +395,16 @@ export default function Sidebar({ user }: SidebarProps) {
           <div className="flex flex-col items-center gap-2">
             <Link
               href="/my-portal/profile"
-              className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center hover:bg-purple-200 transition-colors"
+              className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-200"
               title={user.name}
             >
-              <span className="text-purple-700 font-medium">
+              <span className="text-white font-semibold text-sm">
                 {user.name.charAt(0).toUpperCase()}
               </span>
             </Link>
             <button
               onClick={handleLogout}
-              className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-200"
               title={t.nav.logout}
             >
               <LogOut size={20} />
@@ -413,7 +413,7 @@ export default function Sidebar({ user }: SidebarProps) {
         ) : (
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[15px] font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 tracking-tight"
           >
             <LogOut size={18} />
             {t.nav.logout}
