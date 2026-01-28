@@ -42,14 +42,14 @@ export const PUT = withAuth(
       }
 
       const body = await request.json();
-      const { name, description, color, category, accountable_person, manager_id } = body;
+      const { name, description, color, category, accountable_person_id, manager_id } = body;
 
       const updates: Record<string, unknown> = {};
       if (name !== undefined) updates.name = name.trim();
       if (description !== undefined) updates.description = description?.trim() || null;
       if (color !== undefined) updates.color = color;
       if (category !== undefined) updates.category = category;
-      if (accountable_person !== undefined) updates.accountable_person = accountable_person?.trim() || null;
+      if (accountable_person_id !== undefined) updates.accountable_person_id = accountable_person_id || null;
       if (manager_id !== undefined) updates.manager_id = manager_id;
 
       const department = await updateDepartment(id, updates);

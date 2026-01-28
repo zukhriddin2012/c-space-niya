@@ -5013,12 +5013,13 @@ export async function getDepartments(): Promise<DepartmentWithStats[]> {
     return [];
   }
 
-  // Get departments with manager info
+  // Get departments with manager and accountable person info
   const { data: departments, error: deptError } = await supabaseAdmin!
     .from('departments')
     .select(`
       *,
-      manager:employees!departments_manager_id_fkey(id, full_name, position)
+      manager:employees!departments_manager_id_fkey(id, full_name, position),
+      accountable_person:employees!departments_accountable_person_id_fkey(id, full_name, position)
     `)
     .order('name');
 
@@ -5065,7 +5066,8 @@ export async function getDepartmentById(id: string): Promise<DepartmentWithStats
     .from('departments')
     .select(`
       *,
-      manager:employees!departments_manager_id_fkey(id, full_name, position)
+      manager:employees!departments_manager_id_fkey(id, full_name, position),
+      accountable_person:employees!departments_accountable_person_id_fkey(id, full_name, position)
     `)
     .eq('id', id)
     .single();
@@ -5093,7 +5095,7 @@ export async function createDepartment(department: {
   description?: string;
   color?: string;
   category?: string;
-  accountable_person?: string;
+  accountable_person_id?: string | null;
   manager_id?: string | null;
 }): Promise<Department | null> {
   if (!isSupabaseAdminConfigured()) {
@@ -5108,7 +5110,7 @@ export async function createDepartment(department: {
       description: department.description || null,
       color: department.color || 'bg-gray-500',
       category: department.category || 'operations',
-      accountable_person: department.accountable_person || null,
+      accountable_person_id: department.accountable_person_id || null,
       manager_id: department.manager_id || null,
     })
     .select()

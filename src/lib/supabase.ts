@@ -110,13 +110,14 @@ export interface Department {
   description: string | null;
   color: string;
   category: FaceCategory;
-  accountable_person: string | null;
+  accountable_person_id: string | null;
   display_order: number;
   manager_id: string | null;
   created_at: string;
   updated_at: string;
   // Joined data
   manager?: Employee;
+  accountable_person?: Employee;
   employee_count?: number;
 }
 

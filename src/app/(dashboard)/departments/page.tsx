@@ -41,7 +41,8 @@ interface Department {
   description: string | null;
   color: string;
   category: FaceCategory;
-  accountable_person: string | null;
+  accountable_person_id: string | null;
+  accountable_person?: Employee;
   display_order: number;
   manager_id: string | null;
   manager?: Employee;
@@ -118,7 +119,7 @@ export default function DepartmentsPage() {
     description: '',
     color: 'bg-blue-600',
     category: 'operations' as FaceCategory,
-    accountable_person: '',
+    accountable_person_id: '',
     manager_id: '',
   });
 
@@ -172,7 +173,7 @@ export default function DepartmentsPage() {
       description: '',
       color: 'bg-blue-600',
       category: 'operations',
-      accountable_person: '',
+      accountable_person_id: '',
       manager_id: '',
     });
     setError(null);
@@ -186,7 +187,7 @@ export default function DepartmentsPage() {
       description: dept.description || '',
       color: dept.color,
       category: dept.category || 'operations',
-      accountable_person: dept.accountable_person || '',
+      accountable_person_id: dept.accountable_person_id || '',
       manager_id: dept.manager_id || '',
     });
     setError(null);
@@ -223,7 +224,7 @@ export default function DepartmentsPage() {
           description: formData.description.trim() || null,
           color: formData.color,
           category: formData.category,
-          accountable_person: formData.accountable_person.trim() || null,
+          accountable_person_id: formData.accountable_person_id || null,
           manager_id: formData.manager_id || null,
         }),
       });
@@ -271,7 +272,7 @@ export default function DepartmentsPage() {
   const filteredDepartments = departments.filter(d =>
     d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (d.manager?.full_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (d.accountable_person || '').toLowerCase().includes(searchQuery.toLowerCase())
+    (d.accountable_person?.full_name || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Group departments by category
@@ -336,7 +337,7 @@ export default function DepartmentsPage() {
       {dept.accountable_person && (
         <div className="flex items-center gap-1.5 mb-2">
           <UserCircle size={14} className="text-purple-500" />
-          <span className="text-xs font-medium text-purple-600">{dept.accountable_person}</span>
+          <span className="text-xs font-medium text-purple-600">{dept.accountable_person.full_name}</span>
         </div>
       )}
 
@@ -541,7 +542,7 @@ export default function DepartmentsPage() {
                         {dept.accountable_person && (
                           <span className="flex items-center gap-1 text-purple-600">
                             <UserCircle size={12} />
-                            {dept.accountable_person}
+                            {dept.accountable_person.full_name}
                           </span>
                         )}
                         {dept.accountable_person && dept.manager && <span className="text-gray-300">•</span>}
@@ -636,13 +637,18 @@ export default function DepartmentsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Accountable Person
                 </label>
-                <input
-                  type="text"
-                  value={formData.accountable_person}
-                  onChange={(e) => setFormData({ ...formData, accountable_person: e.target.value })}
+                <select
+                  value={formData.accountable_person_id}
+                  onChange={(e) => setFormData({ ...formData, accountable_person_id: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="e.g., Dilmurod, Zukhriddin"
-                />
+                >
+                  <option value="">No accountable person</option>
+                  {employees.map((emp) => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.full_name} - {emp.position}
+                    </option>
+                  ))}
+                </select>
                 <p className="text-xs text-gray-500 mt-1">Person accountable for this function per FACe</p>
               </div>
 

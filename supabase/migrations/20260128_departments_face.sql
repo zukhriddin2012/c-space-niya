@@ -18,8 +18,11 @@ END $$;
 -- Add new columns to departments table
 ALTER TABLE departments
 ADD COLUMN IF NOT EXISTS category face_category DEFAULT 'operations',
-ADD COLUMN IF NOT EXISTS accountable_person VARCHAR(100),
+ADD COLUMN IF NOT EXISTS accountable_person_id UUID REFERENCES employees(id) ON DELETE SET NULL,
 ADD COLUMN IF NOT EXISTS display_order INT DEFAULT 0;
+
+-- Drop old varchar column if it exists
+ALTER TABLE departments DROP COLUMN IF EXISTS accountable_person;
 
 -- Delete existing generic departments to replace with FACe structure
 DELETE FROM departments WHERE name IN (
@@ -29,34 +32,33 @@ DELETE FROM departments WHERE name IN (
 
 -- Insert C-Space FACe (Function Accountability Chart) - 14 Functions
 -- Based on C-Space Strategy Reference Document V2.4
--- Accountable persons from FACe chart
-INSERT INTO departments (name, description, color, category, accountable_person, display_order) VALUES
+-- Note: accountable_person_id should be set manually after migration by linking to actual employee records
+INSERT INTO departments (name, description, color, category, display_order) VALUES
   -- Executive Leadership
-  ('CEO', 'Chief Executive Officer - Overall company leadership and vision', 'bg-slate-800', 'executive', 'Dilmurod', 1),
-  ('COO', 'Chief Operating Officer - Day-to-day operations management', 'bg-slate-700', 'executive', 'Zukhriddin', 2),
-  ('CFO', 'Chief Financial Officer - Financial strategy and management', 'bg-green-600', 'executive', 'Dilmurod', 3),
+  ('CEO', 'Chief Executive Officer - Overall company leadership and vision', 'bg-slate-800', 'executive', 1),
+  ('COO', 'Chief Operating Officer - Day-to-day operations management', 'bg-slate-700', 'executive', 2),
+  ('CFO', 'Chief Financial Officer - Financial strategy and management', 'bg-green-600', 'executive', 3),
 
   -- Business Growth Functions
-  ('Business Development & Expansion', 'New partnerships, expansion strategy, growth initiatives', 'bg-blue-600', 'growth', 'Ubaydulloh', 1),
-  ('Sales Management', 'Sales strategy, revenue generation, client acquisition', 'bg-yellow-500', 'growth', 'Ubaydulloh', 2),
-  ('Marketing Management', 'Brand management, advertising, lead generation', 'bg-orange-500', 'growth', 'Ubaydulloh', 3),
+  ('Business Development & Expansion', 'New partnerships, expansion strategy, growth initiatives', 'bg-blue-600', 'growth', 1),
+  ('Sales Management', 'Sales strategy, revenue generation, client acquisition', 'bg-yellow-500', 'growth', 2),
+  ('Marketing Management', 'Brand management, advertising, lead generation', 'bg-orange-500', 'growth', 3),
 
   -- Support Functions
-  ('HR', 'Human Resources - Recruitment, employee relations, development', 'bg-purple-500', 'support', 'Zukhriddin', 1),
-  ('Legal Management', 'Legal affairs, contracts, compliance', 'bg-indigo-500', 'support', 'Nigina', 2),
+  ('HR', 'Human Resources - Recruitment, employee relations, development', 'bg-purple-500', 'support', 1),
+  ('Legal Management', 'Legal affairs, contracts, compliance', 'bg-indigo-500', 'support', 2),
 
   -- Operations Functions
-  ('Experience Management', 'Branch Managers (BM), Night Shift (NS), Community Managers (CM) - Member experience and service quality', 'bg-pink-500', 'operations', 'Zukhriddin', 1),
-  ('Internal Facility Management', 'Internal C-Space facilities, maintenance, operations', 'bg-cyan-500', 'operations', 'Mahmud', 2),
-  ('External Facility Management', 'AXOs for Yandex and external client facility services', 'bg-teal-500', 'operations', 'Rahmatulloh', 3),
+  ('Experience Management', 'Branch Managers (BM), Night Shift (NS), Community Managers (CM) - Member experience and service quality', 'bg-pink-500', 'operations', 1),
+  ('Internal Facility Management', 'Internal C-Space facilities, maintenance, operations', 'bg-cyan-500', 'operations', 2),
+  ('External Facility Management', 'AXOs for Yandex and external client facility services', 'bg-teal-500', 'operations', 3),
 
   -- Specialized Functions
-  ('Technology Management', 'IT infrastructure, software, digital solutions', 'bg-violet-500', 'specialized', 'Ubaydulloh', 1),
-  ('Construction & Launch Management', 'New location construction, facility launches', 'bg-amber-600', 'specialized', 'Zukhriddin', 2),
-  ('VC', 'Venture Capital - Investment strategy and portfolio management', 'bg-emerald-600', 'specialized', 'Farrukh', 3)
+  ('Technology Management', 'IT infrastructure, software, digital solutions', 'bg-violet-500', 'specialized', 1),
+  ('Construction & Launch Management', 'New location construction, facility launches', 'bg-amber-600', 'specialized', 2),
+  ('VC', 'Venture Capital - Investment strategy and portfolio management', 'bg-emerald-600', 'specialized', 3)
 ON CONFLICT (name) DO UPDATE SET
   description = EXCLUDED.description,
   color = EXCLUDED.color,
   category = EXCLUDED.category,
-  accountable_person = EXCLUDED.accountable_person,
   display_order = EXCLUDED.display_order;

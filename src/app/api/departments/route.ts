@@ -18,7 +18,7 @@ export const POST = withAuth(
   async (request: NextRequest) => {
     try {
       const body = await request.json();
-      const { name, description, color, category, accountable_person, manager_id } = body;
+      const { name, description, color, category, accountable_person_id, manager_id } = body;
 
       if (!name || typeof name !== 'string') {
         return NextResponse.json({ error: 'Name is required' }, { status: 400 });
@@ -29,7 +29,7 @@ export const POST = withAuth(
         description: description?.trim(),
         color,
         category,
-        accountable_person: accountable_person?.trim(),
+        accountable_person_id,
         manager_id,
       });
 
