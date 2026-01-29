@@ -87,8 +87,7 @@ export async function POST(request: NextRequest) {
         check_in_longitude: 0,
         shift_id: shiftId,
         status: late ? 'late' : 'present',
-        verification_type: 'remote',
-        is_remote: true, // Mark as remote check-in
+        verification_type: 'remote', // This marks it as remote check-in
       })
       .select()
       .single();
