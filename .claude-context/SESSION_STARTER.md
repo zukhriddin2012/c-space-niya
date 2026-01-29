@@ -4,6 +4,51 @@
 
 ---
 
+## 🚀 Worker Session (Recommended for Task Work)
+
+Use this for task-specific sessions. **No git commands allowed** - coordinator handles git.
+
+```
+C-Space HR - Worker Session
+
+⚠️ IMPORTANT: This is a WORKER session. Do NOT use git commands.
+A coordinator session handles all git operations.
+
+Context: Read `.claude-context/PROJECT_CONTEXT.md` for project overview.
+
+Your Task: [TASK_ID] - [TASK_TITLE]
+[TASK_DESCRIPTION]
+
+Files to work on:
+- [FILE_1]
+- [FILE_2]
+
+When done:
+1. Run `npx tsc --noEmit` to verify no errors
+2. List all files you modified/created
+3. Summarize changes made
+4. DO NOT commit or push - coordinator will handle it
+```
+
+---
+
+## 🎯 Coordinator Session
+
+Use this for the main planning/coordination session that handles git.
+
+```
+C-Space HR - Coordinator Session
+
+This session coordinates development:
+- Manages git operations (commit, push, pull)
+- Updates .claude-context/ files
+- Merges changes from worker sessions
+
+Read `.claude-context/WORKFLOW.md` for the hub-and-spoke model.
+```
+
+---
+
 ## Option 1: Full Context Load (Recommended for new sessions)
 
 ```
