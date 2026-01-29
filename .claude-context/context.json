@@ -18,6 +18,16 @@
     "pages": "src/app/(dashboard)/",
     "api": "src/app/api/",
     "components": "src/components/",
+    "componentFolders": {
+      "employee": "src/components/employee/",
+      "recruitment": "src/components/recruitment/",
+      "attendance": "src/components/attendance/",
+      "branch": "src/components/branch/",
+      "layout": "src/components/layout/",
+      "ui": "src/components/ui/",
+      "profile": "src/components/profile/",
+      "auth": "src/components/auth/"
+    },
     "database": "src/lib/db.ts",
     "supabase": "src/lib/supabase.ts",
     "auth": "src/lib/auth-server.ts",
@@ -101,7 +111,9 @@
     }
   },
   "conventions": {
-    "components": "PascalCase, .tsx extension",
+    "components": "PascalCase, .tsx extension, organized in feature folders",
+    "componentImports": "Import from feature folders: @/components/employee, @/components/ui, etc.",
+    "uiPrimitives": "Use Button, Input, Card, Modal, Select, Badge from @/components/ui",
     "apiRoutes": "route.ts in folder structure",
     "translations": "Add to types.ts first, then all 3 language files",
     "database": "Use supabaseAdmin from @/lib/supabase",
@@ -109,6 +121,8 @@
   },
   "currentWork": {
     "recentChanges": [
+      "2026-01-29: Component refactoring - 24 components into 8 feature folders + barrel exports",
+      "2026-01-29: Created 6 UI primitives (Button, Input, Card, Modal, Select, Badge)",
       "2026-01-29: Translation fixes for Employees page",
       "2026-01-29: Remote badge fix in attendance",
       "2026-01-28: Org chart with expandable tree",

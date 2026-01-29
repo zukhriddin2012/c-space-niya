@@ -22,6 +22,7 @@
 | T001 | Org chart with manager hierarchy | 2026-01-28 | Main |
 | T002 | Translation fixes (Employees page) | 2026-01-29 | Main |
 | T003 | Remote badge fix in attendance | 2026-01-29 | Main |
+| T004 | Component refactoring (feature folders + UI primitives) | 2026-01-29 | Main |
 
 ### 🟡 In Progress
 
@@ -33,11 +34,11 @@
 
 | Task ID | Title | Priority | Notes |
 |---------|-------|----------|-------|
-| T004 | Employee profile editing | High | Improve edit form UX |
-| T005 | Recruitment pipeline filters | Medium | Filter by position, date, source |
-| T006 | Shift notes feature | Medium | Allow managers to add notes to shifts |
-| T007 | Attendance export to Excel | Low | Export filtered attendance data |
-| T008 | Dashboard widget customization | Low | Let users reorder widgets |
+| T005 | Employee profile editing | High | Improve edit form UX |
+| T006 | Recruitment pipeline filters | Medium | Filter by position, date, source |
+| T007 | Shift notes feature | Medium | Allow managers to add notes to shifts |
+| T008 | Attendance export to Excel | Low | Export filtered attendance data |
+| T009 | Dashboard widget customization | Low | Let users reorder widgets |
 
 ---
 
@@ -100,17 +101,19 @@ When starting a session:
 **Employees:**
 - Page: `src/app/(dashboard)/employees/page.tsx`
 - Filters: `src/app/(dashboard)/employees/EmployeesFilters.tsx`
-- Table: `src/components/EmployeesTable.tsx`
+- Components: `src/components/employee/` (EmployeesTable, AddEmployeeModal, EditEmployeeModal, etc.)
 - Edit: `src/app/(dashboard)/employees/[id]/edit/page.tsx`
 
 **Attendance:**
 - Sheet: `src/app/(dashboard)/attendance/sheet/page.tsx`
 - Table: `src/app/(dashboard)/attendance/AttendanceTable.tsx`
+- Components: `src/components/attendance/` (AttendanceMap)
 - Dashboard: `src/app/(dashboard)/attendance/dashboard/page.tsx`
 - API: `src/app/api/attendance/*/route.ts`
 
 **Recruitment:**
 - Board: `src/app/(dashboard)/recruitment/board/page.tsx`
+- Components: `src/components/recruitment/` (CandidateDetailModal, CandidatesKanban, RecruitmentFilters)
 - Table: `src/app/(dashboard)/recruitment/page.tsx`
 - API: `src/app/api/candidates/route.ts`
 
@@ -119,6 +122,20 @@ When starting a session:
 - English: `src/lib/i18n/en.ts`
 - Russian: `src/lib/i18n/ru.ts`
 - Uzbek: `src/lib/i18n/uz.ts`
+
+**Shared Components:**
+- Layout: `src/components/layout/` (Sidebar, MobileNav, NotificationBell, etc.)
+- UI Primitives: `src/components/ui/` (Button, Input, Card, Modal, Select, Badge)
+- Auth: `src/components/auth/` (RoleGuard, PageGuard)
+
+### Component Import Pattern
+
+```tsx
+// Import from feature folders (preferred)
+import { EmployeesTable } from '@/components/employee';
+import { Button, Card, Badge } from '@/components/ui';
+import { Sidebar } from '@/components/layout';
+```
 
 ### Testing Commands
 

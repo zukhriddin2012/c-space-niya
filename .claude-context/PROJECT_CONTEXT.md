@@ -1,7 +1,7 @@
 # C-Space HR System - Project Context
 
 > **Last Updated:** 2026-01-29
-> **Updated By:** Claude (Translation fixes, Remote badge fix)
+> **Updated By:** Claude (Component refactoring, UI primitives)
 
 ## Quick Start for New Sessions
 
@@ -70,7 +70,16 @@ c-space-hr/
 │   │   │   └── my-portal/      # Employee self-service
 │   │   ├── api/                # API routes
 │   │   └── login/              # Auth pages
-│   ├── components/             # Shared components
+│   ├── components/             # Feature-based component organization
+│   │   ├── employee/           # Employee-related components
+│   │   ├── recruitment/        # Recruitment components
+│   │   ├── attendance/         # Attendance components
+│   │   ├── branch/             # Branch components
+│   │   ├── layout/             # Layout components (Sidebar, Nav, etc.)
+│   │   ├── ui/                 # UI primitives & shared UI
+│   │   ├── profile/            # Profile components
+│   │   ├── auth/               # Auth guards & components
+│   │   └── index.ts            # Main barrel export
 │   ├── contexts/               # React contexts (Language, etc.)
 │   └── lib/                    # Utilities
 │       ├── db.ts               # Database queries
@@ -82,6 +91,52 @@ c-space-hr/
 │   └── migrations/             # Database migrations
 └── docs/                       # Documentation & mockups
 ```
+
+---
+
+## Component Organization
+
+Components are organized by feature with barrel exports (index.ts files).
+
+### Component Folders
+
+| Folder | Contents | Components |
+|--------|----------|------------|
+| `employee/` | Employee management | AddEmployeeModal, EditEmployeeModal, EmployeesTable, EmployeeWagesSection, EmployeePayslipsSection, WageTrendChart |
+| `recruitment/` | Hiring pipeline | CandidateDetailModal, CandidatesKanban, RecruitmentFilters |
+| `attendance/` | Time tracking | AttendanceMap |
+| `branch/` | Branch management | BranchMap |
+| `layout/` | App layout | Sidebar, MobileNav, NotificationBell, SidebarToggle, QuickSwitch |
+| `ui/` | UI primitives | Button, Input, Card, Modal, Select, Badge, ConfirmationDialog, etc. |
+| `profile/` | User profile | MyProfileClient, ProfilePictureUpload |
+| `auth/` | Auth guards | RoleGuard, PageGuard |
+
+### Import Patterns
+
+```tsx
+// Import from feature folders
+import { EmployeesTable, AddEmployeeModal } from '@/components/employee';
+import { CandidateDetailModal } from '@/components/recruitment';
+import { Sidebar, MobileNav } from '@/components/layout';
+import { Button, Card, Badge } from '@/components/ui';
+import { RoleGuard } from '@/components/auth';
+
+// Or import from main barrel
+import { EmployeesTable, Button, Sidebar } from '@/components';
+```
+
+### UI Primitives
+
+Reusable UI components with consistent styling:
+
+| Component | Props | Variants |
+|-----------|-------|----------|
+| `Button` | variant, size, loading, disabled | primary, secondary, danger, ghost / sm, md, lg |
+| `Input` | label, error, helperText, leftIcon | - |
+| `Card` | title, description, footer, noPadding | - |
+| `Modal` | isOpen, onClose, title, size | sm, md, lg, xl |
+| `Select` | label, error, options, placeholder | - |
+| `Badge` | variant, size | default, success, warning, danger, info, purple / sm, md |
 
 ---
 
@@ -308,6 +363,11 @@ const { data, error } = await supabaseAdmin
 ## Recent Changes Log
 
 ### 2026-01-29
+- **Component Refactoring**: Reorganized 24 components into 8 feature-based folders
+  - Created barrel exports (index.ts) for each folder
+  - Updated 11 files with new import paths
+  - Fixed cross-folder imports (recruitment → employee)
+- **UI Primitives**: Created 6 new reusable components (Button, Input, Card, Modal, Select, Badge)
 - Fixed translations for Employees page (Level, All Levels, position levels, employment types)
 - Fixed Remote badge display in attendance table (verificationType interface)
 - Added verificationType to AttendanceSession and AttendanceRecord interfaces

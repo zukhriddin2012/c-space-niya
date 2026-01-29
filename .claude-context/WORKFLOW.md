@@ -156,16 +156,27 @@ Day 2:
 ```
 Task 1 (Employee Editing):
 - src/app/(dashboard)/employees/[id]/edit/page.tsx ← OWNED
-- src/components/EmployeeForm.tsx ← OWNED
+- src/components/employee/*.tsx ← OWNED
 
 Task 2 (Pipeline Filters):
 - src/app/(dashboard)/recruitment/board/page.tsx ← OWNED
-- src/components/RecruitmentFilters.tsx ← OWNED
+- src/components/recruitment/*.tsx ← OWNED
+
+Task 3 (UI Improvements):
+- src/components/ui/*.tsx ← OWNED
 
 Shared (Coordinator manages):
 - src/lib/i18n/*.ts
+- src/components/index.ts (main barrel)
 - .claude-context/*
 ```
+
+### Component Import Rules
+
+When adding new components:
+1. Place in appropriate feature folder (`employee/`, `ui/`, etc.)
+2. Add export to that folder's `index.ts`
+3. Import via feature folder: `import { X } from '@/components/feature'`
 
 ---
 
