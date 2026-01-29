@@ -29,6 +29,7 @@ import {
   Code2,
   Bot,
   GitBranch,
+  Upload,
 } from 'lucide-react';
 import type { User, UserRole } from '@/types';
 import { getRoleLabel } from '@/lib/auth';
@@ -96,6 +97,12 @@ const navItems: NavItem[] = [
         href: '/org-chart',
         icon: GitBranch,
         roles: ['general_manager', 'ceo', 'hr', 'branch_manager'],
+      },
+      {
+        nameKey: 'salaryImport',
+        href: '/admin/salary-import',
+        icon: Upload,
+        roles: ['general_manager', 'hr'],
       },
     ],
   },
@@ -220,6 +227,7 @@ export default function Sidebar({ user }: SidebarProps) {
       allRequests: t.nav.allRequests,
       approvals: t.nav.approvals,
       departments: t.nav.departments,
+      salaryImport: 'Salary Import',
       feedback: t.nav.feedback,
       feedbackInbox: t.nav.feedbackInbox,
       settings: t.nav.settings,
