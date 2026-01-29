@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check permission (accountant, hr, ceo, super_admin)
-    if (!hasPermission(user.role, 'accounting', 'create')) {
+    if (!hasPermission(user.role, 'branches:edit')) {
       return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
     }
 
