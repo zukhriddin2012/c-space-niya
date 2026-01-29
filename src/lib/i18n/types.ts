@@ -248,6 +248,7 @@ export interface Translations {
     verifiedBy: string;
     ip: string;
     gps: string;
+    remote: string;
     manual: string;
     // Button labels
     remind: string;

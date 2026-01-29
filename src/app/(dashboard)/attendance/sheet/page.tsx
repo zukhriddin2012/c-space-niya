@@ -40,6 +40,7 @@ interface AttendanceSession {
   status: 'present' | 'late' | 'early_leave';
   isActive: boolean;
   source: 'telegram' | 'web' | 'manual' | null;
+  verificationType?: 'ip' | 'gps' | 'remote' | null;
 }
 
 interface ReminderInfo {
@@ -65,6 +66,7 @@ interface AttendanceRecord {
   checkOutTime: string | null;
   status: 'present' | 'late' | 'absent' | 'early_leave';
   source: 'telegram' | 'web' | 'manual' | null;
+  verificationType?: 'ip' | 'gps' | 'remote' | null;
   totalHours: number | null;
   isOvernight?: boolean;
   overnightFromDate?: string;
