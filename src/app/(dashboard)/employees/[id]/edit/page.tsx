@@ -31,6 +31,7 @@ import {
   ArrowDownCircle,
   Edit3,
   Rocket,
+  Wifi,
 } from 'lucide-react';
 import type { UserRole } from '@/types';
 
@@ -120,6 +121,7 @@ interface Employee {
   positions?: Position;
   system_role?: UserRole;
   is_growth_team?: boolean;
+  remote_work_enabled?: boolean;
 }
 
 interface ManagerOption {
@@ -234,6 +236,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
     gender: '',
     notes: '',
     is_growth_team: false,
+    remote_work_enabled: false,
   });
   const [saving, setSaving] = useState(false);
   const [telegramId, setTelegramId] = useState<string | null>(null);
@@ -346,6 +349,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
           gender: data.employee.gender || '',
           notes: data.employee.notes || '',
           is_growth_team: data.employee.is_growth_team || false,
+          remote_work_enabled: data.employee.remote_work_enabled || false,
         });
         setTelegramId(data.employee.telegram_id || null);
       } catch (err) {
@@ -740,6 +744,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
           gender: formData.gender || null,
           notes: formData.notes || null,
           is_growth_team: pageData.canAssignRoles ? formData.is_growth_team : undefined,
+          remote_work_enabled: pageData.canAssignRoles ? formData.remote_work_enabled : undefined,
         }),
       });
 
@@ -1347,6 +1352,48 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
                 <p className="text-sm text-orange-700">
                   <strong>Access granted:</strong> This employee will see the Growth section in their My Portal
                   with visibility into all strategic projects and company updates.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Remote Work Section */}
+        {canAssignRoles && (
+          <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Wifi size={18} className="text-blue-500" />
+              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">
+                Remote Work
+              </h3>
+            </div>
+
+            <label className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
+              formData.remote_work_enabled
+                ? 'border-blue-400 bg-blue-50'
+                : 'border-gray-200 hover:border-gray-300'
+            }`}>
+              <input
+                type="checkbox"
+                checked={formData.remote_work_enabled}
+                onChange={(e) => setFormData({ ...formData, remote_work_enabled: e.target.checked })}
+                className="mt-1 h-4 w-4 text-blue-500 focus:ring-blue-500 rounded"
+              />
+              <div>
+                <p className="text-sm font-medium text-gray-900">Allow Remote Work Check-in</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Enable to allow this employee to check in remotely via Telegram bot
+                  without GPS verification when their IP doesn&apos;t match the office network.
+                </p>
+              </div>
+            </label>
+
+            {formData.remote_work_enabled && (
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  <strong>Remote check-in enabled:</strong> When this employee checks in from outside the office,
+                  they will be asked to choose between &quot;I&apos;m in the office&quot; (requires GPS) or &quot;I&apos;m working remotely&quot;
+                  (no GPS required, marked as remote).
                 </p>
               </div>
             )}

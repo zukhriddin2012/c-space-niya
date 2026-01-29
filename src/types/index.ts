@@ -45,6 +45,7 @@ export interface Employee {
   status: 'active' | 'inactive' | 'terminated' | 'probation';
   isGrowthTeam?: boolean; // Part of the Growth Team with access to strategic projects
   managerId?: string; // Direct manager for org chart hierarchy
+  remoteWorkEnabled?: boolean; // Can check in remotely without GPS verification
   createdAt: Date;
   updatedAt: Date;
 }

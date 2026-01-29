@@ -1,7 +1,7 @@
 import { getSession } from '@/lib/auth-server';
 import { hasPermission, PERMISSIONS } from '@/lib/permissions';
 import { redirect, notFound } from 'next/navigation';
-import { ArrowLeft, User, Briefcase, MapPin, Clock, Phone, Mail, Calendar, CheckCircle, AlertCircle, XCircle, Pencil } from 'lucide-react';
+import { ArrowLeft, User, Briefcase, MapPin, Clock, Phone, Mail, Calendar, CheckCircle, AlertCircle, XCircle, Pencil, Wifi } from 'lucide-react';
 import Link from 'next/link';
 import { getEmployeeById, getBranches, getAttendanceByEmployeeAndMonth } from '@/lib/db';
 import EmployeeWagesSection from '@/components/EmployeeWagesSection';
@@ -211,6 +211,12 @@ export default async function EmployeeDetailPage({ params, searchParams }: PageP
             <div className="flex items-center gap-3 mb-2">
               <h2 className="text-xl font-semibold text-gray-900">{employee.full_name}</h2>
               <EmployeeStatusBadge status={employee.status} />
+              {employee.remote_work_enabled && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                  <Wifi size={12} />
+                  Remote
+                </span>
+              )}
             </div>
             <p className="text-gray-500 mb-4">{employee.employee_id}</p>
 

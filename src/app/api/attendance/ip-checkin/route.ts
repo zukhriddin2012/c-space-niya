@@ -36,10 +36,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Database not configured' }, { status: 500 });
     }
 
-    // Get employee by telegram ID (including preferred_language)
+    // Get employee by telegram ID (including preferred_language and remote_work_enabled)
     const { data: employee, error: empError } = await supabaseAdmin
       .from('employees')
-      .select('id, full_name, position, branch_id, preferred_language')
+      .select('id, full_name, position, branch_id, preferred_language, remote_work_enabled')
       .eq('telegram_id', telegramId.toString())
       .single();
 
@@ -88,7 +88,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (!matchedBranch) {
-      // IP doesn't match - notify bot to prompt for GPS
+      // IP doesn't match - check if employee has remote work enabled
+      const remoteWorkEnabled = employee.remote_work_enabled === true;
+
+      // Notify bot to prompt for GPS or show remote work options
       const botWebhookUrl = process.env.TELEGRAM_BOT_WEBHOOK_URL;
       const botWebhookSecret = process.env.TELEGRAM_BOT_WEBHOOK_SECRET;
 
@@ -103,7 +106,8 @@ export async function POST(request: NextRequest) {
             body: JSON.stringify({
               telegramId,
               success: false,
-              action: 'need_gps',
+              action: remoteWorkEnabled ? 'remote_choice' : 'need_gps',
+              remoteWorkEnabled,
             }),
           });
         } catch (err) {
@@ -116,6 +120,7 @@ export async function POST(request: NextRequest) {
         error: 'ip_not_matched',
         message: 'Office network not detected',
         detectedIp: clientIp,
+        remoteWorkEnabled,
       }, { status: 200 });
     }
 
