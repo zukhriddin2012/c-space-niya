@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     const clientIp = forwardedFor?.split(',')[0]?.trim() || realIp || 'unknown';
 
     const body = await request.json();
-    const { telegramId, shiftId = 'day' } = body;
+    const { telegramId, shiftId = 'day', remoteCheckin = false } = body;
 
     if (!telegramId) {
       return NextResponse.json({ success: false, error: 'Missing telegramId' }, { status: 400 });
@@ -64,6 +64,53 @@ export async function POST(request: NextRequest) {
         message: 'You already have an active check-in',
         checkIn: activeCheckin.check_in?.substring(0, 5),
       }, { status: 400 });
+    }
+
+    // Handle remote check-in (user already chose "Working remotely")
+    if (remoteCheckin) {
+      const tashkent = getTashkentTime();
+      const checkInTime = tashkent.toISOString().substring(11, 19);
+      const today = tashkent.toISOString().split('T')[0];
+      const late = isLate(shiftId);
+
+      const { data: attendance, error: attError } = await supabaseAdmin
+        .from('attendance')
+        .insert({
+          employee_id: employee.id,
+          date: today,
+          check_in: checkInTime,
+          check_in_branch_id: employee.branch_id,
+          check_in_latitude: 0,
+          check_in_longitude: 0,
+          shift_id: shiftId,
+          status: late ? 'late' : 'present',
+          verification_type: 'remote',
+        })
+        .select()
+        .single();
+
+      if (attError) {
+        console.error('Remote check-in error:', attError);
+        return NextResponse.json({ success: false, error: 'Failed to record check-in' }, { status: 500 });
+      }
+
+      const responseData = {
+        id: attendance.id,
+        checkIn: checkInTime.substring(0, 5),
+        branchId: employee.branch_id,
+        branchName: 'Remote',
+        verificationType: 'remote',
+        isLate: late,
+        isRemote: true,
+        shiftId,
+        employeeName: employee.full_name,
+        language: employee.preferred_language || 'uz',
+      };
+
+      return NextResponse.json({
+        success: true,
+        data: responseData,
+      });
     }
 
     // Check if IP matches any branch's office IPs
