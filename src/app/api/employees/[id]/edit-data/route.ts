@@ -30,6 +30,8 @@ export const GET = withAuth(async (request: NextRequest, context: { user: User; 
     // Determine permissions for this user
     const canEditSalary = hasPermission(user.role, PERMISSIONS.EMPLOYEES_EDIT_SALARY);
     const canAssignRoles = hasPermission(user.role, PERMISSIONS.USERS_ASSIGN_ROLES);
+    // GM can directly edit wages without requesting changes
+    const canDirectEditWages = user.role === 'general_manager';
 
     return NextResponse.json({
       employee,
@@ -39,6 +41,8 @@ export const GET = withAuth(async (request: NextRequest, context: { user: User; 
       managers,
       canEditSalary,
       canAssignRoles,
+      canDirectEditWages,
+      userRole: user.role,
     });
   } catch (error) {
     console.error('Error fetching employee edit data:', error);

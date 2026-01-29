@@ -136,6 +136,8 @@ interface PageData {
   managers: ManagerOption[]; // Potential managers for org chart
   canEditSalary: boolean;
   canAssignRoles: boolean;
+  canDirectEditWages: boolean; // GM can directly edit wages without requesting changes
+  userRole: string;
 }
 
 interface EmployeeDocument {
@@ -290,6 +292,12 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
   const [wageChangeReason, setWageChangeReason] = useState('');
   const [wageChangeDate, setWageChangeDate] = useState('');
   const [submittingWageChange, setSubmittingWageChange] = useState(false);
+
+  // Direct wage editing state (for GM)
+  const [editingWageId, setEditingWageId] = useState<string | null>(null);
+  const [editingWageAmount, setEditingWageAmount] = useState('');
+  const [editingBranchWageId, setEditingBranchWageId] = useState<string | null>(null);
+  const [editingBranchWageAmount, setEditingBranchWageAmount] = useState('');
 
   // Calculate totals
   const primaryTotal = wages.reduce((sum, w) => sum + (w.wage_amount || 0), 0);
@@ -858,6 +866,54 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
     }
   };
 
+  // Direct wage update (for GM)
+  const handleUpdateWage = async (wageId: string, newAmount: number) => {
+    if (!employeeId) return;
+
+    try {
+      const response = await fetch(`/api/employees/${employeeId}/wages`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          wage_id: wageId,
+          wage_amount: newAmount,
+        }),
+      });
+
+      if (response.ok) {
+        setWages(wages.map(w => w.id === wageId ? { ...w, wage_amount: newAmount } : w));
+        setEditingWageId(null);
+        setEditingWageAmount('');
+      }
+    } catch (err) {
+      console.error('Error updating wage:', err);
+    }
+  };
+
+  // Direct branch wage update (for GM)
+  const handleUpdateBranchWage = async (wageId: string, newAmount: number) => {
+    if (!employeeId) return;
+
+    try {
+      const response = await fetch(`/api/employees/${employeeId}/branch-wages`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          wage_id: wageId,
+          wage_amount: newAmount,
+        }),
+      });
+
+      if (response.ok) {
+        setBranchWages(branchWages.map(w => w.id === wageId ? { ...w, wage_amount: newAmount } : w));
+        setEditingBranchWageId(null);
+        setEditingBranchWageAmount('');
+      }
+    } catch (err) {
+      console.error('Error updating branch wage:', err);
+    }
+  };
+
   // Get available entities (not already assigned)
   const availableEntities = legalEntities.filter(
     e => !wages.some(w => w.legal_entity_id === e.id)
@@ -887,7 +943,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
     );
   }
 
-  const { employee, branches, departments, positions, canEditSalary, canAssignRoles } = pageData;
+  const { employee, branches, departments, positions, canEditSalary, canAssignRoles, canDirectEditWages } = pageData;
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -1362,6 +1418,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
               <div className="space-y-2">
                 {wages.map((wage) => {
                   const pendingChange = getPendingChange('primary', wage.legal_entity_id);
+                  const isEditing = editingWageId === wage.id;
                   return (
                     <div key={wage.id} className="p-3 bg-indigo-50 rounded-lg">
                       <div className="flex items-center justify-between">
@@ -1377,22 +1434,72 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="font-semibold text-gray-900">{formatSalary(wage.wage_amount)}</span>
-                          {!pendingChange && (
-                            <button
-                              type="button"
-                              onClick={() => openWageChangeModal(
-                                'primary',
-                                wage.legal_entity_id,
-                                wage.legal_entities?.short_name || wage.legal_entities?.name || wage.legal_entity_id,
-                                wage.wage_amount,
-                                true
-                              )}
-                              className="inline-flex items-center gap-1 px-2 py-1 text-xs text-indigo-600 bg-white border border-indigo-200 rounded hover:bg-indigo-100 transition-colors"
-                            >
-                              <Edit3 size={12} />
-                              Request Change
-                            </button>
+                          {isEditing ? (
+                            <>
+                              <input
+                                type="number"
+                                value={editingWageAmount}
+                                onChange={(e) => setEditingWageAmount(e.target.value)}
+                                className="w-32 px-2 py-1 text-sm border border-indigo-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                                min="0"
+                                step="100000"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateWage(wage.id, parseFloat(editingWageAmount))}
+                                className="inline-flex items-center gap-1 px-2 py-1 text-xs text-white bg-indigo-600 rounded hover:bg-indigo-700 transition-colors"
+                              >
+                                <Save size={12} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => { setEditingWageId(null); setEditingWageAmount(''); }}
+                                className="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 bg-gray-200 rounded hover:bg-gray-300 transition-colors"
+                              >
+                                <X size={12} />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <span className="font-semibold text-gray-900">{formatSalary(wage.wage_amount)}</span>
+                              {!pendingChange && canDirectEditWages ? (
+                                // GM can directly edit and remove
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => { setEditingWageId(wage.id); setEditingWageAmount(wage.wage_amount.toString()); }}
+                                    className="inline-flex items-center gap-1 px-2 py-1 text-xs text-indigo-600 bg-white border border-indigo-200 rounded hover:bg-indigo-100 transition-colors"
+                                  >
+                                    <Edit3 size={12} />
+                                    Edit
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveWage(wage.id)}
+                                    className="inline-flex items-center gap-1 px-2 py-1 text-xs text-red-600 bg-white border border-red-200 rounded hover:bg-red-100 transition-colors"
+                                  >
+                                    <Trash2 size={12} />
+                                    Remove
+                                  </button>
+                                </>
+                              ) : !pendingChange ? (
+                                // Non-GM can request change
+                                <button
+                                  type="button"
+                                  onClick={() => openWageChangeModal(
+                                    'primary',
+                                    wage.legal_entity_id,
+                                    wage.legal_entities?.short_name || wage.legal_entities?.name || wage.legal_entity_id,
+                                    wage.wage_amount,
+                                    true
+                                  )}
+                                  className="inline-flex items-center gap-1 px-2 py-1 text-xs text-indigo-600 bg-white border border-indigo-200 rounded hover:bg-indigo-100 transition-colors"
+                                >
+                                  <Edit3 size={12} />
+                                  Request Change
+                                </button>
+                              ) : null}
+                            </>
                           )}
                         </div>
                       </div>
@@ -1505,6 +1612,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
               <div className="space-y-2">
                 {branchWages.map((wage) => {
                   const pendingChange = getPendingChange('additional', wage.branch_id);
+                  const isEditing = editingBranchWageId === wage.id;
                   return (
                     <div key={wage.id} className="p-3 bg-emerald-50 rounded-lg">
                       <div className="flex items-center justify-between">
@@ -1517,22 +1625,72 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="font-semibold text-gray-900">{formatSalary(wage.wage_amount)}</span>
-                          {!pendingChange && (
-                            <button
-                              type="button"
-                              onClick={() => openWageChangeModal(
-                                'additional',
-                                wage.branch_id,
-                                wage.branches?.name || wage.branch_id,
-                                wage.wage_amount,
-                                false
-                              )}
-                              className="inline-flex items-center gap-1 px-2 py-1 text-xs text-emerald-600 bg-white border border-emerald-200 rounded hover:bg-emerald-100 transition-colors"
-                            >
-                              <Edit3 size={12} />
-                              Request Change
-                            </button>
+                          {isEditing ? (
+                            <>
+                              <input
+                                type="number"
+                                value={editingBranchWageAmount}
+                                onChange={(e) => setEditingBranchWageAmount(e.target.value)}
+                                className="w-32 px-2 py-1 text-sm border border-emerald-300 rounded focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+                                min="0"
+                                step="100000"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateBranchWage(wage.id, parseFloat(editingBranchWageAmount))}
+                                className="inline-flex items-center gap-1 px-2 py-1 text-xs text-white bg-emerald-600 rounded hover:bg-emerald-700 transition-colors"
+                              >
+                                <Save size={12} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => { setEditingBranchWageId(null); setEditingBranchWageAmount(''); }}
+                                className="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 bg-gray-200 rounded hover:bg-gray-300 transition-colors"
+                              >
+                                <X size={12} />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <span className="font-semibold text-gray-900">{formatSalary(wage.wage_amount)}</span>
+                              {!pendingChange && canDirectEditWages ? (
+                                // GM can directly edit and remove
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => { setEditingBranchWageId(wage.id); setEditingBranchWageAmount(wage.wage_amount.toString()); }}
+                                    className="inline-flex items-center gap-1 px-2 py-1 text-xs text-emerald-600 bg-white border border-emerald-200 rounded hover:bg-emerald-100 transition-colors"
+                                  >
+                                    <Edit3 size={12} />
+                                    Edit
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveBranchWage(wage.id)}
+                                    className="inline-flex items-center gap-1 px-2 py-1 text-xs text-red-600 bg-white border border-red-200 rounded hover:bg-red-100 transition-colors"
+                                  >
+                                    <Trash2 size={12} />
+                                    Remove
+                                  </button>
+                                </>
+                              ) : !pendingChange ? (
+                                // Non-GM can request change
+                                <button
+                                  type="button"
+                                  onClick={() => openWageChangeModal(
+                                    'additional',
+                                    wage.branch_id,
+                                    wage.branches?.name || wage.branch_id,
+                                    wage.wage_amount,
+                                    false
+                                  )}
+                                  className="inline-flex items-center gap-1 px-2 py-1 text-xs text-emerald-600 bg-white border border-emerald-200 rounded hover:bg-emerald-100 transition-colors"
+                                >
+                                  <Edit3 size={12} />
+                                  Request Change
+                                </button>
+                              ) : null}
+                            </>
                           )}
                         </div>
                       </div>
