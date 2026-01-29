@@ -51,6 +51,9 @@ export const ru: Translations = {
     apply: 'Применить',
     reset: 'Сбросить',
     export: 'Экспорт',
+    pending: 'ожидает',
+    unread: 'непрочитано',
+    noBranch: 'Без филиала',
   },
 
   // Navigation

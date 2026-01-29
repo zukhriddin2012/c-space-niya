@@ -51,6 +51,9 @@ export const uz: Translations = {
     apply: "Qo'llash",
     reset: 'Tozalash',
     export: 'Eksport',
+    pending: 'kutilmoqda',
+    unread: "o'qilmagan",
+    noBranch: "Filial yo'q",
   },
 
   // Navigation

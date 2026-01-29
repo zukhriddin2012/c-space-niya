@@ -592,7 +592,7 @@ export function CEODashboard({
           </div>
           <p className="font-medium text-gray-900">{t.dashboard.feedbackInbox}</p>
           {unreadFeedbackCount > 0 && (
-            <span className="text-xs text-blue-600">{unreadFeedbackCount} unread</span>
+            <span className="text-xs text-blue-600">{unreadFeedbackCount} {t.common.unread}</span>
           )}
         </Link>
 
@@ -605,7 +605,7 @@ export function CEODashboard({
           </div>
           <p className="font-medium text-gray-900">{t.nav.approvals}</p>
           {pendingApprovals.paymentRequests > 0 && (
-            <span className="text-xs text-amber-600">{pendingApprovals.paymentRequests} pending</span>
+            <span className="text-xs text-amber-600">{pendingApprovals.paymentRequests} {t.common.pending}</span>
           )}
         </Link>
 
@@ -847,7 +847,7 @@ export function EmployeeDashboard({
           <div>
             <h2 className="text-xl font-semibold">{employee.full_name}</h2>
             <p className="text-purple-200">{employee.position}</p>
-            <p className="text-purple-200 text-sm">{employee.branches?.name || 'No Branch'}</p>
+            <p className="text-purple-200 text-sm">{employee.branches?.name || t.common.noBranch}</p>
           </div>
         </div>
       </div>
@@ -985,7 +985,7 @@ export function EmployeeDashboard({
           </div>
           <p className="font-medium text-gray-900">{t.dashboard.myRequests}</p>
           {myPaymentStats.pending > 0 && (
-            <span className="text-xs text-amber-600">{myPaymentStats.pending} pending</span>
+            <span className="text-xs text-amber-600">{myPaymentStats.pending} {t.common.pending}</span>
           )}
         </Link>
 
@@ -995,6 +995,627 @@ export function EmployeeDashboard({
         >
           <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mx-auto mb-2">
             <MessageSquare size={20} className="text-indigo-600" />
+          </div>
+          <p className="font-medium text-gray-900">{t.dashboard.giveFeedback}</p>
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// ============= RECRUITER DASHBOARD =============
+interface RecruiterDashboardProps {
+  userName: string;
+  recruiterStats: {
+    totalCandidates: number;
+    screening: number;
+    interview: number;
+    underReview: number;
+    probation: number;
+    hiredThisMonth: number;
+  };
+}
+
+export function RecruiterDashboard({
+  userName,
+  recruiterStats,
+}: RecruiterDashboardProps) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="mb-4 lg:mb-6">
+        <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">{t.dashboard.recruitmentDashboard}</h1>
+        <p className="text-sm lg:text-base text-gray-500 mt-1">
+          {t.dashboard.welcome}, {userName}! {t.dashboard.manageCandidates}
+        </p>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+        <StatCard
+          title={t.dashboard.totalCandidates}
+          value={recruiterStats.totalCandidates}
+          icon={Users}
+          color="purple"
+          href="/recruitment"
+        />
+        <StatCard
+          title={t.dashboard.interviewStage}
+          value={recruiterStats.interview}
+          icon={UserCheck}
+          color="blue"
+          href="/recruitment/board"
+        />
+        <StatCard
+          title={t.dashboard.underReview}
+          value={recruiterStats.underReview}
+          icon={ClipboardCheck}
+          color="amber"
+          href="/recruitment/board"
+        />
+        <StatCard
+          title={t.dashboard.hiredThisMonth}
+          value={recruiterStats.hiredThisMonth}
+          icon={CheckCircle2}
+          color="green"
+        />
+      </div>
+
+      {/* Pipeline Overview */}
+      <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <UserPlus size={20} className="text-purple-600" />
+            <h3 className="font-semibold text-gray-900">{t.dashboard.pipelineOverview}</h3>
+          </div>
+          <Link href="/recruitment/board" className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1">
+            {t.dashboard.openBoard} <ArrowRight size={14} />
+          </Link>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="p-3 bg-gray-50 rounded-lg text-center">
+            <p className="text-2xl font-bold text-gray-900">{recruiterStats.screening}</p>
+            <p className="text-sm text-gray-500">{t.dashboard.screening}</p>
+          </div>
+          <div className="p-3 bg-blue-50 rounded-lg text-center">
+            <p className="text-2xl font-bold text-blue-600">{recruiterStats.interview}</p>
+            <p className="text-sm text-gray-500">{t.dashboard.interview}</p>
+          </div>
+          <div className="p-3 bg-amber-50 rounded-lg text-center">
+            <p className="text-2xl font-bold text-amber-600">{recruiterStats.underReview}</p>
+            <p className="text-sm text-gray-500">{t.dashboard.underReview}</p>
+          </div>
+          <div className="p-3 bg-purple-50 rounded-lg text-center">
+            <p className="text-2xl font-bold text-purple-600">{recruiterStats.probation}</p>
+            <p className="text-sm text-gray-500">{t.dashboard.probation}</p>
+          </div>
+          <div className="p-3 bg-green-50 rounded-lg text-center">
+            <p className="text-2xl font-bold text-green-600">{recruiterStats.hiredThisMonth}</p>
+            <p className="text-sm text-gray-500">{t.dashboard.hired}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <Link
+          href="/recruitment/board"
+          className="bg-white rounded-xl border border-gray-200 p-4 hover:border-purple-300 hover:bg-purple-50 transition-colors text-center"
+        >
+          <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+            <UserPlus size={20} className="text-purple-600" />
+          </div>
+          <p className="font-medium text-gray-900">{t.dashboard.kanbanBoard}</p>
+        </Link>
+
+        <Link
+          href="/recruitment/table"
+          className="bg-white rounded-xl border border-gray-200 p-4 hover:border-blue-300 hover:bg-blue-50 transition-colors text-center"
+        >
+          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+            <FileText size={20} className="text-blue-600" />
+          </div>
+          <p className="font-medium text-gray-900">{t.dashboard.tableView}</p>
+        </Link>
+
+        <Link
+          href="/feedback"
+          className="bg-white rounded-xl border border-gray-200 p-4 hover:border-green-300 hover:bg-green-50 transition-colors text-center"
+        >
+          <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+            <MessageSquare size={20} className="text-green-600" />
+          </div>
+          <p className="font-medium text-gray-900">{t.dashboard.giveFeedback}</p>
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// ============= CHIEF ACCOUNTANT DASHBOARD =============
+interface ChiefAccountantDashboardProps {
+  userName: string;
+  accountingStats: {
+    pendingRequests: number;
+    awaitingApproval: number;
+    processedToday: number;
+    totalThisMonth: number;
+  };
+  pendingRequests: Array<{
+    id: string;
+    request_number: string;
+    description?: string;
+    request_type: string;
+    total_amount: number;
+  }>;
+}
+
+export function ChiefAccountantDashboard({
+  userName,
+  accountingStats,
+  pendingRequests,
+}: ChiefAccountantDashboardProps) {
+  const { t } = useTranslation();
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('uz-UZ').format(amount) + ' UZS';
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="mb-4 lg:mb-6">
+        <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">{t.dashboard.accountingDashboard}</h1>
+        <p className="text-sm lg:text-base text-gray-500 mt-1">
+          {t.dashboard.welcome}, {userName}! {t.dashboard.managePaymentRequests}
+        </p>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+        <StatCard
+          title={t.dashboard.pendingRequests}
+          value={accountingStats.pendingRequests}
+          icon={FileText}
+          color="amber"
+          href="/accounting/requests"
+        />
+        <StatCard
+          title={t.dashboard.awaitingMyApproval}
+          value={accountingStats.awaitingApproval}
+          icon={ClipboardCheck}
+          color="purple"
+          href="/accounting/approvals"
+        />
+        <StatCard
+          title={t.dashboard.processedToday}
+          value={accountingStats.processedToday}
+          icon={CheckCircle2}
+          color="green"
+        />
+        <StatCard
+          title={t.dashboard.totalThisMonth}
+          value={accountingStats.totalThisMonth}
+          icon={Calculator}
+          color="blue"
+        />
+      </div>
+
+      {/* Pending Approvals */}
+      <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <ClipboardCheck size={20} className="text-purple-600" />
+            <h3 className="font-semibold text-gray-900">{t.dashboard.pendingApprovals}</h3>
+          </div>
+          <Link href="/accounting/approvals" className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1">
+            {t.dashboard.viewAll} <ArrowRight size={14} />
+          </Link>
+        </div>
+        <div className="space-y-2">
+          {pendingRequests.length === 0 ? (
+            <p className="text-sm text-gray-500 text-center py-4">{t.dashboard.noPendingApprovals}</p>
+          ) : (
+            pendingRequests.map((request) => (
+              <div key={request.id} className="flex justify-between items-center p-3 bg-amber-50 rounded-lg">
+                <div>
+                  <span className="font-medium text-gray-900">{request.request_number}</span>
+                  <span className="text-sm text-gray-500 ml-2">- {request.description || request.request_type}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="font-medium text-gray-900">{formatCurrency(request.total_amount)}</span>
+                  <Link
+                    href={`/accounting/requests/${request.id}`}
+                    className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700"
+                  >
+                    {t.dashboard.review}
+                  </Link>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Quick Links */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <Link
+          href="/accounting/requests"
+          className="bg-white rounded-xl border border-gray-200 p-4 hover:border-purple-300 hover:bg-purple-50 transition-colors text-center"
+        >
+          <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+            <FileText size={20} className="text-purple-600" />
+          </div>
+          <p className="font-medium text-gray-900">{t.dashboard.allRequests}</p>
+        </Link>
+
+        <Link
+          href="/accounting/approvals"
+          className="bg-white rounded-xl border border-gray-200 p-4 hover:border-amber-300 hover:bg-amber-50 transition-colors text-center"
+        >
+          <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+            <ClipboardCheck size={20} className="text-amber-600" />
+          </div>
+          <p className="font-medium text-gray-900">{t.nav.approvals}</p>
+        </Link>
+
+        <Link
+          href="/accounting/my-requests"
+          className="bg-white rounded-xl border border-gray-200 p-4 hover:border-blue-300 hover:bg-blue-50 transition-colors text-center"
+        >
+          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+            <FileText size={20} className="text-blue-600" />
+          </div>
+          <p className="font-medium text-gray-900">{t.dashboard.myRequests}</p>
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// ============= ACCOUNTANT DASHBOARD =============
+interface AccountantDashboardProps {
+  userName: string;
+  accountingStats: {
+    pendingRequests: number;
+    inProgress: number;
+    processedToday: number;
+  };
+}
+
+export function AccountantDashboard({
+  userName,
+  accountingStats,
+}: AccountantDashboardProps) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="mb-4 lg:mb-6">
+        <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">{t.dashboard.accountantDashboard}</h1>
+        <p className="text-sm lg:text-base text-gray-500 mt-1">
+          {t.dashboard.welcome}, {userName}! {t.dashboard.processPaymentRequests}
+        </p>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-3 lg:gap-4">
+        <StatCard
+          title={t.dashboard.toProcess}
+          value={accountingStats.pendingRequests}
+          icon={FileText}
+          color="amber"
+          href="/accounting/requests"
+        />
+        <StatCard
+          title={t.dashboard.inProgress}
+          value={accountingStats.inProgress}
+          icon={Clock}
+          color="blue"
+        />
+        <StatCard
+          title={t.dashboard.completedToday}
+          value={accountingStats.processedToday}
+          icon={CheckCircle2}
+          color="green"
+        />
+      </div>
+
+      {/* Quick Links */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <Link
+          href="/accounting/requests"
+          className="bg-white rounded-xl border border-gray-200 p-4 hover:border-purple-300 hover:bg-purple-50 transition-colors text-center"
+        >
+          <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+            <FileText size={20} className="text-purple-600" />
+          </div>
+          <p className="font-medium text-gray-900">{t.dashboard.allRequests}</p>
+        </Link>
+
+        <Link
+          href="/accounting/my-requests"
+          className="bg-white rounded-xl border border-gray-200 p-4 hover:border-blue-300 hover:bg-blue-50 transition-colors text-center"
+        >
+          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+            <FileText size={20} className="text-blue-600" />
+          </div>
+          <p className="font-medium text-gray-900">{t.dashboard.myRequests}</p>
+        </Link>
+
+        <Link
+          href="/feedback"
+          className="bg-white rounded-xl border border-gray-200 p-4 hover:border-green-300 hover:bg-green-50 transition-colors text-center"
+        >
+          <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+            <MessageSquare size={20} className="text-green-600" />
+          </div>
+          <p className="font-medium text-gray-900">{t.dashboard.giveFeedback}</p>
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// ============= LEGAL MANAGER DASHBOARD =============
+interface LegalManagerDashboardProps {
+  userName: string;
+  myPaymentStats: {
+    myRequests: number;
+    pending: number;
+  };
+  myRecentRequests: Array<{
+    id: string;
+    description?: string;
+    request_type: string;
+    status: string;
+  }>;
+}
+
+export function LegalManagerDashboard({
+  userName,
+  myPaymentStats,
+  myRecentRequests,
+}: LegalManagerDashboardProps) {
+  const { t } = useTranslation();
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'approved':
+      case 'paid':
+        return 'bg-green-100 text-green-700';
+      case 'submitted':
+      case 'pending_review':
+        return 'bg-amber-100 text-amber-700';
+      case 'rejected':
+        return 'bg-red-100 text-red-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="mb-4 lg:mb-6">
+        <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">{t.dashboard.legalDashboard}</h1>
+        <p className="text-sm lg:text-base text-gray-500 mt-1">
+          {t.dashboard.welcome}, {userName}!
+        </p>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-3 lg:gap-4">
+        <StatCard
+          title={t.dashboard.myRequests}
+          value={myPaymentStats.myRequests}
+          icon={FileText}
+          color="purple"
+          href="/accounting/my-requests"
+        />
+        <StatCard
+          title={t.accounting.pending}
+          value={myPaymentStats.pending}
+          icon={Clock}
+          color="amber"
+          href="/accounting/my-requests"
+        />
+      </div>
+
+      {/* Recent Requests */}
+      <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <FileText size={20} className="text-purple-600" />
+            <h3 className="font-semibold text-gray-900">{t.dashboard.myRecentRequests}</h3>
+          </div>
+          <Link href="/accounting/my-requests" className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1">
+            {t.dashboard.viewAll} <ArrowRight size={14} />
+          </Link>
+        </div>
+        <div className="space-y-2">
+          {myRecentRequests.length === 0 ? (
+            <p className="text-sm text-gray-500 text-center py-4">{t.dashboard.noRecentRequests}</p>
+          ) : (
+            myRecentRequests.map((request) => (
+              <div key={request.id} className={`flex justify-between items-center p-3 rounded-lg ${getStatusColor(request.status).replace('text-', 'bg-').replace('-700', '-50')}`}>
+                <span className="text-sm text-gray-700">{request.description || request.request_type}</span>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${getStatusColor(request.status)}`}>
+                  {request.status.replace('_', ' ')}
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Quick Links */}
+      <div className="grid grid-cols-2 gap-4">
+        <Link
+          href="/accounting/my-requests"
+          className="bg-white rounded-xl border border-gray-200 p-4 hover:border-purple-300 hover:bg-purple-50 transition-colors text-center"
+        >
+          <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+            <FileText size={20} className="text-purple-600" />
+          </div>
+          <p className="font-medium text-gray-900">{t.dashboard.myRequests}</p>
+        </Link>
+
+        <Link
+          href="/feedback"
+          className="bg-white rounded-xl border border-gray-200 p-4 hover:border-green-300 hover:bg-green-50 transition-colors text-center"
+        >
+          <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+            <MessageSquare size={20} className="text-green-600" />
+          </div>
+          <p className="font-medium text-gray-900">{t.dashboard.giveFeedback}</p>
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// ============= BRANCH MANAGER DASHBOARD =============
+interface BranchManagerDashboardProps {
+  userName: string;
+  branchName?: string;
+  stats: {
+    juniorCount: number;
+    middleCount: number;
+    seniorCount: number;
+    executiveCount: number;
+  };
+  branchAttendance: {
+    total: number;
+    present: number;
+    absent: number;
+    late: number;
+    absentEmployees: Array<{ id: string; full_name: string }>;
+    lateEmployees: Array<{ id: string; full_name: string; check_in: string }>;
+  };
+  recentActivity: RecentActivityItem[];
+}
+
+export function BranchManagerDashboard({
+  userName,
+  branchName,
+  stats,
+  branchAttendance,
+  recentActivity,
+}: BranchManagerDashboardProps) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="mb-4 lg:mb-6">
+        <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">{t.dashboard.branchDashboard}</h1>
+        <p className="text-sm lg:text-base text-gray-500 mt-1">
+          {t.dashboard.welcome}, {userName}!
+          {branchName && <span className="text-purple-600"> {branchName}</span>}
+        </p>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-3 lg:gap-4">
+        <StatCard
+          title={t.dashboard.branchEmployees}
+          value={branchAttendance.total}
+          icon={Users}
+          color="purple"
+          href="/employees"
+        />
+        <StatCard
+          title={t.dashboard.presentToday}
+          value={branchAttendance.present}
+          icon={UserCheck}
+          color="green"
+          href="/attendance"
+        />
+        <StatCard
+          title={t.dashboard.absentLate}
+          value={branchAttendance.absent + branchAttendance.late}
+          icon={XCircle}
+          color="red"
+          href="/attendance"
+        />
+      </div>
+
+      {/* Today's Attendance Issues */}
+      <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Clock size={20} className="text-purple-600" />
+            <h3 className="font-semibold text-gray-900">{t.dashboard.todaysAttendance}</h3>
+          </div>
+          <Link href="/attendance" className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1">
+            {t.dashboard.viewAll} <ArrowRight size={14} />
+          </Link>
+        </div>
+        <div className="space-y-2">
+          {branchAttendance.absentEmployees.length === 0 && branchAttendance.lateEmployees.length === 0 ? (
+            <p className="text-sm text-green-600 text-center py-4">{t.dashboard.allPresentOnTime}</p>
+          ) : (
+            <>
+              {branchAttendance.absentEmployees.map((emp) => (
+                <div key={emp.id} className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                  <span className="text-sm text-gray-900">{emp.full_name}</span>
+                  <span className="text-sm text-red-600 font-medium">{t.dashboard.absent}</span>
+                </div>
+              ))}
+              {branchAttendance.lateEmployees.map((emp) => (
+                <div key={emp.id} className="flex justify-between items-center p-3 bg-amber-50 rounded-lg">
+                  <span className="text-sm text-gray-900">{emp.full_name}</span>
+                  <span className="text-sm text-amber-600 font-medium">{t.dashboard.late} ({emp.check_in})</span>
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Two Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <LevelDistributionCard
+          juniorCount={stats.juniorCount}
+          middleCount={stats.middleCount}
+          seniorCount={stats.seniorCount}
+          executiveCount={stats.executiveCount}
+        />
+        <RecentActivityCard activities={recentActivity} />
+      </div>
+
+      {/* Quick Links */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <Link
+          href="/employees"
+          className="bg-white rounded-xl border border-gray-200 p-4 hover:border-purple-300 hover:bg-purple-50 transition-colors text-center"
+        >
+          <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+            <Users size={20} className="text-purple-600" />
+          </div>
+          <p className="font-medium text-gray-900">{t.nav.employees}</p>
+        </Link>
+
+        <Link
+          href="/attendance"
+          className="bg-white rounded-xl border border-gray-200 p-4 hover:border-blue-300 hover:bg-blue-50 transition-colors text-center"
+        >
+          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+            <Clock size={20} className="text-blue-600" />
+          </div>
+          <p className="font-medium text-gray-900">{t.nav.attendance}</p>
+        </Link>
+
+        <Link
+          href="/feedback"
+          className="bg-white rounded-xl border border-gray-200 p-4 hover:border-green-300 hover:bg-green-50 transition-colors text-center"
+        >
+          <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+            <MessageSquare size={20} className="text-green-600" />
           </div>
           <p className="font-medium text-gray-900">{t.dashboard.giveFeedback}</p>
         </Link>

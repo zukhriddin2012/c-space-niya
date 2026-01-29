@@ -51,6 +51,9 @@ export interface Translations {
     apply: string;
     reset: string;
     export: string;
+    pending: string;
+    unread: string;
+    noBranch: string;
   };
 
   // Navigation

@@ -51,6 +51,9 @@ export const en: Translations = {
     apply: 'Apply',
     reset: 'Reset',
     export: 'Export',
+    pending: 'pending',
+    unread: 'unread',
+    noBranch: 'No Branch',
   },
 
   // Navigation
