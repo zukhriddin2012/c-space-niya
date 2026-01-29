@@ -67,7 +67,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle remote check-in (user already chose "Working remotely")
+    console.log('📡 ip-checkin called with remoteCheckin:', remoteCheckin);
     if (remoteCheckin) {
+      console.log('📡 Processing remote check-in for employee:', employee.id);
       const tashkent = getTashkentTime();
       const checkInTime = tashkent.toISOString().substring(11, 19);
       const today = tashkent.toISOString().split('T')[0];
@@ -93,6 +95,8 @@ export async function POST(request: NextRequest) {
         console.error('Remote check-in error:', attError);
         return NextResponse.json({ success: false, error: 'Failed to record check-in' }, { status: 500 });
       }
+
+      console.log('📡 Remote check-in success, attendance:', attendance?.id, 'verification_type:', attendance?.verification_type);
 
       const responseData = {
         id: attendance.id,
