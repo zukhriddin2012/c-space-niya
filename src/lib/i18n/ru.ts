@@ -259,6 +259,108 @@ export const ru: Translations = {
     december: 'Декабрь',
   },
 
+  // Employee Edit Form
+  employeeEdit: {
+    // Page
+    title: 'Редактировать сотрудника',
+    subtitle: 'Обновить информацию и настройки сотрудника',
+
+    // Tabs
+    tabProfile: 'Профиль',
+    tabEmployment: 'Занятость',
+    tabWages: 'Зарплата',
+    tabDocuments: 'Документы',
+    tabAdmin: 'Админ',
+
+    // Profile section
+    basicInfo: 'Основная информация',
+    personalInfo: 'Личная информация',
+    contactInfo: 'Контактная информация',
+
+    // Fields
+    fullName: 'ФИО',
+    position: 'Должность',
+    selectPosition: 'Выберите должность',
+    level: 'Уровень',
+    branch: 'Филиал',
+    noBranch: 'Без филиала (ГО)',
+    department: 'Отдел',
+    noDepartment: 'Без отдела',
+    manager: 'Руководитель',
+    reportsTo: 'Подчиняется',
+    noManager: 'Нет руководителя (верхний уровень)',
+    managerHint: 'Используется для иерархии в оргструктуре',
+    status: 'Статус',
+    employmentType: 'Тип занятости',
+    hireDate: 'Дата приёма',
+    dateOfBirth: 'Дата рождения',
+    gender: 'Пол',
+    notSpecified: 'Не указан',
+    male: 'Мужской',
+    female: 'Женский',
+    phone: 'Телефон',
+    email: 'Email',
+    notes: 'Заметки',
+
+    // Wages section
+    primaryWages: 'Основная зарплата (Банк)',
+    primaryWagesHint: 'Официальная зарплата через юридические лица',
+    additionalWages: 'Дополнительная зарплата (Наличные)',
+    additionalWagesHint: 'Дополнительные выплаты по филиалам',
+    totalSalary: 'Общая зарплата',
+    addWage: 'Добавить зарплату',
+    legalEntity: 'Юридическое лицо',
+    amount: 'Сумма',
+    noWagesYet: 'Зарплата ещё не настроена',
+    pendingChange: 'Ожидает изменения',
+    requestChange: 'Запросить изменение',
+
+    // Documents section
+    documentsTitle: 'Документы сотрудника',
+    uploadDocument: 'Загрузить документ',
+    documentType: 'Тип документа',
+    dragDropHint: 'Перетащите файлы сюда или нажмите для выбора',
+    noDocuments: 'Документы ещё не загружены',
+    termSheet: 'Тёрм-шит',
+    contract: 'Трудовой договор',
+    passport: 'Паспорт',
+    idCard: 'Удостоверение личности',
+    diploma: 'Диплом/Сертификат',
+    other: 'Другое',
+
+    // Admin section
+    systemRole: 'Системная роль',
+    systemRoleHint: 'Определяет доступ сотрудника в системе',
+    telegramStatus: 'Статус Telegram',
+    connected: 'Подключён',
+    notConnected: 'Не подключён',
+    disconnect: 'Отключить',
+    growthTeam: 'Команда роста',
+    growthTeamHint: 'Член команды развития',
+    remoteWork: 'Удалённая работа',
+    remoteWorkHint: 'Разрешить удалённую отметку присутствия',
+
+    // Termination
+    terminationSection: 'Увольнение',
+    requestTermination: 'Запросить увольнение',
+    terminationReason: 'Причина увольнения',
+    terminationDate: 'Дата увольнения',
+    pendingTermination: 'Запрос на увольнение ожидает одобрения',
+
+    // Delete
+    dangerZone: 'Опасная зона',
+    deleteEmployee: 'Удалить сотрудника',
+    deleteWarning: 'Это действие нельзя отменить. Все данные сотрудника будут удалены.',
+    typeDeleteConfirm: 'Введите DELETE для подтверждения',
+
+    // Messages
+    saveSuccess: 'Сотрудник успешно обновлён!',
+    saveError: 'Не удалось обновить сотрудника',
+    uploadSuccess: 'Документ успешно загружен!',
+    deleteSuccess: 'Документ успешно удалён!',
+    unsavedChanges: 'У вас есть несохранённые изменения',
+  },
+
   // Attendance
   attendance: {
     title: 'Посещаемость',

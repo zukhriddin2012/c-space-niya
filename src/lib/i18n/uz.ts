@@ -259,6 +259,108 @@ export const uz: Translations = {
     december: 'Dekabr',
   },
 
+  // Employee Edit Form
+  employeeEdit: {
+    // Page
+    title: 'Xodimni tahrirlash',
+    subtitle: 'Xodim maʼlumotlari va sozlamalarini yangilash',
+
+    // Tabs
+    tabProfile: 'Profil',
+    tabEmployment: 'Bandlik',
+    tabWages: 'Maosh',
+    tabDocuments: 'Hujjatlar',
+    tabAdmin: 'Admin',
+
+    // Profile section
+    basicInfo: 'Asosiy maʼlumot',
+    personalInfo: 'Shaxsiy maʼlumot',
+    contactInfo: 'Aloqa maʼlumoti',
+
+    // Fields
+    fullName: 'FIO',
+    position: 'Lavozim',
+    selectPosition: 'Lavozimni tanlang',
+    level: 'Daraja',
+    branch: 'Filial',
+    noBranch: 'Filialsiz (Bosh ofis)',
+    department: 'Boʻlim',
+    noDepartment: 'Boʻlimsiz',
+    manager: 'Rahbar',
+    reportsTo: 'Hisobot beradi',
+    noManager: 'Rahbarsiz (Yuqori daraja)',
+    managerHint: 'Tashkiliy tuzilma iyerarxiyasi uchun',
+    status: 'Holat',
+    employmentType: 'Bandlik turi',
+    hireDate: 'Ishga qabul sanasi',
+    dateOfBirth: 'Tugʻilgan sana',
+    gender: 'Jins',
+    notSpecified: 'Koʻrsatilmagan',
+    male: 'Erkak',
+    female: 'Ayol',
+    phone: 'Telefon',
+    email: 'Email',
+    notes: 'Izohlar',
+
+    // Wages section
+    primaryWages: 'Asosiy maosh (Bank)',
+    primaryWagesHint: 'Yuridik shaxslar orqali rasmiy maosh',
+    additionalWages: 'Qoʻshimcha maosh (Naqd)',
+    additionalWagesHint: 'Filiallar boʻyicha qoʻshimcha toʻlovlar',
+    totalSalary: 'Umumiy maosh',
+    addWage: 'Maosh qoʻshish',
+    legalEntity: 'Yuridik shaxs',
+    amount: 'Miqdor',
+    noWagesYet: 'Maosh hali sozlanmagan',
+    pendingChange: 'Oʻzgarish kutilmoqda',
+    requestChange: 'Oʻzgarish soʻrash',
+
+    // Documents section
+    documentsTitle: 'Xodim hujjatlari',
+    uploadDocument: 'Hujjat yuklash',
+    documentType: 'Hujjat turi',
+    dragDropHint: 'Fayllarni shu yerga tashlang yoki tanlash uchun bosing',
+    noDocuments: 'Hujjatlar hali yuklanmagan',
+    termSheet: 'Term sheet',
+    contract: 'Mehnat shartnomasi',
+    passport: 'Pasport',
+    idCard: 'ID karta',
+    diploma: 'Diplom/Sertifikat',
+    other: 'Boshqa',
+
+    // Admin section
+    systemRole: 'Tizim roli',
+    systemRoleHint: 'Xodimning tizimdagi ruxsatlarini belgilaydi',
+    telegramStatus: 'Telegram holati',
+    connected: 'Ulangan',
+    notConnected: 'Ulanmagan',
+    disconnect: 'Uzish',
+    growthTeam: 'Oʻsish jamoasi',
+    growthTeamHint: 'Rivojlanish jamoasi aʼzosi',
+    remoteWork: 'Masofadan ish',
+    remoteWorkHint: 'Masofadan qatnashish belgilashga ruxsat',
+
+    // Termination
+    terminationSection: 'Ishdan boʻshatish',
+    requestTermination: 'Ishdan boʻshatish soʻrash',
+    terminationReason: 'Ishdan boʻshatish sababi',
+    terminationDate: 'Ishdan boʻshatish sanasi',
+    pendingTermination: 'Ishdan boʻshatish soʻrovi tasdiqlash kutilmoqda',
+
+    // Delete
+    dangerZone: 'Xavfli zona',
+    deleteEmployee: 'Xodimni oʻchirish',
+    deleteWarning: 'Bu amalni bekor qilib boʻlmaydi. Barcha xodim maʼlumotlari oʻchiriladi.',
+    typeDeleteConfirm: 'Tasdiqlash uchun DELETE kiriting',
+
+    // Messages
+    saveSuccess: 'Xodim muvaffaqiyatli yangilandi!',
+    saveError: 'Xodimni yangilab boʻlmadi',
+    uploadSuccess: 'Hujjat muvaffaqiyatli yuklandi!',
+    deleteSuccess: 'Hujjat muvaffaqiyatli oʻchirildi!',
+    unsavedChanges: 'Saqlanmagan oʻzgarishlar bor',
+  },
+
   // Attendance
   attendance: {
     title: 'Davomat',

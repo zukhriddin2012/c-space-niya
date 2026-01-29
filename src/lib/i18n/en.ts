@@ -259,6 +259,108 @@ export const en: Translations = {
     december: 'December',
   },
 
+  // Employee Edit Form
+  employeeEdit: {
+    // Page
+    title: 'Edit Employee',
+    subtitle: 'Update employee information and settings',
+
+    // Tabs
+    tabProfile: 'Profile',
+    tabEmployment: 'Employment',
+    tabWages: 'Wages',
+    tabDocuments: 'Documents',
+    tabAdmin: 'Admin',
+
+    // Profile section
+    basicInfo: 'Basic Information',
+    personalInfo: 'Personal Information',
+    contactInfo: 'Contact Information',
+
+    // Fields
+    fullName: 'Full Name',
+    position: 'Position',
+    selectPosition: 'Select Position',
+    level: 'Level',
+    branch: 'Branch',
+    noBranch: 'No Branch (HQ)',
+    department: 'Department',
+    noDepartment: 'No Department',
+    manager: 'Manager',
+    reportsTo: 'Reports To',
+    noManager: 'No Manager (Top Level)',
+    managerHint: 'Used for organization chart hierarchy',
+    status: 'Status',
+    employmentType: 'Employment Type',
+    hireDate: 'Hire Date',
+    dateOfBirth: 'Date of Birth',
+    gender: 'Gender',
+    notSpecified: 'Not specified',
+    male: 'Male',
+    female: 'Female',
+    phone: 'Phone',
+    email: 'Email',
+    notes: 'Notes',
+
+    // Wages section
+    primaryWages: 'Primary Wages (Bank)',
+    primaryWagesHint: 'Official wages paid through legal entities',
+    additionalWages: 'Additional Wages (Cash)',
+    additionalWagesHint: 'Branch-based additional payments',
+    totalSalary: 'Total Salary',
+    addWage: 'Add Wage',
+    legalEntity: 'Legal Entity',
+    amount: 'Amount',
+    noWagesYet: 'No wages configured yet',
+    pendingChange: 'Pending change',
+    requestChange: 'Request Change',
+
+    // Documents section
+    documentsTitle: 'Employee Documents',
+    uploadDocument: 'Upload Document',
+    documentType: 'Document Type',
+    dragDropHint: 'Drag and drop files here or click to browse',
+    noDocuments: 'No documents uploaded yet',
+    termSheet: 'Term Sheet',
+    contract: 'Employment Contract',
+    passport: 'Passport',
+    idCard: 'ID Card',
+    diploma: 'Diploma/Certificate',
+    other: 'Other',
+
+    // Admin section
+    systemRole: 'System Role',
+    systemRoleHint: 'Determines what the employee can access in the system',
+    telegramStatus: 'Telegram Status',
+    connected: 'Connected',
+    notConnected: 'Not Connected',
+    disconnect: 'Disconnect',
+    growthTeam: 'Growth Team',
+    growthTeamHint: 'Member of the growth/expansion team',
+    remoteWork: 'Remote Work',
+    remoteWorkHint: 'Allow remote work check-ins',
+
+    // Termination
+    terminationSection: 'Termination',
+    requestTermination: 'Request Termination',
+    terminationReason: 'Reason for Termination',
+    terminationDate: 'Termination Date',
+    pendingTermination: 'Termination request pending approval',
+
+    // Delete
+    dangerZone: 'Danger Zone',
+    deleteEmployee: 'Delete Employee',
+    deleteWarning: 'This action cannot be undone. All employee data will be permanently deleted.',
+    typeDeleteConfirm: 'Type DELETE to confirm',
+
+    // Messages
+    saveSuccess: 'Employee updated successfully!',
+    saveError: 'Failed to update employee',
+    uploadSuccess: 'Document uploaded successfully!',
+    deleteSuccess: 'Document deleted successfully!',
+    unsavedChanges: 'You have unsaved changes',
+  },
+
   // Attendance
   attendance: {
     title: 'Attendance',

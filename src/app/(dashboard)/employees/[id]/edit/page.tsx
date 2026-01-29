@@ -32,8 +32,14 @@ import {
   Edit3,
   Rocket,
   Wifi,
+  Briefcase,
+  Phone,
+  Mail,
+  Calendar,
 } from 'lucide-react';
 import type { UserRole } from '@/types';
+import { useTranslation } from '@/contexts/LanguageContext';
+import { Button, Input, Select, Card, Tabs, TabPanel, Modal, Badge } from '@/components/ui';
 
 const SYSTEM_ROLES: { value: UserRole; label: string; description: string }[] = [
   { value: 'employee', label: 'Employee', description: 'Regular employee with basic access' },
@@ -100,12 +106,12 @@ interface Employee {
   id: string;
   employee_id: string;
   full_name: string;
-  position: string; // Legacy text field
-  position_id: string | null; // Reference to positions table
+  position: string;
+  position_id: string | null;
   level: string;
   branch_id: string | null;
   department_id: string | null;
-  manager_id: string | null; // Direct manager for org chart
+  manager_id: string | null;
   salary: number | null;
   phone: string | null;
   email: string | null;
@@ -135,10 +141,10 @@ interface PageData {
   branches: Branch[];
   departments: Department[];
   positions: Position[];
-  managers: ManagerOption[]; // Potential managers for org chart
+  managers: ManagerOption[];
   canEditSalary: boolean;
   canAssignRoles: boolean;
-  canDirectEditWages: boolean; // GM can directly edit wages without requesting changes
+  canDirectEditWages: boolean;
   userRole: string;
 }
 
@@ -209,23 +215,28 @@ function formatSalary(amount: number): string {
   return new Intl.NumberFormat('uz-UZ').format(amount) + ' UZS';
 }
 
+// Tab definitions
+type TabId = 'profile' | 'employment' | 'wages' | 'documents' | 'admin';
+
 export default function EditEmployeePage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [employeeId, setEmployeeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [pageData, setPageData] = useState<PageData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabId>('profile');
 
   // Form state
   const [formData, setFormData] = useState({
     full_name: '',
-    position: '', // Legacy text field
-    position_id: '', // Reference to positions table
+    position: '',
+    position_id: '',
     level: 'junior',
     branch_id: '',
     department_id: '',
-    manager_id: '', // Direct manager for org chart
+    manager_id: '',
     phone: '',
     email: '',
     status: 'active',
@@ -242,14 +253,17 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
   const [telegramId, setTelegramId] = useState<string | null>(null);
   const [disconnectingTelegram, setDisconnectingTelegram] = useState(false);
 
-  // Primary wages (bank/legal entities) state
+  // Validation errors
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  // Primary wages state
   const [wages, setWages] = useState<EmployeeWage[]>([]);
   const [legalEntities, setLegalEntities] = useState<LegalEntity[]>([]);
   const [loadingWages, setLoadingWages] = useState(true);
   const [showAddWage, setShowAddWage] = useState(false);
   const [newWage, setNewWage] = useState({ entity_id: '', amount: '' });
 
-  // Additional wages (cash/branches) state
+  // Additional wages state
   const [branchWages, setBranchWages] = useState<EmployeeBranchWage[]>([]);
   const [showAddBranchWage, setShowAddBranchWage] = useState(false);
   const [newBranchWage, setNewBranchWage] = useState({ branch_id: '', amount: '' });
@@ -263,7 +277,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
   const [uploadNotes, setUploadNotes] = useState('');
   const [dragActive, setDragActive] = useState(false);
 
-  // Termination request state
+  // Termination state
   const [showTerminationModal, setShowTerminationModal] = useState(false);
   const [pendingTermination, setPendingTermination] = useState<{
     id: string;
@@ -276,12 +290,12 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
   const [terminationDate, setTerminationDate] = useState('');
   const [submittingTermination, setSubmittingTermination] = useState(false);
 
-  // Delete employee state
+  // Delete state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deletingEmployee, setDeletingEmployee] = useState(false);
 
-  // Wage change request state
+  // Wage change state
   const [pendingWageChanges, setPendingWageChanges] = useState<PendingWageChange[]>([]);
   const [showWageChangeModal, setShowWageChangeModal] = useState(false);
   const [wageChangeData, setWageChangeData] = useState<{
@@ -296,16 +310,25 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
   const [wageChangeDate, setWageChangeDate] = useState('');
   const [submittingWageChange, setSubmittingWageChange] = useState(false);
 
-  // Direct wage editing state (for GM)
+  // Direct wage editing state
   const [editingWageId, setEditingWageId] = useState<string | null>(null);
   const [editingWageAmount, setEditingWageAmount] = useState('');
   const [editingBranchWageId, setEditingBranchWageId] = useState<string | null>(null);
   const [editingBranchWageAmount, setEditingBranchWageAmount] = useState('');
 
-  // Calculate totals
+  // Computed values
   const primaryTotal = wages.reduce((sum, w) => sum + (w.wage_amount || 0), 0);
   const additionalTotal = branchWages.reduce((sum, w) => sum + (w.wage_amount || 0), 0);
   const totalSalary = primaryTotal + additionalTotal;
+
+  // Tab configuration
+  const tabs = [
+    { id: 'profile' as TabId, label: t.employeeEdit.tabProfile, icon: <User size={16} /> },
+    { id: 'employment' as TabId, label: t.employeeEdit.tabEmployment, icon: <Briefcase size={16} /> },
+    { id: 'wages' as TabId, label: t.employeeEdit.tabWages, icon: <Wallet size={16} />, badge: pageData?.canEditSalary ? undefined : '🔒' },
+    { id: 'documents' as TabId, label: t.employeeEdit.tabDocuments, icon: <FileText size={16} />, badge: documents.length > 0 ? documents.length : undefined },
+    { id: 'admin' as TabId, label: t.employeeEdit.tabAdmin, icon: <Shield size={16} />, badge: pageData?.canAssignRoles ? undefined : '🔒' },
+  ];
 
   // Get employee ID from params
   useEffect(() => {
@@ -330,15 +353,14 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
         const data: PageData = await response.json();
         setPageData(data);
 
-        // Initialize form with employee data
         setFormData({
           full_name: data.employee.full_name,
-          position: data.employee.position, // Legacy text field
-          position_id: data.employee.position_id || '', // Position from positions table
+          position: data.employee.position,
+          position_id: data.employee.position_id || '',
           level: data.employee.level || 'junior',
           branch_id: data.employee.branch_id || '',
           department_id: data.employee.department_id || '',
-          manager_id: data.employee.manager_id || '', // Direct manager for org chart
+          manager_id: data.employee.manager_id || '',
           phone: data.employee.phone || '',
           email: data.employee.email || '',
           status: data.employee.status,
@@ -419,7 +441,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
     fetchDocuments();
   }, [employeeId]);
 
-  // Fetch pending termination request
+  // Fetch pending termination
   useEffect(() => {
     if (!employeeId) return;
 
@@ -438,7 +460,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
     fetchPendingTermination();
   }, [employeeId]);
 
-  // Fetch pending wage change requests
+  // Fetch pending wage changes
   useEffect(() => {
     if (!employeeId) return;
 
@@ -457,7 +479,27 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
     fetchPendingWageChanges();
   }, [employeeId]);
 
-  // Termination request handler
+  // Form validation
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!formData.full_name.trim()) {
+      errors.full_name = t.common.required;
+    }
+
+    if (!formData.position_id) {
+      errors.position_id = t.common.required;
+    }
+
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = 'Invalid email format';
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Handlers
   const handleSubmitTermination = async () => {
     if (!employeeId || !terminationReason || !terminationDate) return;
 
@@ -500,7 +542,6 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
     }
   };
 
-  // Delete employee handler (permanent deletion)
   const handleDeleteEmployee = async () => {
     if (!employeeId || deleteConfirmText !== 'DELETE') return;
 
@@ -517,7 +558,6 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
         throw new Error(data.error || 'Failed to delete employee');
       }
 
-      // Redirect to employees list after successful deletion
       router.push('/employees');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete employee');
@@ -525,7 +565,6 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
     }
   };
 
-  // Wage change request handlers
   const openWageChangeModal = (
     wageType: 'primary' | 'additional',
     entityId: string,
@@ -542,7 +581,6 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
     });
     setProposedAmount(currentAmount.toString());
     setWageChangeReason('');
-    // Default to first of next month
     const nextMonth = new Date();
     nextMonth.setMonth(nextMonth.getMonth() + 1);
     nextMonth.setDate(1);
@@ -599,7 +637,6 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
     }
   };
 
-  // Helper to check if a wage has a pending change
   const hasPendingChange = (wageType: 'primary' | 'additional', entityId: string) => {
     return pendingWageChanges.some(pc =>
       pc.wage_type === wageType &&
@@ -607,7 +644,6 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
     );
   };
 
-  // Get pending change for a specific wage
   const getPendingChange = (wageType: 'primary' | 'additional', entityId: string) => {
     return pendingWageChanges.find(pc =>
       pc.wage_type === wageType &&
@@ -615,7 +651,6 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
     );
   };
 
-  // Document handlers
   const handleFileUpload = async (file: File) => {
     if (!employeeId) return;
 
@@ -623,16 +658,16 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
     setError(null);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('document_type', uploadDocType);
+      const formDataUpload = new FormData();
+      formDataUpload.append('file', file);
+      formDataUpload.append('document_type', uploadDocType);
       if (uploadNotes) {
-        formData.append('notes', uploadNotes);
+        formDataUpload.append('notes', uploadNotes);
       }
 
       const response = await fetch(`/api/employees/${employeeId}/documents`, {
         method: 'POST',
-        body: formData,
+        body: formDataUpload,
       });
 
       if (!response.ok) {
@@ -645,7 +680,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
       setShowUploadForm(false);
       setUploadDocType('other');
       setUploadNotes('');
-      setSuccess('Document uploaded successfully!');
+      setSuccess(t.employeeEdit.uploadSuccess);
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to upload document');
@@ -669,7 +704,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
       }
 
       setDocuments(documents.filter(d => d.id !== documentId));
-      setSuccess('Document deleted successfully!');
+      setSuccess(t.employeeEdit.deleteSuccess);
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete document');
@@ -712,7 +747,6 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       setShowUploadForm(true);
-      // Will trigger file input change after form opens
       const file = e.dataTransfer.files[0];
       setTimeout(() => handleFileUpload(file), 100);
     }
@@ -722,6 +756,10 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
     e.preventDefault();
     if (!employeeId || !pageData) return;
 
+    if (!validateForm()) {
+      return;
+    }
+
     setSaving(true);
     setError(null);
     setSuccess(null);
@@ -729,9 +767,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
     try {
       const response = await fetch(`/api/employees/${employeeId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
           branch_id: formData.branch_id || null,
@@ -750,13 +786,13 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to update employee');
+        throw new Error(data.error || t.employeeEdit.saveError);
       }
 
-      setSuccess('Employee updated successfully!');
+      setSuccess(t.employeeEdit.saveSuccess);
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update employee');
+      setError(err instanceof Error ? err.message : t.employeeEdit.saveError);
     } finally {
       setSaving(false);
     }
@@ -871,7 +907,6 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
     }
   };
 
-  // Direct wage update (for GM)
   const handleUpdateWage = async (wageId: string, newAmount: number) => {
     if (!employeeId) return;
 
@@ -879,10 +914,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
       const response = await fetch(`/api/employees/${employeeId}/wages`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          wage_id: wageId,
-          wage_amount: newAmount,
-        }),
+        body: JSON.stringify({ wage_id: wageId, wage_amount: newAmount }),
       });
 
       if (response.ok) {
@@ -895,7 +927,6 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
     }
   };
 
-  // Direct branch wage update (for GM)
   const handleUpdateBranchWage = async (wageId: string, newAmount: number) => {
     if (!employeeId) return;
 
@@ -903,10 +934,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
       const response = await fetch(`/api/employees/${employeeId}/branch-wages`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          wage_id: wageId,
-          wage_amount: newAmount,
-        }),
+        body: JSON.stringify({ wage_id: wageId, wage_amount: newAmount }),
       });
 
       if (response.ok) {
@@ -919,16 +947,16 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
     }
   };
 
-  // Get available entities (not already assigned)
+  // Available entities/branches
   const availableEntities = legalEntities.filter(
     e => !wages.some(w => w.legal_entity_id === e.id)
   );
 
-  // Get available branches for additional wages (not already assigned)
   const availableBranches = (pageData?.branches || []).filter(
     b => !branchWages.some(w => w.branch_id === b.id)
   );
 
+  // Loading state
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -942,7 +970,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
       <div className="text-center py-12">
         <p className="text-gray-500">Employee not found</p>
         <Link href="/employees" className="text-purple-600 hover:underline mt-2 inline-block">
-          Back to Employees
+          {t.common.back}
         </Link>
       </div>
     );
@@ -951,7 +979,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
   const { employee, branches, departments, positions, canEditSalary, canAssignRoles, canDirectEditWages } = pageData;
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto pb-8">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <Link
@@ -961,12 +989,12 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
           <ArrowLeft size={20} />
         </Link>
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Edit Employee</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">{t.employeeEdit.title}</h1>
           <p className="text-gray-500 mt-1">{employee.employee_id} - {employee.full_name}</p>
         </div>
       </div>
 
-      {/* Success Message */}
+      {/* Success/Error Messages */}
       {success && (
         <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
           <CheckCircle size={20} className="text-green-600" />
@@ -974,7 +1002,6 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
         </div>
       )}
 
-      {/* Error Message */}
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
           <AlertCircle size={20} className="text-red-600" />
@@ -982,1384 +1009,1052 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
         </div>
       )}
 
+      {/* Tabs Navigation */}
+      <Tabs
+        tabs={tabs}
+        activeTab={activeTab}
+        onChange={(tabId) => setActiveTab(tabId as TabId)}
+        className="mb-6"
+      />
+
       <form onSubmit={handleSubmit}>
-        {/* Basic Information */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-          <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">
-            Basic Information
-          </h3>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name
-              </label>
-              <input
-                type="text"
-                value={formData.full_name}
-                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Position
-                </label>
-                <select
-                  value={formData.position_id}
-                  onChange={(e) => {
-                    const selectedPosition = positions?.find(p => p.id === e.target.value);
-                    setFormData({
-                      ...formData,
-                      position_id: e.target.value,
-                      // Also update legacy position field for backwards compatibility
-                      position: selectedPosition?.name || formData.position,
-                      // Auto-set level if position has one
-                      level: selectedPosition?.level?.toLowerCase() || formData.level
-                    });
-                  }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+        {/* Profile Tab */}
+        <TabPanel tabId="profile" activeTab={activeTab}>
+          <div className="space-y-6">
+            {/* Basic Information */}
+            <Card title={t.employeeEdit.basicInfo}>
+              <div className="space-y-4">
+                <Input
+                  label={t.employeeEdit.fullName}
+                  value={formData.full_name}
+                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                  error={validationErrors.full_name}
                   required
-                >
-                  <option value="">Select Position</option>
-                  {positions?.map((pos) => (
-                    <option key={pos.id} value={pos.id}>
-                      {pos.name}
-                    </option>
-                  ))}
-                </select>
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Select
+                    label={t.employeeEdit.position}
+                    value={formData.position_id}
+                    onChange={(e) => {
+                      const selectedPosition = positions?.find(p => p.id === e.target.value);
+                      setFormData({
+                        ...formData,
+                        position_id: e.target.value,
+                        position: selectedPosition?.name || formData.position,
+                        level: selectedPosition?.level?.toLowerCase() || formData.level
+                      });
+                    }}
+                    options={positions?.map(pos => ({ value: pos.id, label: pos.name })) || []}
+                    placeholder={t.employeeEdit.selectPosition}
+                    error={validationErrors.position_id}
+                    required
+                  />
+
+                  <Select
+                    label={t.employeeEdit.level}
+                    value={formData.level}
+                    onChange={(e) => setFormData({ ...formData, level: e.target.value })}
+                    options={[
+                      { value: 'junior', label: t.employees.junior },
+                      { value: 'middle', label: t.employees.middle },
+                      { value: 'senior', label: t.employees.senior },
+                      { value: 'executive', label: t.employees.executive },
+                    ]}
+                  />
+                </div>
               </div>
+            </Card>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Level
-                </label>
-                <select
-                  value={formData.level}
-                  onChange={(e) => setFormData({ ...formData, level: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
-                >
-                  <option value="junior">Junior</option>
-                  <option value="middle">Middle</option>
-                  <option value="senior">Senior</option>
-                  <option value="executive">Executive</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Branch
-                </label>
-                <select
-                  value={formData.branch_id}
-                  onChange={(e) => setFormData({ ...formData, branch_id: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
-                >
-                  <option value="">No Branch (HQ)</option>
-                  {branches.map((branch) => (
-                    <option key={branch.id} value={branch.id}>
-                      {branch.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Department
-                </label>
-                <select
-                  value={formData.department_id}
-                  onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
-                >
-                  <option value="">No Department</option>
-                  {departments?.map((dept) => (
-                    <option key={dept.id} value={dept.id}>
-                      {dept.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Manager (Reports To)
-                </label>
-                <select
-                  value={formData.manager_id}
-                  onChange={(e) => setFormData({ ...formData, manager_id: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
-                >
-                  <option value="">No Manager (Top Level)</option>
-                  {pageData?.managers
-                    ?.filter(m => m.id !== employeeId) // Can't report to self
-                    .map((manager) => (
-                      <option key={manager.id} value={manager.id}>
-                        {manager.full_name} - {manager.position}
-                      </option>
-                    ))}
-                </select>
-                <p className="mt-1 text-xs text-gray-500">Used for organization chart hierarchy</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Status
-                </label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
-                >
-                  <option value="active">Active</option>
-                  <option value="probation">Probation</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="terminated">Terminated</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Employment Type
-                </label>
-                <select
-                  value={formData.employment_type}
-                  onChange={(e) => setFormData({ ...formData, employment_type: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
-                >
-                  <option value="full-time">Full-time</option>
-                  <option value="part-time">Part-time</option>
-                  <option value="internship">Internship</option>
-                  <option value="probation">Probation Period</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Personal Information */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-          <div className="flex items-center gap-2 mb-4">
-            <User size={18} className="text-indigo-600" />
-            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">
-              Personal Information
-            </h3>
-          </div>
-
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Hire Date
-                </label>
-                <input
+            {/* Personal Information */}
+            <Card title={t.employeeEdit.personalInfo}>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Input
+                  label={t.employeeEdit.hireDate}
                   type="date"
                   value={formData.hire_date}
                   onChange={(e) => setFormData({ ...formData, hire_date: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
                 />
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Date of Birth
-                </label>
-                <input
+                <Input
+                  label={t.employeeEdit.dateOfBirth}
                   type="date"
                   value={formData.date_of_birth}
                   onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
                 />
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Gender
-                </label>
-                <select
+                <Select
+                  label={t.employeeEdit.gender}
                   value={formData.gender}
                   onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
-                >
-                  <option value="">Not specified</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                </select>
+                  options={[
+                    { value: '', label: t.employeeEdit.notSpecified },
+                    { value: 'male', label: t.employeeEdit.male },
+                    { value: 'female', label: t.employeeEdit.female },
+                  ]}
+                />
               </div>
-            </div>
-          </div>
-        </div>
+            </Card>
 
-        {/* Contact Information */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-          <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">
-            Contact Information
-          </h3>
+            {/* Contact Information */}
+            <Card title={t.employeeEdit.contactInfo}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label={t.employeeEdit.phone}
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  placeholder="+998 XX XXX XX XX"
+                  leftIcon={<Phone size={16} />}
+                />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Phone
-              </label>
-              <input
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
-                placeholder="+998 XX XXX XX XX"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Telegram Bot Connection */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-          <div className="flex items-center gap-2 mb-4">
-            <MessageCircle size={18} className="text-blue-600" />
-            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">
-              Telegram Bot Connection
-            </h3>
-          </div>
-
-          {telegramId ? (
-            <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                  <MessageCircle size={20} className="text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-blue-900">Connected to C-Space Time Bot</p>
-                  <p className="text-xs text-blue-600">Telegram ID: {telegramId}</p>
-                </div>
+                <Input
+                  label={t.employeeEdit.email}
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  error={validationErrors.email}
+                  leftIcon={<Mail size={16} />}
+                />
               </div>
-              <button
-                type="button"
-                onClick={handleDisconnectTelegram}
-                disabled={disconnectingTelegram}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
+            </Card>
+
+            {/* Notes */}
+            <Card title={t.employeeEdit.notes}>
+              <textarea
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                rows={3}
+                placeholder="Any special notes about this employee..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none resize-none"
+              />
+            </Card>
+          </div>
+        </TabPanel>
+
+        {/* Employment Tab */}
+        <TabPanel tabId="employment" activeTab={activeTab}>
+          <div className="space-y-6">
+            <Card title={t.employeeEdit.tabEmployment}>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Select
+                    label={t.employeeEdit.branch}
+                    value={formData.branch_id}
+                    onChange={(e) => setFormData({ ...formData, branch_id: e.target.value })}
+                    options={[
+                      { value: '', label: t.employeeEdit.noBranch },
+                      ...branches.map(b => ({ value: b.id, label: b.name }))
+                    ]}
+                  />
+
+                  <Select
+                    label={t.employees.department}
+                    value={formData.department_id}
+                    onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}
+                    options={[
+                      { value: '', label: t.employeeEdit.noDepartment },
+                      ...departments?.map(d => ({ value: d.id, label: d.name })) || []
+                    ]}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Select
+                      label={t.employeeEdit.reportsTo}
+                      value={formData.manager_id}
+                      onChange={(e) => setFormData({ ...formData, manager_id: e.target.value })}
+                      options={[
+                        { value: '', label: t.employeeEdit.noManager },
+                        ...pageData?.managers
+                          ?.filter(m => m.id !== employeeId)
+                          .map(m => ({ value: m.id, label: `${m.full_name} - ${m.position}` })) || []
+                      ]}
+                    />
+                    <p className="mt-1 text-xs text-gray-500">{t.employeeEdit.managerHint}</p>
+                  </div>
+
+                  <Select
+                    label={t.employeeEdit.status}
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    options={[
+                      { value: 'active', label: t.employees.active },
+                      { value: 'probation', label: t.employees.probation },
+                      { value: 'inactive', label: t.employees.inactive },
+                      { value: 'terminated', label: t.employees.terminated },
+                    ]}
+                  />
+                </div>
+
+                <Select
+                  label={t.employeeEdit.employmentType}
+                  value={formData.employment_type}
+                  onChange={(e) => setFormData({ ...formData, employment_type: e.target.value })}
+                  options={[
+                    { value: 'full-time', label: t.employees.fullTime },
+                    { value: 'part-time', label: t.employees.partTime },
+                    { value: 'internship', label: t.employees.internship },
+                    { value: 'probation', label: 'Probation Period' },
+                  ]}
+                />
+              </div>
+            </Card>
+
+            {/* Termination Section */}
+            {formData.status !== 'terminated' && (
+              <Card
+                title={t.employeeEdit.terminationSection}
+                className="border-red-200"
               >
-                <Unlink size={14} />
-                {disconnectingTelegram ? 'Disconnecting...' : 'Disconnect'}
-              </button>
+                {pendingTermination ? (
+                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <Clock size={20} className="text-yellow-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-yellow-800">{t.employeeEdit.pendingTermination}</p>
+                        <div className="mt-2 text-sm text-yellow-600">
+                          <p><strong>Reason:</strong> {pendingTermination.reason}</p>
+                          <p><strong>Date:</strong> {new Date(pendingTermination.termination_date).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Initiate employee termination process. This requires General Manager approval.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="danger"
+                      onClick={() => setShowTerminationModal(true)}
+                      leftIcon={<UserMinus size={18} />}
+                    >
+                      {t.employeeEdit.requestTermination}
+                    </Button>
+                  </div>
+                )}
+              </Card>
+            )}
+
+            {/* Delete Section */}
+            <Card
+              title={t.employeeEdit.dangerZone}
+              className="border-red-300"
+            >
+              <p className="text-sm text-gray-600 mb-4">
+                {t.employeeEdit.deleteWarning}
+              </p>
+              <Button
+                type="button"
+                variant="danger"
+                onClick={() => setShowDeleteModal(true)}
+                leftIcon={<Trash2 size={18} />}
+              >
+                {t.employeeEdit.deleteEmployee}
+              </Button>
+            </Card>
+          </div>
+        </TabPanel>
+
+        {/* Wages Tab */}
+        <TabPanel tabId="wages" activeTab={activeTab}>
+          {canEditSalary ? (
+            <div className="space-y-6">
+              {/* Salary Summary */}
+              <Card title={t.employeeEdit.totalSalary}>
+                <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-purple-600">{t.employeeEdit.totalSalary}</span>
+                    <span className="text-xl font-bold text-purple-700">{formatSalary(totalSalary)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-purple-200">
+                    <div className="flex items-center gap-4">
+                      <span className="flex items-center gap-1">
+                        <Banknote size={12} className="text-indigo-500" />
+                        Primary: {formatSalary(primaryTotal)}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <MapPin size={12} className="text-emerald-500" />
+                        Additional: {formatSalary(additionalTotal)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Primary Wages */}
+              <Card
+                title={t.employeeEdit.primaryWages}
+                description={t.employeeEdit.primaryWagesHint}
+              >
+                <div className="flex justify-end mb-4">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setShowAddWage(true)}
+                    leftIcon={<Plus size={14} />}
+                  >
+                    {t.employeeEdit.addWage}
+                  </Button>
+                </div>
+
+                {loadingWages ? (
+                  <div className="text-center py-4 text-gray-500">Loading...</div>
+                ) : wages.length === 0 ? (
+                  <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">
+                    <Building2 size={24} className="mx-auto mb-2 text-gray-300" />
+                    <p className="text-sm">{t.employeeEdit.noWagesYet}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {wages.map((wage) => {
+                      const pendingChange = getPendingChange('primary', wage.legal_entity_id);
+                      const isEditing = editingWageId === wage.id;
+                      return (
+                        <div key={wage.id} className="p-3 bg-indigo-50 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <Building2 size={16} className="text-indigo-500" />
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">
+                                  {wage.legal_entities?.short_name || wage.legal_entities?.name}
+                                </p>
+                                {wage.legal_entities?.inn && (
+                                  <p className="text-xs text-gray-500">INN: {wage.legal_entities.inn}</p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              {isEditing ? (
+                                <>
+                                  <input
+                                    type="number"
+                                    value={editingWageAmount}
+                                    onChange={(e) => setEditingWageAmount(e.target.value)}
+                                    className="w-32 px-2 py-1 text-sm border border-indigo-300 rounded"
+                                    min="0"
+                                    step="100000"
+                                  />
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={() => handleUpdateWage(wage.id, parseFloat(editingWageAmount))}
+                                  >
+                                    <Save size={12} />
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => { setEditingWageId(null); setEditingWageAmount(''); }}
+                                  >
+                                    <X size={12} />
+                                  </Button>
+                                </>
+                              ) : (
+                                <>
+                                  <span className="font-semibold text-gray-900">{formatSalary(wage.wage_amount)}</span>
+                                  {!pendingChange && canDirectEditWages && (
+                                    <>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => { setEditingWageId(wage.id); setEditingWageAmount(wage.wage_amount.toString()); }}
+                                      >
+                                        <Edit3 size={12} />
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleRemoveWage(wage.id)}
+                                      >
+                                        <Trash2 size={12} className="text-red-500" />
+                                      </Button>
+                                    </>
+                                  )}
+                                  {!pendingChange && !canDirectEditWages && (
+                                    <Button
+                                      type="button"
+                                      variant="secondary"
+                                      size="sm"
+                                      onClick={() => openWageChangeModal(
+                                        'primary',
+                                        wage.legal_entity_id,
+                                        wage.legal_entities?.short_name || wage.legal_entities?.name || '',
+                                        wage.wage_amount,
+                                        true
+                                      )}
+                                    >
+                                      {t.employeeEdit.requestChange}
+                                    </Button>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          {pendingChange && (
+                            <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+                              <Badge variant="warning" size="sm">{t.employeeEdit.pendingChange}</Badge>
+                              <p className="text-xs text-amber-600 mt-1">
+                                {formatSalary(pendingChange.current_amount)} → {formatSalary(pendingChange.proposed_amount)}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {showAddWage && (
+                  <div className="mt-4 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <Select
+                        value={newWage.entity_id}
+                        onChange={(e) => setNewWage({ ...newWage, entity_id: e.target.value })}
+                        options={availableEntities.map(e => ({ value: e.id, label: e.short_name || e.name }))}
+                        placeholder={t.employeeEdit.legalEntity}
+                      />
+                      <Input
+                        type="number"
+                        value={newWage.amount}
+                        onChange={(e) => setNewWage({ ...newWage, amount: e.target.value })}
+                        placeholder={t.employeeEdit.amount}
+                        min={0}
+                        step={100000}
+                      />
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                      <Button type="button" variant="secondary" onClick={() => setShowAddWage(false)}>
+                        {t.common.cancel}
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleAddWage}
+                        disabled={!newWage.entity_id || !newWage.amount}
+                      >
+                        {t.employeeEdit.addWage}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </Card>
+
+              {/* Additional Wages */}
+              <Card
+                title={t.employeeEdit.additionalWages}
+                description={t.employeeEdit.additionalWagesHint}
+              >
+                <div className="flex justify-end mb-4">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setShowAddBranchWage(true)}
+                    leftIcon={<Plus size={14} />}
+                  >
+                    {t.employeeEdit.addWage}
+                  </Button>
+                </div>
+
+                {loadingWages ? (
+                  <div className="text-center py-4 text-gray-500">Loading...</div>
+                ) : branchWages.length === 0 ? (
+                  <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">
+                    <MapPin size={24} className="mx-auto mb-2 text-gray-300" />
+                    <p className="text-sm">{t.employeeEdit.noWagesYet}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {branchWages.map((wage) => {
+                      const pendingChange = getPendingChange('additional', wage.branch_id);
+                      const isEditing = editingBranchWageId === wage.id;
+                      return (
+                        <div key={wage.id} className="p-3 bg-emerald-50 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <MapPin size={16} className="text-emerald-500" />
+                              <p className="text-sm font-medium text-gray-900">
+                                {wage.branches?.name}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              {isEditing ? (
+                                <>
+                                  <input
+                                    type="number"
+                                    value={editingBranchWageAmount}
+                                    onChange={(e) => setEditingBranchWageAmount(e.target.value)}
+                                    className="w-32 px-2 py-1 text-sm border border-emerald-300 rounded"
+                                  />
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={() => handleUpdateBranchWage(wage.id, parseFloat(editingBranchWageAmount))}
+                                  >
+                                    <Save size={12} />
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => { setEditingBranchWageId(null); setEditingBranchWageAmount(''); }}
+                                  >
+                                    <X size={12} />
+                                  </Button>
+                                </>
+                              ) : (
+                                <>
+                                  <span className="font-semibold">{formatSalary(wage.wage_amount)}</span>
+                                  {!pendingChange && canDirectEditWages && (
+                                    <>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => { setEditingBranchWageId(wage.id); setEditingBranchWageAmount(wage.wage_amount.toString()); }}
+                                      >
+                                        <Edit3 size={12} />
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleRemoveBranchWage(wage.id)}
+                                      >
+                                        <Trash2 size={12} className="text-red-500" />
+                                      </Button>
+                                    </>
+                                  )}
+                                  {!pendingChange && !canDirectEditWages && (
+                                    <Button
+                                      type="button"
+                                      variant="secondary"
+                                      size="sm"
+                                      onClick={() => openWageChangeModal(
+                                        'additional',
+                                        wage.branch_id,
+                                        wage.branches?.name || '',
+                                        wage.wage_amount,
+                                        false
+                                      )}
+                                    >
+                                      {t.employeeEdit.requestChange}
+                                    </Button>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          {pendingChange && (
+                            <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+                              <Badge variant="warning" size="sm">{t.employeeEdit.pendingChange}</Badge>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {showAddBranchWage && (
+                  <div className="mt-4 p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <Select
+                        value={newBranchWage.branch_id}
+                        onChange={(e) => setNewBranchWage({ ...newBranchWage, branch_id: e.target.value })}
+                        options={availableBranches.map(b => ({ value: b.id, label: b.name }))}
+                        placeholder={t.employeeEdit.branch}
+                      />
+                      <Input
+                        type="number"
+                        value={newBranchWage.amount}
+                        onChange={(e) => setNewBranchWage({ ...newBranchWage, amount: e.target.value })}
+                        placeholder={t.employeeEdit.amount}
+                      />
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                      <Button type="button" variant="secondary" onClick={() => setShowAddBranchWage(false)}>
+                        {t.common.cancel}
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleAddBranchWage}
+                        disabled={!newBranchWage.branch_id || !newBranchWage.amount}
+                      >
+                        {t.employeeEdit.addWage}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </Card>
             </div>
           ) : (
-            <div className="p-4 bg-gray-50 rounded-lg text-center">
-              <MessageCircle size={24} className="mx-auto mb-2 text-gray-300" />
-              <p className="text-sm text-gray-500">Not connected to Telegram Bot</p>
-              <p className="text-xs text-gray-400 mt-1">Employee can connect via /register command in the bot</p>
-            </div>
+            <Card>
+              <div className="text-center py-8 text-gray-500">
+                <Shield size={32} className="mx-auto mb-2 text-gray-300" />
+                <p>You don&apos;t have permission to view wages</p>
+              </div>
+            </Card>
           )}
-        </div>
+        </TabPanel>
 
-        {/* System Role Section - only for users who can assign roles */}
-        {canAssignRoles && (
-          <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Shield size={18} className="text-purple-600" />
-              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">
-                System Access Role
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {SYSTEM_ROLES.map((role) => (
-                <label
-                  key={role.value}
-                  className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
-                    formData.system_role === role.value
-                      ? 'border-purple-500 bg-purple-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="system_role"
-                    value={role.value}
-                    checked={formData.system_role === role.value}
-                    onChange={(e) => setFormData({ ...formData, system_role: e.target.value as UserRole })}
-                    className="mt-1 text-purple-600 focus:ring-purple-500"
-                  />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{role.label}</p>
-                    <p className="text-xs text-gray-500">{role.description}</p>
-                  </div>
-                </label>
-              ))}
-            </div>
-
-            {formData.system_role === 'branch_manager' && (
-              <div className="mt-4 p-3 bg-teal-50 border border-teal-200 rounded-lg">
-                <p className="text-sm text-teal-700">
-                  <strong>Note:</strong> Branch Manager will have access to manage employees in the branch selected above ({branches.find(b => b.id === formData.branch_id)?.name || 'No branch selected'}).
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Growth Team Section - only for users who can assign roles */}
-        {canAssignRoles && (
-          <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Rocket size={18} className="text-orange-500" />
-              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">
-                Growth Team
-              </h3>
-            </div>
-
-            <label className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
-              formData.is_growth_team
-                ? 'border-orange-400 bg-orange-50'
-                : 'border-gray-200 hover:border-gray-300'
-            }`}>
-              <input
-                type="checkbox"
-                checked={formData.is_growth_team}
-                onChange={(e) => setFormData({ ...formData, is_growth_team: e.target.checked })}
-                className="mt-1 h-4 w-4 text-orange-500 focus:ring-orange-500 rounded"
-              />
-              <div>
-                <p className="text-sm font-medium text-gray-900">Growth Team Member</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Enable to give this employee access to the Growth section with strategic projects,
-                  Metronome Sync updates, and leadership alignment information.
-                </p>
-              </div>
-            </label>
-
-            {formData.is_growth_team && (
-              <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                <p className="text-sm text-orange-700">
-                  <strong>Access granted:</strong> This employee will see the Growth section in their My Portal
-                  with visibility into all strategic projects and company updates.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Remote Work Section */}
-        {canAssignRoles && (
-          <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Wifi size={18} className="text-blue-500" />
-              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">
-                Remote Work
-              </h3>
-            </div>
-
-            <label className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
-              formData.remote_work_enabled
-                ? 'border-blue-400 bg-blue-50'
-                : 'border-gray-200 hover:border-gray-300'
-            }`}>
-              <input
-                type="checkbox"
-                checked={formData.remote_work_enabled}
-                onChange={(e) => setFormData({ ...formData, remote_work_enabled: e.target.checked })}
-                className="mt-1 h-4 w-4 text-blue-500 focus:ring-blue-500 rounded"
-              />
-              <div>
-                <p className="text-sm font-medium text-gray-900">Allow Remote Work Check-in</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Enable to allow this employee to check in remotely via Telegram bot
-                  without GPS verification when their IP doesn&apos;t match the office network.
-                </p>
-              </div>
-            </label>
-
-            {formData.remote_work_enabled && (
-              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-700">
-                  <strong>Remote check-in enabled:</strong> When this employee checks in from outside the office,
-                  they will be asked to choose between &quot;I&apos;m in the office&quot; (requires GPS) or &quot;I&apos;m working remotely&quot;
-                  (no GPS required, marked as remote).
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Salary Summary Section */}
-        {canEditSalary && (
-          <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Wallet size={18} className="text-purple-600" />
-              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">
-                Salary Summary
-              </h3>
-            </div>
-
-            {/* Total Salary Display with breakdown */}
-            <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-purple-600">Total Monthly Salary</span>
-                <span className="text-xl font-bold text-purple-700">{formatSalary(totalSalary)}</span>
-              </div>
-              <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-purple-200">
-                <div className="flex items-center gap-4">
-                  <span className="flex items-center gap-1">
-                    <Banknote size={12} className="text-indigo-500" />
-                    Primary: {formatSalary(primaryTotal)}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <MapPin size={12} className="text-emerald-500" />
-                    Additional: {formatSalary(additionalTotal)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Primary Wages Section (Bank/Legal Entities) */}
-        {canEditSalary && (
-          <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Banknote size={18} className="text-indigo-600" />
-                <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">
-                  Primary Wages (Bank)
-                </h3>
-              </div>
-              <button
+        {/* Documents Tab */}
+        <TabPanel tabId="documents" activeTab={activeTab}>
+          <Card title={t.employeeEdit.documentsTitle}>
+            <div className="flex justify-end mb-4">
+              <Button
                 type="button"
-                onClick={() => setShowAddWage(true)}
-                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
+                variant="secondary"
+                onClick={() => setShowUploadForm(true)}
+                leftIcon={<Upload size={14} />}
               >
-                <Plus size={14} />
-                Add
-              </button>
+                {t.employeeEdit.uploadDocument}
+              </Button>
             </div>
 
-            {/* Primary Wages List */}
-            {loadingWages ? (
-              <div className="text-center py-4 text-gray-500">Loading wages...</div>
-            ) : wages.length === 0 ? (
-              <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">
-                <Building2 size={24} className="mx-auto mb-2 text-gray-300" />
-                <p className="text-sm">No primary wages assigned</p>
-                <p className="text-xs text-gray-400">Add wages from legal entities</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {wages.map((wage) => {
-                  const pendingChange = getPendingChange('primary', wage.legal_entity_id);
-                  const isEditing = editingWageId === wage.id;
-                  return (
-                    <div key={wage.id} className="p-3 bg-indigo-50 rounded-lg">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Building2 size={16} className="text-indigo-500" />
-                          <div>
-                            <p className="text-sm font-medium text-gray-900">
-                              {wage.legal_entities?.short_name || wage.legal_entities?.name || wage.legal_entity_id}
-                            </p>
-                            {wage.legal_entities?.inn && (
-                              <p className="text-xs text-gray-500">INN: {wage.legal_entities.inn}</p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          {isEditing ? (
-                            <>
-                              <input
-                                type="number"
-                                value={editingWageAmount}
-                                onChange={(e) => setEditingWageAmount(e.target.value)}
-                                className="w-32 px-2 py-1 text-sm border border-indigo-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-                                min="0"
-                                step="100000"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => handleUpdateWage(wage.id, parseFloat(editingWageAmount))}
-                                className="inline-flex items-center gap-1 px-2 py-1 text-xs text-white bg-indigo-600 rounded hover:bg-indigo-700 transition-colors"
-                              >
-                                <Save size={12} />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => { setEditingWageId(null); setEditingWageAmount(''); }}
-                                className="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 bg-gray-200 rounded hover:bg-gray-300 transition-colors"
-                              >
-                                <X size={12} />
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <span className="font-semibold text-gray-900">{formatSalary(wage.wage_amount)}</span>
-                              {!pendingChange && canDirectEditWages ? (
-                                // GM can directly edit and remove
-                                <>
-                                  <button
-                                    type="button"
-                                    onClick={() => { setEditingWageId(wage.id); setEditingWageAmount(wage.wage_amount.toString()); }}
-                                    className="inline-flex items-center gap-1 px-2 py-1 text-xs text-indigo-600 bg-white border border-indigo-200 rounded hover:bg-indigo-100 transition-colors"
-                                  >
-                                    <Edit3 size={12} />
-                                    Edit
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemoveWage(wage.id)}
-                                    className="inline-flex items-center gap-1 px-2 py-1 text-xs text-red-600 bg-white border border-red-200 rounded hover:bg-red-100 transition-colors"
-                                  >
-                                    <Trash2 size={12} />
-                                    Remove
-                                  </button>
-                                </>
-                              ) : !pendingChange ? (
-                                // Non-GM can request change
-                                <button
-                                  type="button"
-                                  onClick={() => openWageChangeModal(
-                                    'primary',
-                                    wage.legal_entity_id,
-                                    wage.legal_entities?.short_name || wage.legal_entities?.name || wage.legal_entity_id,
-                                    wage.wage_amount,
-                                    true
-                                  )}
-                                  className="inline-flex items-center gap-1 px-2 py-1 text-xs text-indigo-600 bg-white border border-indigo-200 rounded hover:bg-indigo-100 transition-colors"
-                                >
-                                  <Edit3 size={12} />
-                                  Request Change
-                                </button>
-                              ) : null}
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      {/* Pending change indicator */}
-                      {pendingChange && (
-                        <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
-                          <div className="flex items-center gap-2 text-amber-700">
-                            <Clock size={14} />
-                            <span className="text-xs font-medium">Pending Change Request</span>
-                          </div>
-                          <div className="mt-1 flex items-center gap-2 text-xs text-amber-600">
-                            {pendingChange.change_type === 'increase' ? (
-                              <ArrowUpCircle size={12} className="text-green-500" />
-                            ) : (
-                              <ArrowDownCircle size={12} className="text-red-500" />
-                            )}
-                            <span>
-                              {formatSalary(pendingChange.current_amount)} → {formatSalary(pendingChange.proposed_amount)}
-                            </span>
-                            <span className="text-gray-400">|</span>
-                            <span>Effective: {formatDate(pendingChange.effective_date)}</span>
-                          </div>
-                          <p className="mt-1 text-xs text-gray-500">Reason: {pendingChange.reason}</p>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Add Primary Wage Form */}
-            {showAddWage && (
-              <div className="mt-4 p-4 bg-indigo-50 rounded-lg space-y-3 border border-indigo-200">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <select
-                    value={newWage.entity_id}
-                    onChange={(e) => setNewWage({ ...newWage, entity_id: e.target.value })}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white"
-                  >
-                    <option value="">Select legal entity...</option>
-                    {availableEntities.map((entity) => (
-                      <option key={entity.id} value={entity.id}>
-                        {entity.short_name || entity.name}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="number"
-                    value={newWage.amount}
-                    onChange={(e) => setNewWage({ ...newWage, amount: e.target.value })}
-                    placeholder="Amount (UZS)"
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-                    min="0"
-                    step="100000"
-                  />
-                </div>
-                <div className="flex gap-2">
+            {showUploadForm && (
+              <div className="mb-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-medium text-gray-900">{t.employeeEdit.uploadDocument}</h4>
                   <button
                     type="button"
-                    onClick={() => setShowAddWage(false)}
-                    className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+                    onClick={() => {
+                      setShowUploadForm(false);
+                      setUploadDocType('other');
+                      setUploadNotes('');
+                    }}
+                    className="text-gray-400 hover:text-gray-600"
                   >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleAddWage}
-                    disabled={!newWage.entity_id || !newWage.amount}
-                    className="flex-1 px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
-                  >
-                    Add Primary Wage
+                    <X size={16} />
                   </button>
                 </div>
-              </div>
-            )}
-          </div>
-        )}
 
-        {/* Additional Wages Section (Cash/Branches) */}
-        {canEditSalary && (
-          <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <MapPin size={18} className="text-emerald-600" />
-                <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">
-                  Additional Wages (Cash)
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowAddBranchWage(true)}
-                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-emerald-600 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors"
-              >
-                <Plus size={14} />
-                Add
-              </button>
-            </div>
-
-            {/* Additional Wages List */}
-            {loadingWages ? (
-              <div className="text-center py-4 text-gray-500">Loading wages...</div>
-            ) : branchWages.length === 0 ? (
-              <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">
-                <MapPin size={24} className="mx-auto mb-2 text-gray-300" />
-                <p className="text-sm">No additional wages assigned</p>
-                <p className="text-xs text-gray-400">Add cash wages from branches</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {branchWages.map((wage) => {
-                  const pendingChange = getPendingChange('additional', wage.branch_id);
-                  const isEditing = editingBranchWageId === wage.id;
-                  return (
-                    <div key={wage.id} className="p-3 bg-emerald-50 rounded-lg">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <MapPin size={16} className="text-emerald-500" />
-                          <div>
-                            <p className="text-sm font-medium text-gray-900">
-                              {wage.branches?.name || wage.branch_id}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          {isEditing ? (
-                            <>
-                              <input
-                                type="number"
-                                value={editingBranchWageAmount}
-                                onChange={(e) => setEditingBranchWageAmount(e.target.value)}
-                                className="w-32 px-2 py-1 text-sm border border-emerald-300 rounded focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
-                                min="0"
-                                step="100000"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => handleUpdateBranchWage(wage.id, parseFloat(editingBranchWageAmount))}
-                                className="inline-flex items-center gap-1 px-2 py-1 text-xs text-white bg-emerald-600 rounded hover:bg-emerald-700 transition-colors"
-                              >
-                                <Save size={12} />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => { setEditingBranchWageId(null); setEditingBranchWageAmount(''); }}
-                                className="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 bg-gray-200 rounded hover:bg-gray-300 transition-colors"
-                              >
-                                <X size={12} />
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <span className="font-semibold text-gray-900">{formatSalary(wage.wage_amount)}</span>
-                              {!pendingChange && canDirectEditWages ? (
-                                // GM can directly edit and remove
-                                <>
-                                  <button
-                                    type="button"
-                                    onClick={() => { setEditingBranchWageId(wage.id); setEditingBranchWageAmount(wage.wage_amount.toString()); }}
-                                    className="inline-flex items-center gap-1 px-2 py-1 text-xs text-emerald-600 bg-white border border-emerald-200 rounded hover:bg-emerald-100 transition-colors"
-                                  >
-                                    <Edit3 size={12} />
-                                    Edit
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemoveBranchWage(wage.id)}
-                                    className="inline-flex items-center gap-1 px-2 py-1 text-xs text-red-600 bg-white border border-red-200 rounded hover:bg-red-100 transition-colors"
-                                  >
-                                    <Trash2 size={12} />
-                                    Remove
-                                  </button>
-                                </>
-                              ) : !pendingChange ? (
-                                // Non-GM can request change
-                                <button
-                                  type="button"
-                                  onClick={() => openWageChangeModal(
-                                    'additional',
-                                    wage.branch_id,
-                                    wage.branches?.name || wage.branch_id,
-                                    wage.wage_amount,
-                                    false
-                                  )}
-                                  className="inline-flex items-center gap-1 px-2 py-1 text-xs text-emerald-600 bg-white border border-emerald-200 rounded hover:bg-emerald-100 transition-colors"
-                                >
-                                  <Edit3 size={12} />
-                                  Request Change
-                                </button>
-                              ) : null}
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      {/* Pending change indicator */}
-                      {pendingChange && (
-                        <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
-                          <div className="flex items-center gap-2 text-amber-700">
-                            <Clock size={14} />
-                            <span className="text-xs font-medium">Pending Change Request</span>
-                          </div>
-                          <div className="mt-1 flex items-center gap-2 text-xs text-amber-600">
-                            {pendingChange.change_type === 'increase' ? (
-                              <ArrowUpCircle size={12} className="text-green-500" />
-                            ) : (
-                              <ArrowDownCircle size={12} className="text-red-500" />
-                            )}
-                            <span>
-                              {formatSalary(pendingChange.current_amount)} → {formatSalary(pendingChange.proposed_amount)}
-                            </span>
-                            <span className="text-gray-400">|</span>
-                            <span>Effective: {formatDate(pendingChange.effective_date)}</span>
-                          </div>
-                          <p className="mt-1 text-xs text-gray-500">Reason: {pendingChange.reason}</p>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Add Additional Wage Form */}
-            {showAddBranchWage && (
-              <div className="mt-4 p-4 bg-emerald-50 rounded-lg space-y-3 border border-emerald-200">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <select
-                    value={newBranchWage.branch_id}
-                    onChange={(e) => setNewBranchWage({ ...newBranchWage, branch_id: e.target.value })}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-white"
-                  >
-                    <option value="">Select branch...</option>
-                    {availableBranches.map((branch) => (
-                      <option key={branch.id} value={branch.id}>
-                        {branch.name}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="number"
-                    value={newBranchWage.amount}
-                    onChange={(e) => setNewBranchWage({ ...newBranchWage, amount: e.target.value })}
-                    placeholder="Amount (UZS)"
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
-                    min="0"
-                    step="100000"
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowAddBranchWage(false)}
-                    className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleAddBranchWage}
-                    disabled={!newBranchWage.branch_id || !newBranchWage.amount}
-                    className="flex-1 px-3 py-1.5 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
-                  >
-                    Add Additional Wage
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Documents Section */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <File size={18} className="text-purple-600" />
-              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">
-                Documents
-              </h3>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowUploadForm(true)}
-              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
-            >
-              <Upload size={14} />
-              Upload
-            </button>
-          </div>
-
-          {/* Upload Form */}
-          {showUploadForm && (
-            <div className="mb-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-medium text-gray-900">Upload Document</h4>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowUploadForm(false);
-                    setUploadDocType('other');
-                    setUploadNotes('');
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Document Type
-                  </label>
-                  <select
+                <div className="space-y-3">
+                  <Select
+                    label={t.employeeEdit.documentType}
                     value={uploadDocType}
                     onChange={(e) => setUploadDocType(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none bg-white"
-                  >
-                    {DOCUMENT_TYPES.map(type => (
-                      <option key={type.value} value={type.value}>
-                        {type.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                    options={DOCUMENT_TYPES.map(type => ({ value: type.value, label: type.label }))}
+                  />
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Notes (optional)
-                  </label>
-                  <input
-                    type="text"
+                  <Input
+                    label={t.employeeEdit.notes}
                     value={uploadNotes}
                     onChange={(e) => setUploadNotes(e.target.value)}
-                    placeholder="Add any notes about this document"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                    placeholder="Add any notes..."
                   />
-                </div>
 
-                {/* Drop zone */}
-                <div
-                  className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                    dragActive
-                      ? 'border-purple-500 bg-purple-50'
-                      : 'border-gray-300 hover:border-purple-400'
-                  }`}
-                  onDragEnter={handleDrag}
-                  onDragLeave={handleDrag}
-                  onDragOver={handleDrag}
-                  onDrop={handleDrop}
-                >
-                  <input
-                    type="file"
-                    id="file-upload"
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleFileUpload(file);
-                    }}
-                    accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
-                    disabled={uploadingDocument}
-                  />
-                  {uploadingDocument ? (
-                    <div className="flex items-center justify-center gap-2">
-                      <Loader2 className="animate-spin text-purple-600" size={20} />
-                      <span className="text-sm text-purple-600">Uploading...</span>
-                    </div>
-                  ) : (
-                    <>
-                      <Upload className="mx-auto mb-2 text-gray-400" size={24} />
-                      <p className="text-sm text-gray-600">
-                        <span className="text-purple-600 font-medium">Click to upload</span> or drag and drop
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        PDF, JPG, PNG, WebP, DOC, DOCX (max 10MB)
-                      </p>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Documents List */}
-          {loadingDocuments ? (
-            <div className="text-center py-4 text-gray-500">Loading documents...</div>
-          ) : documents.length === 0 ? (
-            <div className="text-center py-6 text-gray-500 bg-gray-50 rounded-lg">
-              <File size={24} className="mx-auto mb-2 text-gray-300" />
-              <p className="text-sm">No documents uploaded</p>
-              <p className="text-xs text-gray-400">Upload term sheets, contracts, passports, etc.</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {documents.map((doc) => (
-                <div
-                  key={doc.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <FileText size={18} className="text-purple-600" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{doc.file_name}</p>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <span className="px-1.5 py-0.5 bg-gray-200 rounded text-gray-600">
-                          {getDocumentTypeLabel(doc.document_type)}
-                        </span>
-                        <span>{formatFileSize(doc.file_size)}</span>
-                        <span>{formatDate(doc.created_at)}</span>
+                  <div
+                    className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                      dragActive ? 'border-purple-500 bg-purple-50' : 'border-gray-300 hover:border-purple-400'
+                    }`}
+                    onDragEnter={handleDrag}
+                    onDragLeave={handleDrag}
+                    onDragOver={handleDrag}
+                    onDrop={handleDrop}
+                  >
+                    <input
+                      type="file"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleFileUpload(file);
+                      }}
+                      accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
+                      disabled={uploadingDocument}
+                    />
+                    {uploadingDocument ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <Loader2 className="animate-spin text-purple-600" size={20} />
+                        <span className="text-sm text-purple-600">Uploading...</span>
                       </div>
-                      {doc.notes && (
-                        <p className="text-xs text-gray-400 mt-0.5 truncate">{doc.notes}</p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => handleDownloadDocument(doc)}
-                      className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
-                      title="Download"
-                    >
-                      <Download size={16} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteDocument(doc.id)}
-                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                      title="Delete"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    ) : (
+                      <>
+                        <Upload className="mx-auto mb-2 text-gray-400" size={24} />
+                        <p className="text-sm text-gray-600">{t.employeeEdit.dragDropHint}</p>
+                      </>
+                    )}
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Notes Section */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-          <div className="flex items-center gap-2 mb-4">
-            <FileText size={18} className="text-gray-600" />
-            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">
-              Notes
-            </h3>
-          </div>
-
-          <textarea
-            value={formData.notes}
-            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-            rows={3}
-            placeholder="Any special notes about this employee (e.g., termination date, special conditions)"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none resize-none"
-          />
-        </div>
-
-        {/* Termination Section - Only show for active/probation employees */}
-        {formData.status !== 'terminated' && (
-          <div className="bg-white rounded-xl border border-red-200 p-6 mb-6">
-            <div className="flex items-center gap-2 mb-4">
-              <UserMinus size={18} className="text-red-600" />
-              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">
-                Employee Termination
-              </h3>
-            </div>
-
-            {pendingTermination ? (
-              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <div className="flex items-start gap-3">
-                  <Clock size={20} className="text-yellow-600 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-yellow-800">Termination Request Pending</p>
-                    <p className="text-sm text-yellow-700 mt-1">
-                      A termination request has been submitted and is awaiting General Manager approval.
-                    </p>
-                    <div className="mt-2 text-sm text-yellow-600">
-                      <p><strong>Reason:</strong> {pendingTermination.reason}</p>
-                      <p><strong>Termination Date:</strong> {new Date(pendingTermination.termination_date).toLocaleDateString()}</p>
-                      <p><strong>Submitted:</strong> {new Date(pendingTermination.created_at).toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div>
-                <p className="text-sm text-gray-600 mb-4">
-                  Initiate employee termination process. This requires General Manager approval before the employee is terminated.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setShowTerminationModal(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors font-medium"
-                >
-                  <UserMinus size={18} />
-                  Request Termination
-                </button>
               </div>
             )}
-          </div>
-        )}
 
-        {/* Delete Employee Section - Permanent removal */}
-        <div className="bg-white rounded-xl border border-red-300 p-6 mb-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Trash2 size={18} className="text-red-600" />
-            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">
-              Delete Employee
-            </h3>
-          </div>
+            {loadingDocuments ? (
+              <div className="text-center py-4 text-gray-500">Loading...</div>
+            ) : documents.length === 0 ? (
+              <div className="text-center py-6 text-gray-500 bg-gray-50 rounded-lg">
+                <File size={24} className="mx-auto mb-2 text-gray-300" />
+                <p className="text-sm">{t.employeeEdit.noDocuments}</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {documents.map((doc) => (
+                  <div
+                    key={doc.id}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <FileText size={18} className="text-purple-600" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{doc.file_name}</p>
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <Badge size="sm">{getDocumentTypeLabel(doc.document_type)}</Badge>
+                          <span>{formatFileSize(doc.file_size)}</span>
+                          <span>{formatDate(doc.created_at)}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDownloadDocument(doc)}
+                      >
+                        <Download size={16} />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteDocument(doc.id)}
+                      >
+                        <Trash2 size={16} className="text-red-500" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        </TabPanel>
 
-          <div>
-            <p className="text-sm text-gray-600 mb-4">
-              Permanently delete this employee record from the system. This action cannot be undone. Use this only for mistakenly created accounts.
-            </p>
-            <button
-              type="button"
-              onClick={() => setShowDeleteModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 text-white bg-red-600 border border-red-600 rounded-lg hover:bg-red-700 transition-colors font-medium"
-            >
-              <Trash2 size={18} />
-              Delete Employee
-            </button>
-          </div>
-        </div>
+        {/* Admin Tab */}
+        <TabPanel tabId="admin" activeTab={activeTab}>
+          {canAssignRoles ? (
+            <div className="space-y-6">
+              {/* System Role */}
+              <Card
+                title={t.employeeEdit.systemRole}
+                description={t.employeeEdit.systemRoleHint}
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {SYSTEM_ROLES.map((role) => (
+                    <label
+                      key={role.value}
+                      className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                        formData.system_role === role.value
+                          ? 'border-purple-500 bg-purple-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="system_role"
+                        value={role.value}
+                        checked={formData.system_role === role.value}
+                        onChange={(e) => setFormData({ ...formData, system_role: e.target.value as UserRole })}
+                        className="mt-1 text-purple-600 focus:ring-purple-500"
+                      />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{role.label}</p>
+                        <p className="text-xs text-gray-500">{role.description}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </Card>
 
-        {/* Action Buttons */}
-        <div className="flex gap-3">
+              {/* Telegram Status */}
+              <Card title={t.employeeEdit.telegramStatus}>
+                {telegramId ? (
+                  <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <MessageCircle size={20} className="text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-blue-900">{t.employeeEdit.connected}</p>
+                        <p className="text-xs text-blue-600">ID: {telegramId}</p>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="danger"
+                      size="sm"
+                      onClick={handleDisconnectTelegram}
+                      isLoading={disconnectingTelegram}
+                      leftIcon={<Unlink size={14} />}
+                    >
+                      {t.employeeEdit.disconnect}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="p-4 bg-gray-50 rounded-lg text-center">
+                    <MessageCircle size={24} className="mx-auto mb-2 text-gray-300" />
+                    <p className="text-sm text-gray-500">{t.employeeEdit.notConnected}</p>
+                  </div>
+                )}
+              </Card>
+
+              {/* Growth Team */}
+              <Card title={t.employeeEdit.growthTeam}>
+                <label className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
+                  formData.is_growth_team
+                    ? 'border-orange-400 bg-orange-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}>
+                  <input
+                    type="checkbox"
+                    checked={formData.is_growth_team}
+                    onChange={(e) => setFormData({ ...formData, is_growth_team: e.target.checked })}
+                    className="mt-1 h-4 w-4 text-orange-500 focus:ring-orange-500 rounded"
+                  />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{t.employeeEdit.growthTeam}</p>
+                    <p className="text-xs text-gray-500 mt-1">{t.employeeEdit.growthTeamHint}</p>
+                  </div>
+                </label>
+              </Card>
+
+              {/* Remote Work */}
+              <Card title={t.employeeEdit.remoteWork}>
+                <label className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
+                  formData.remote_work_enabled
+                    ? 'border-blue-400 bg-blue-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}>
+                  <input
+                    type="checkbox"
+                    checked={formData.remote_work_enabled}
+                    onChange={(e) => setFormData({ ...formData, remote_work_enabled: e.target.checked })}
+                    className="mt-1 h-4 w-4 text-blue-500 focus:ring-blue-500 rounded"
+                  />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{t.employeeEdit.remoteWork}</p>
+                    <p className="text-xs text-gray-500 mt-1">{t.employeeEdit.remoteWorkHint}</p>
+                  </div>
+                </label>
+              </Card>
+            </div>
+          ) : (
+            <Card>
+              <div className="text-center py-8 text-gray-500">
+                <Shield size={32} className="mx-auto mb-2 text-gray-300" />
+                <p>You don&apos;t have permission to access admin settings</p>
+              </div>
+            </Card>
+          )}
+        </TabPanel>
+
+        {/* Action Buttons - Always visible */}
+        <div className="flex gap-3 mt-6 pt-6 border-t border-gray-200">
           <Link
             href={`/employees/${employeeId}`}
             className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-center"
           >
-            Cancel
+            {t.common.cancel}
           </Link>
-          <button
+          <Button
             type="submit"
-            disabled={saving}
-            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            isLoading={saving}
+            leftIcon={<Save size={16} />}
+            className="flex-1"
           >
-            {saving ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save size={16} />
-                Save Changes
-              </>
-            )}
-          </button>
+            {t.common.save}
+          </Button>
         </div>
       </form>
 
-      {/* Termination Request Modal */}
+      {/* Termination Modal */}
       {showTerminationModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                <AlertTriangle size={24} className="text-red-600" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Request Employee Termination</h3>
-                <p className="text-sm text-gray-500">This requires GM approval</p>
-              </div>
+        <Modal
+          isOpen={showTerminationModal}
+          onClose={() => {
+            setShowTerminationModal(false);
+            setTerminationReason('');
+            setTerminationDate('');
+          }}
+          title={t.employeeEdit.requestTermination}
+          size="md"
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t.employeeEdit.terminationReason} *
+              </label>
+              <textarea
+                value={terminationReason}
+                onChange={(e) => setTerminationReason(e.target.value)}
+                rows={3}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none resize-none"
+                required
+              />
             </div>
 
-            <div className="space-y-4 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Reason for Termination *
-                </label>
-                <textarea
-                  value={terminationReason}
-                  onChange={(e) => setTerminationReason(e.target.value)}
-                  rows={3}
-                  placeholder="Provide a detailed reason for termination..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none resize-none"
-                  required
-                />
-              </div>
+            <Input
+              label={`${t.employeeEdit.terminationDate} *`}
+              type="date"
+              value={terminationDate}
+              onChange={(e) => setTerminationDate(e.target.value)}
+              min={new Date().toISOString().split('T')[0]}
+              required
+            />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Last Working Day *
-                </label>
-                <input
-                  type="date"
-                  value={terminationDate}
-                  onChange={(e) => setTerminationDate(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
-                  required
-                />
-              </div>
-
-              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
-                <strong>Note:</strong> Upon approval, the employee will be:
-                <ul className="list-disc list-inside mt-1 ml-2 space-y-1">
-                  <li>Marked as terminated in the system</li>
-                  <li>Disconnected from the Telegram bot</li>
-                  <li>Have all wage assignments deactivated</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
+            <div className="flex gap-3 pt-4">
+              <Button
                 type="button"
-                onClick={() => {
-                  setShowTerminationModal(false);
-                  setTerminationReason('');
-                  setTerminationDate('');
-                }}
+                variant="secondary"
+                onClick={() => setShowTerminationModal(false)}
                 disabled={submittingTermination}
-                className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
+                className="flex-1"
               >
-                Cancel
-              </button>
-              <button
+                {t.common.cancel}
+              </Button>
+              <Button
                 type="button"
+                variant="danger"
                 onClick={handleSubmitTermination}
                 disabled={submittingTermination || !terminationReason || !terminationDate}
-                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                isLoading={submittingTermination}
+                className="flex-1"
               >
-                {submittingTermination ? 'Submitting...' : 'Submit Request'}
-              </button>
+                {t.common.submit}
+              </Button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
 
-      {/* Wage Change Request Modal */}
+      {/* Wage Change Modal */}
       {showWageChangeModal && wageChangeData && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
-                <Edit3 size={24} className="text-indigo-600" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Request Wage Change</h3>
-                <p className="text-sm text-gray-500">This requires GM approval</p>
-              </div>
+        <Modal
+          isOpen={showWageChangeModal}
+          onClose={() => {
+            setShowWageChangeModal(false);
+            setWageChangeData(null);
+          }}
+          title={t.employeeEdit.requestChange}
+          size="md"
+        >
+          <div className="space-y-4">
+            <div className="p-3 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-500">{wageChangeData.entity_name}</p>
+              <p className="text-lg font-bold text-gray-900">
+                Current: {formatSalary(wageChangeData.current_amount)}
+              </p>
             </div>
 
-            <div className="space-y-4 mb-6">
-              {/* Wage info display */}
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-500">
-                  {wageChangeData.wage_type === 'primary' ? 'Primary Wage' : 'Additional Wage'}
-                </p>
-                <p className="text-sm font-medium text-gray-900">{wageChangeData.entity_name}</p>
-                <p className="text-lg font-bold text-gray-900 mt-1">
-                  Current: {formatSalary(wageChangeData.current_amount)}
-                </p>
-              </div>
+            <Input
+              label={`${t.employeeEdit.amount} *`}
+              type="number"
+              value={proposedAmount}
+              onChange={(e) => setProposedAmount(e.target.value)}
+              min={0}
+              step={100000}
+            />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  New Amount (UZS) *
-                </label>
-                <input
-                  type="number"
-                  value={proposedAmount}
-                  onChange={(e) => setProposedAmount(e.target.value)}
-                  placeholder="Enter new wage amount"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-                  min="0"
-                  step="100000"
-                  required
-                />
-                {proposedAmount && parseFloat(proposedAmount) !== wageChangeData.current_amount && (
-                  <p className={`text-xs mt-1 flex items-center gap-1 ${
-                    parseFloat(proposedAmount) > wageChangeData.current_amount ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {parseFloat(proposedAmount) > wageChangeData.current_amount ? (
-                      <><ArrowUpCircle size={12} /> Increase by {formatSalary(parseFloat(proposedAmount) - wageChangeData.current_amount)}</>
-                    ) : (
-                      <><ArrowDownCircle size={12} /> Decrease by {formatSalary(wageChangeData.current_amount - parseFloat(proposedAmount))}</>
-                    )}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Reason for Change *
-                </label>
-                <textarea
-                  value={wageChangeReason}
-                  onChange={(e) => setWageChangeReason(e.target.value)}
-                  rows={3}
-                  placeholder="e.g., Performance review - promotion, Annual raise, Role change..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Effective Date *
-                </label>
-                <input
-                  type="date"
-                  value={wageChangeDate}
-                  onChange={(e) => setWageChangeDate(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-                  required
-                />
-              </div>
-
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
-                <strong>Note:</strong> This change request will be sent to the General Manager for approval. The wage will only be updated after approval.
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Reason *
+              </label>
+              <textarea
+                value={wageChangeReason}
+                onChange={(e) => setWageChangeReason(e.target.value)}
+                rows={3}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none resize-none"
+              />
             </div>
 
-            <div className="flex gap-3">
-              <button
+            <Input
+              label="Effective Date *"
+              type="date"
+              value={wageChangeDate}
+              onChange={(e) => setWageChangeDate(e.target.value)}
+              min={new Date().toISOString().split('T')[0]}
+            />
+
+            <div className="flex gap-3 pt-4">
+              <Button
                 type="button"
-                onClick={() => {
-                  setShowWageChangeModal(false);
-                  setWageChangeData(null);
-                  setProposedAmount('');
-                  setWageChangeReason('');
-                  setWageChangeDate('');
-                }}
-                disabled={submittingWageChange}
-                className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
+                variant="secondary"
+                onClick={() => setShowWageChangeModal(false)}
+                className="flex-1"
               >
-                Cancel
-              </button>
-              <button
+                {t.common.cancel}
+              </Button>
+              <Button
                 type="button"
                 onClick={handleSubmitWageChange}
-                disabled={
-                  submittingWageChange ||
-                  !proposedAmount ||
-                  !wageChangeReason ||
-                  !wageChangeDate ||
-                  parseFloat(proposedAmount) === wageChangeData.current_amount
-                }
-                className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!proposedAmount || !wageChangeReason || !wageChangeDate || parseFloat(proposedAmount) === wageChangeData.current_amount}
+                isLoading={submittingWageChange}
+                className="flex-1"
               >
-                {submittingWageChange ? 'Submitting...' : 'Submit Request'}
-              </button>
+                {t.common.submit}
+              </Button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
 
-      {/* Delete Employee Confirmation Modal */}
+      {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                <Trash2 size={24} className="text-red-600" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Delete Employee</h3>
-                <p className="text-sm text-gray-500">This action cannot be undone</p>
-              </div>
+        <Modal
+          isOpen={showDeleteModal}
+          onClose={() => {
+            setShowDeleteModal(false);
+            setDeleteConfirmText('');
+          }}
+          title={t.employeeEdit.deleteEmployee}
+          size="md"
+        >
+          <div className="space-y-4">
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-800">
+                You are about to permanently delete <strong>{employee.full_name}</strong> ({employee.employee_id}).
+                {t.employeeEdit.deleteWarning}
+              </p>
             </div>
 
-            <div className="space-y-4 mb-6">
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-800">
-                  You are about to permanently delete <strong>{employee.full_name}</strong> ({employee.employee_id}) from the system.
-                  This will remove all associated data including wages, documents, and attendance records.
-                </p>
-              </div>
+            <Input
+              label={t.employeeEdit.typeDeleteConfirm}
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="DELETE"
+            />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Type <strong>DELETE</strong> to confirm
-                </label>
-                <input
-                  type="text"
-                  value={deleteConfirmText}
-                  onChange={(e) => setDeleteConfirmText(e.target.value)}
-                  placeholder="DELETE"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
+            <div className="flex gap-3 pt-4">
+              <Button
                 type="button"
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setDeleteConfirmText('');
-                }}
+                variant="secondary"
+                onClick={() => setShowDeleteModal(false)}
                 disabled={deletingEmployee}
-                className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
+                className="flex-1"
               >
-                Cancel
-              </button>
-              <button
+                {t.common.cancel}
+              </Button>
+              <Button
                 type="button"
+                variant="danger"
                 onClick={handleDeleteEmployee}
                 disabled={deletingEmployee || deleteConfirmText !== 'DELETE'}
-                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                isLoading={deletingEmployee}
+                className="flex-1"
               >
-                {deletingEmployee ? 'Deleting...' : 'Delete Employee'}
-              </button>
+                {t.employeeEdit.deleteEmployee}
+              </Button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

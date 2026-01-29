@@ -259,6 +259,108 @@ export interface Translations {
     december: string;
   };
 
+  // Employee Edit Form
+  employeeEdit: {
+    // Page
+    title: string;
+    subtitle: string;
+
+    // Tabs
+    tabProfile: string;
+    tabEmployment: string;
+    tabWages: string;
+    tabDocuments: string;
+    tabAdmin: string;
+
+    // Profile section
+    basicInfo: string;
+    personalInfo: string;
+    contactInfo: string;
+
+    // Fields
+    fullName: string;
+    position: string;
+    selectPosition: string;
+    level: string;
+    branch: string;
+    noBranch: string;
+    department: string;
+    noDepartment: string;
+    manager: string;
+    reportsTo: string;
+    noManager: string;
+    managerHint: string;
+    status: string;
+    employmentType: string;
+    hireDate: string;
+    dateOfBirth: string;
+    gender: string;
+    notSpecified: string;
+    male: string;
+    female: string;
+    phone: string;
+    email: string;
+    notes: string;
+
+    // Wages section
+    primaryWages: string;
+    primaryWagesHint: string;
+    additionalWages: string;
+    additionalWagesHint: string;
+    totalSalary: string;
+    addWage: string;
+    legalEntity: string;
+    amount: string;
+    noWagesYet: string;
+    pendingChange: string;
+    requestChange: string;
+
+    // Documents section
+    documentsTitle: string;
+    uploadDocument: string;
+    documentType: string;
+    dragDropHint: string;
+    noDocuments: string;
+    termSheet: string;
+    contract: string;
+    passport: string;
+    idCard: string;
+    diploma: string;
+    other: string;
+
+    // Admin section
+    systemRole: string;
+    systemRoleHint: string;
+    telegramStatus: string;
+    connected: string;
+    notConnected: string;
+    disconnect: string;
+    growthTeam: string;
+    growthTeamHint: string;
+    remoteWork: string;
+    remoteWorkHint: string;
+
+    // Termination
+    terminationSection: string;
+    requestTermination: string;
+    terminationReason: string;
+    terminationDate: string;
+    pendingTermination: string;
+
+    // Delete
+    dangerZone: string;
+    deleteEmployee: string;
+    deleteWarning: string;
+    typeDeleteConfirm: string;
+
+    // Messages
+    saveSuccess: string;
+    saveError: string;
+    uploadSuccess: string;
+    deleteSuccess: string;
+    unsavedChanges: string;
+  };
+
   // Attendance
   attendance: {
     title: string;
