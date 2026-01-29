@@ -9,8 +9,10 @@ interface SalaryRecord {
   employee_id?: string;
   year: number;
   month: number;
-  advance: number;
-  salary: number;
+  advance_bank: number;
+  advance_naqd: number;
+  salary_bank: number;
+  salary_naqd: number;
   total: number;
   branch?: string;
   notes?: string;
@@ -131,8 +133,10 @@ export default function SalaryImportPage() {
       employee_name: '',
       year: selectedYear,
       month: selectedMonth,
-      advance: 0,
-      salary: 0,
+      advance_bank: 0,
+      advance_naqd: 0,
+      salary_bank: 0,
+      salary_naqd: 0,
       total: 0,
       matched: false,
     };
@@ -146,8 +150,8 @@ export default function SalaryImportPage() {
         const updated = { ...r, [field]: value };
 
         // Auto-calculate total
-        if (field === 'advance' || field === 'salary') {
-          updated.total = (updated.advance || 0) + (updated.salary || 0);
+        if (field === 'advance_bank' || field === 'advance_naqd' || field === 'salary_bank' || field === 'salary_naqd') {
+          updated.total = (updated.advance_bank || 0) + (updated.advance_naqd || 0) + (updated.salary_bank || 0) + (updated.salary_naqd || 0);
         }
 
         // Auto-match employee
@@ -173,7 +177,7 @@ export default function SalaryImportPage() {
     setRecords(records.filter(r => r.id !== id));
   };
 
-  // Parse CSV file - supports standard format: employee_code,employee_name,year,month,advance,salary,notes
+  // Parse CSV file - supports format: employee_name,year,month,advance_bank,advance_naqd,salary_bank,salary_naqd,notes
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -193,27 +197,44 @@ export default function SalaryImportPage() {
       // Check if this is the standard format (has header row with employee_name)
       const headerLine = lines[0]?.toLowerCase() || '';
       const isStandardFormat = headerLine.includes('employee_name') || headerLine.includes('year');
+      const hasBankNaqdColumns = headerLine.includes('advance_bank') || headerLine.includes('salary_bank');
 
       if (isStandardFormat) {
-        // Parse standard CSV format: employee_code,employee_name,year,month,advance,salary,notes
+        // Parse CSV format
         for (let i = 1; i < lines.length; i++) {
           const line = lines[i].trim();
           if (!line) continue;
 
-          // Parse CSV properly (handle commas in quoted fields)
           const cols = line.split(',');
 
-          const employeeName = cols[1]?.trim();
+          const employeeName = cols[0]?.trim();
           if (!employeeName) continue;
 
-          const year = parseInt(cols[2]) || selectedYear;
-          const month = parseInt(cols[3]) || selectedMonth;
-          const advance = parseAmount(cols[4] || '0');
-          const salary = parseAmount(cols[5] || '0');
-          const notes = cols[6]?.trim() || '';
+          const year = parseInt(cols[1]) || selectedYear;
+          const month = parseInt(cols[2]) || selectedMonth;
 
-          // Match employee - pass the fetched employee list directly
+          let advance_bank = 0, advance_naqd = 0, salary_bank = 0, salary_naqd = 0;
+          let notes = '';
+
+          if (hasBankNaqdColumns) {
+            // New format: employee_name,year,month,advance_bank,advance_naqd,salary_bank,salary_naqd,notes
+            advance_bank = parseAmount(cols[3] || '0');
+            advance_naqd = parseAmount(cols[4] || '0');
+            salary_bank = parseAmount(cols[5] || '0');
+            salary_naqd = parseAmount(cols[6] || '0');
+            notes = cols[7]?.trim() || '';
+          } else {
+            // Old format: employee_code,employee_name,year,month,advance,salary,notes
+            // Treat advance and salary as bank values
+            advance_bank = parseAmount(cols[4] || '0');
+            salary_bank = parseAmount(cols[5] || '0');
+            notes = cols[6]?.trim() || '';
+          }
+
+          // Match employee
           const match = matchEmployee(employeeName, empList);
+
+          const total = advance_bank + advance_naqd + salary_bank + salary_naqd;
 
           const record: SalaryRecord = {
             id: generateId(),
@@ -221,9 +242,11 @@ export default function SalaryImportPage() {
             employee_id: match?.employee_id,
             year,
             month,
-            advance,
-            salary,
-            total: advance + salary,
+            advance_bank,
+            advance_naqd,
+            salary_bank,
+            salary_naqd,
+            total,
             branch: notes,
             notes,
             matched: !!match,
@@ -267,8 +290,10 @@ export default function SalaryImportPage() {
             employee_id: match?.employee_id,
             year: selectedYear,
             month: selectedMonth,
-            advance: 0,
-            salary: 0,
+            advance_bank: 0,
+            advance_naqd: 0,
+            salary_bank: 0,
+            salary_naqd: 0,
             total: 0,
             branch: currentBranch,
             matched: !!match,
@@ -290,7 +315,7 @@ export default function SalaryImportPage() {
 
   // Import records to database
   const handleImport = async () => {
-    const validRecords = records.filter(r => r.matched && (r.advance > 0 || r.salary > 0));
+    const validRecords = records.filter(r => r.matched && (r.advance_bank > 0 || r.advance_naqd > 0 || r.salary_bank > 0 || r.salary_naqd > 0));
 
     if (validRecords.length === 0) {
       setError('No valid records to import. Make sure employees are matched and have salary data.');
@@ -324,11 +349,11 @@ export default function SalaryImportPage() {
 
   // Download template
   const downloadTemplate = () => {
-    const headers = ['employee_code', 'employee_name', 'year', 'month', 'advance', 'salary', 'notes'];
+    const headers = ['employee_name', 'year', 'month', 'advance_bank', 'advance_naqd', 'salary_bank', 'salary_naqd', 'notes'];
     const sampleData = [
-      ['', 'Zuxriddin Abduraxmonov', '2025', '1', '1500000', '3500000', 'HQ - GM'],
-      ['', 'Ruxshona Nabijonova', '2025', '1', '1000000', '2500000', 'HQ - Supervisor'],
-      ['', 'Nodir Mahmudov', '2025', '1', '1000000', '4000000', 'Yunusabad - BM'],
+      ['Zuxriddin Abduraxmonov', '2025', '1', '1500000', '0', '3500000', '0', 'HQ - GM'],
+      ['Ruxshona Nabijonova', '2025', '1', '1000000', '0', '2500000', '0', 'HQ - Supervisor'],
+      ['Nodir Mahmudov', '2025', '1', '1000000', '500000', '3500000', '500000', 'Yunusabad - BM'],
     ];
 
     const csv = [headers.join(','), ...sampleData.map(row => row.join(','))].join('\n');
@@ -344,8 +369,10 @@ export default function SalaryImportPage() {
   // Stats
   const matchedCount = records.filter(r => r.matched).length;
   const unmatchedCount = records.filter(r => !r.matched).length;
-  const totalAdvance = records.reduce((sum, r) => sum + (r.advance || 0), 0);
-  const totalSalary = records.reduce((sum, r) => sum + (r.salary || 0), 0);
+  const totalAdvanceBank = records.reduce((sum, r) => sum + (r.advance_bank || 0), 0);
+  const totalAdvanceNaqd = records.reduce((sum, r) => sum + (r.advance_naqd || 0), 0);
+  const totalSalaryBank = records.reduce((sum, r) => sum + (r.salary_bank || 0), 0);
+  const totalSalaryNaqd = records.reduce((sum, r) => sum + (r.salary_naqd || 0), 0);
 
   return (
     <div className="max-w-6xl mx-auto p-6">
@@ -430,7 +457,7 @@ export default function SalaryImportPage() {
 
       {/* Stats */}
       {records.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
           <div className="bg-white rounded-lg border border-gray-200 p-4">
             <p className="text-sm text-gray-500">Total Records</p>
             <p className="text-xl font-semibold text-gray-900">{records.length}</p>
@@ -444,12 +471,20 @@ export default function SalaryImportPage() {
             <p className="text-xl font-semibold text-red-600">{unmatchedCount}</p>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <p className="text-sm text-gray-500">Total Advance</p>
-            <p className="text-lg font-semibold text-gray-900">{formatCurrency(totalAdvance)}</p>
+            <p className="text-sm text-gray-500">Advance (Bank)</p>
+            <p className="text-lg font-semibold text-gray-900">{formatCurrency(totalAdvanceBank)}</p>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <p className="text-sm text-gray-500">Total Salary</p>
-            <p className="text-lg font-semibold text-gray-900">{formatCurrency(totalSalary)}</p>
+            <p className="text-sm text-gray-500">Advance (Naqd)</p>
+            <p className="text-lg font-semibold text-gray-900">{formatCurrency(totalAdvanceNaqd)}</p>
+          </div>
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <p className="text-sm text-gray-500">Salary (Bank)</p>
+            <p className="text-lg font-semibold text-gray-900">{formatCurrency(totalSalaryBank)}</p>
+          </div>
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <p className="text-sm text-gray-500">Salary (Naqd)</p>
+            <p className="text-lg font-semibold text-gray-900">{formatCurrency(totalSalaryNaqd)}</p>
           </div>
         </div>
       )}
@@ -462,10 +497,11 @@ export default function SalaryImportPage() {
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Employee</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Branch</th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Period</th>
-                  <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase">Advance</th>
-                  <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase">Salary</th>
+                  <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase">Avans Bank</th>
+                  <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase">Avans Naqd</th>
+                  <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase">Oylik Bank</th>
+                  <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase">Oylik Naqd</th>
                   <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase">Total</th>
                   <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase">Status</th>
                   <th className="px-4 py-3"></th>
@@ -485,38 +521,50 @@ export default function SalaryImportPage() {
                       {record.employee_id && (
                         <p className="text-xs text-gray-500 mt-1">{record.employee_id}</p>
                       )}
+                      {record.notes && (
+                        <p className="text-xs text-gray-400 mt-1">{record.notes}</p>
+                      )}
                     </td>
-                    <td className="px-4 py-3">
-                      <input
-                        type="text"
-                        value={record.branch || ''}
-                        onChange={(e) => updateRecord(record.id, 'branch', e.target.value)}
-                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
-                        placeholder="Branch"
-                      />
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">
+                    <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
                       {MONTHS[record.month - 1]?.label} {record.year}
                     </td>
                     <td className="px-4 py-3">
                       <input
                         type="number"
-                        value={record.advance || ''}
-                        onChange={(e) => updateRecord(record.id, 'advance', parseInt(e.target.value) || 0)}
-                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-right focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                        value={record.advance_bank || ''}
+                        onChange={(e) => updateRecord(record.id, 'advance_bank', parseInt(e.target.value) || 0)}
+                        className="w-24 px-2 py-1 border border-gray-300 rounded text-sm text-right focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
                         placeholder="0"
                       />
                     </td>
                     <td className="px-4 py-3">
                       <input
                         type="number"
-                        value={record.salary || ''}
-                        onChange={(e) => updateRecord(record.id, 'salary', parseInt(e.target.value) || 0)}
-                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-right focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                        value={record.advance_naqd || ''}
+                        onChange={(e) => updateRecord(record.id, 'advance_naqd', parseInt(e.target.value) || 0)}
+                        className="w-24 px-2 py-1 border border-gray-300 rounded text-sm text-right focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
                         placeholder="0"
                       />
                     </td>
-                    <td className="px-4 py-3 text-right text-sm font-medium text-gray-900">
+                    <td className="px-4 py-3">
+                      <input
+                        type="number"
+                        value={record.salary_bank || ''}
+                        onChange={(e) => updateRecord(record.id, 'salary_bank', parseInt(e.target.value) || 0)}
+                        className="w-24 px-2 py-1 border border-gray-300 rounded text-sm text-right focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                        placeholder="0"
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <input
+                        type="number"
+                        value={record.salary_naqd || ''}
+                        onChange={(e) => updateRecord(record.id, 'salary_naqd', parseInt(e.target.value) || 0)}
+                        className="w-24 px-2 py-1 border border-gray-300 rounded text-sm text-right focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                        placeholder="0"
+                      />
+                    </td>
+                    <td className="px-4 py-3 text-right text-sm font-medium text-gray-900 whitespace-nowrap">
                       {formatCurrency(record.total)}
                     </td>
                     <td className="px-4 py-3 text-center">

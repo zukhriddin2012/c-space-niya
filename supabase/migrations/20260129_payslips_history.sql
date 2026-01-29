@@ -17,9 +17,11 @@ CREATE TABLE IF NOT EXISTS payslips (
   working_days INTEGER DEFAULT 0,
   worked_days INTEGER DEFAULT 0,
   status TEXT DEFAULT 'draft' CHECK (status IN ('draft', 'approved', 'paid')),
-  -- Historical salary tracking columns
-  advance_paid DECIMAL(15, 2) DEFAULT 0,
-  wage_paid DECIMAL(15, 2) DEFAULT 0,
+  -- Historical salary tracking columns - Bank (primary) and Naqd (cash/additional)
+  advance_bank DECIMAL(15, 2) DEFAULT 0,
+  advance_naqd DECIMAL(15, 2) DEFAULT 0,
+  salary_bank DECIMAL(15, 2) DEFAULT 0,
+  salary_naqd DECIMAL(15, 2) DEFAULT 0,
   notes TEXT,
   -- Timestamps
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -31,13 +33,23 @@ CREATE TABLE IF NOT EXISTS payslips (
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns
-                 WHERE table_name = 'payslips' AND column_name = 'advance_paid') THEN
-    ALTER TABLE payslips ADD COLUMN advance_paid DECIMAL(15, 2) DEFAULT 0;
+                 WHERE table_name = 'payslips' AND column_name = 'advance_bank') THEN
+    ALTER TABLE payslips ADD COLUMN advance_bank DECIMAL(15, 2) DEFAULT 0;
   END IF;
 
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns
-                 WHERE table_name = 'payslips' AND column_name = 'wage_paid') THEN
-    ALTER TABLE payslips ADD COLUMN wage_paid DECIMAL(15, 2) DEFAULT 0;
+                 WHERE table_name = 'payslips' AND column_name = 'advance_naqd') THEN
+    ALTER TABLE payslips ADD COLUMN advance_naqd DECIMAL(15, 2) DEFAULT 0;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'payslips' AND column_name = 'salary_bank') THEN
+    ALTER TABLE payslips ADD COLUMN salary_bank DECIMAL(15, 2) DEFAULT 0;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'payslips' AND column_name = 'salary_naqd') THEN
+    ALTER TABLE payslips ADD COLUMN salary_naqd DECIMAL(15, 2) DEFAULT 0;
   END IF;
 
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns
@@ -52,8 +64,10 @@ CREATE INDEX IF NOT EXISTS idx_payslips_employee_year ON payslips(employee_id, y
 CREATE INDEX IF NOT EXISTS idx_payslips_status ON payslips(status);
 
 -- Add comments for documentation
-COMMENT ON COLUMN payslips.advance_paid IS 'Advance payment (Avans) for the month';
-COMMENT ON COLUMN payslips.wage_paid IS 'Main salary payment (Oylik) for the month';
+COMMENT ON COLUMN payslips.advance_bank IS 'Advance payment via bank (Avans Bank) - primary';
+COMMENT ON COLUMN payslips.advance_naqd IS 'Advance payment in cash (Avans Naqd) - additional';
+COMMENT ON COLUMN payslips.salary_bank IS 'Salary payment via bank (Oylik Bank) - primary';
+COMMENT ON COLUMN payslips.salary_naqd IS 'Salary payment in cash (Oylik Naqd) - additional';
 COMMENT ON COLUMN payslips.notes IS 'Additional notes or import source info';
 
 -- Create updated_at trigger if it doesn't exist

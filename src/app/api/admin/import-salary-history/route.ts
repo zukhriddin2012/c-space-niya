@@ -8,8 +8,10 @@ interface SalaryRecord {
   employee_id?: string;
   year: number;
   month: number;
-  advance: number;
-  salary: number;
+  advance_bank: number;
+  advance_naqd: number;
+  salary_bank: number;
+  salary_naqd: number;
   total: number;
   branch?: string;
   notes?: string;
@@ -59,8 +61,10 @@ export const POST = withAuth(async (request: NextRequest) => {
           net_salary: record.total, // Assuming no deductions for historical data
           deductions: 0,
           bonuses: 0,
-          advance_paid: record.advance,
-          wage_paid: record.salary,
+          advance_bank: record.advance_bank || 0,
+          advance_naqd: record.advance_naqd || 0,
+          salary_bank: record.salary_bank || 0,
+          salary_naqd: record.salary_naqd || 0,
           working_days: 0, // Not tracked in historical data
           worked_days: 0,
           status: 'paid',
@@ -71,13 +75,6 @@ export const POST = withAuth(async (request: NextRequest) => {
     if (payslipRecords.length === 0) {
       return NextResponse.json({ error: 'No valid records to import' }, { status: 400 });
     }
-
-    // Check for existing records to avoid duplicates
-    const existingChecks = payslipRecords.map(r => ({
-      employee_id: r.employee_id,
-      year: r.year,
-      month: r.month,
-    }));
 
     // Get existing payslips
     const { data: existingPayslips } = await supabase
