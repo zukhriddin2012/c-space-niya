@@ -104,10 +104,10 @@ export default function AccountingApprovalsPage() {
 
     setActionLoading(selectedRequest.id);
     try {
-      const response = await fetch(`/api/accounting/requests/${selectedRequest.id}/approve`, {
-        method: 'POST',
+      const response = await fetch(`/api/accounting/requests/${selectedRequest.id}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ comments: approvalComments }),
+        body: JSON.stringify({ action: 'approve', comments: approvalComments }),
       });
 
       if (!response.ok) {
@@ -132,10 +132,10 @@ export default function AccountingApprovalsPage() {
 
     setActionLoading(selectedRequest.id);
     try {
-      const response = await fetch(`/api/accounting/requests/${selectedRequest.id}/approve`, {
-        method: 'DELETE',
+      const response = await fetch(`/api/accounting/requests/${selectedRequest.id}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: rejectReason }),
+        body: JSON.stringify({ action: 'reject', reason: rejectReason }),
       });
 
       if (!response.ok) {

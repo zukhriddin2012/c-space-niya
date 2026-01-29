@@ -476,10 +476,11 @@ export default function CandidateDetailModal({
         ? JSON.stringify({ type: 'typed', name: recruiterSignature.name, style: 1 })
         : recruiterSignature.data;
 
-      const res = await fetch(`/api/candidates/${candidate.id}/documents/${selectedDocForSigning}/sign`, {
-        method: 'POST',
+      const res = await fetch(`/api/candidates/${candidate.id}/documents/${selectedDocForSigning}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          action: 'sign',
           signature_type: recruiterSignature.type,
           signature_data: signatureData,
           signer_name: recruiterSignature.name,

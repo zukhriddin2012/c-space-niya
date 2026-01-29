@@ -459,10 +459,10 @@ export default function PaymentRequestsSection({
   const executeAction = async (requestId: string, action: 'submit' | 'approve' | 'pay', body: object = {}) => {
     setActionLoading(`${requestId}-${action}`);
     try {
-      const response = await fetch(`/api/payment-requests/${requestId}/${action}`, {
-        method: 'POST',
+      const response = await fetch(`/api/payment-requests/${requestId}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ action, ...body }),
       });
 
       if (response.ok) {
@@ -483,10 +483,10 @@ export default function PaymentRequestsSection({
   const executeReject = async (requestId: string, reason: string) => {
     setActionLoading(`${requestId}-reject`);
     try {
-      const response = await fetch(`/api/payment-requests/${requestId}/reject`, {
-        method: 'POST',
+      const response = await fetch(`/api/payment-requests/${requestId}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason }),
+        body: JSON.stringify({ action: 'reject', reason }),
       });
 
       if (response.ok) {

@@ -1139,10 +1139,10 @@ function SprintManagementPanel({
     if (!selectedSprintId) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/dev-board/sprints/${selectedSprintId}/complete`, {
-        method: 'POST',
+      const res = await fetch(`/api/dev-board/sprints/${selectedSprintId}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(completeOptions),
+        body: JSON.stringify({ action: 'complete', ...completeOptions }),
       });
       if (res.ok) {
         onUpdated();

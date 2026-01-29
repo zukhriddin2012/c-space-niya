@@ -196,10 +196,10 @@ export default function AccountingRequestDetailPage({ params }: { params: Promis
 
     setActionLoading(true);
     try {
-      const response = await fetch(`/api/accounting/requests/${requestId}/status`, {
-        method: 'POST',
+      const response = await fetch(`/api/accounting/requests/${requestId}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus, notes, assignToSelf: true }),
+        body: JSON.stringify({ action: 'changeStatus', status: newStatus, notes, assignToSelf: true }),
       });
 
       if (!response.ok) {
@@ -223,10 +223,10 @@ export default function AccountingRequestDetailPage({ params }: { params: Promis
 
     setActionLoading(true);
     try {
-      const response = await fetch(`/api/accounting/requests/${requestId}/approve`, {
-        method: 'POST',
+      const response = await fetch(`/api/accounting/requests/${requestId}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ comments: approvalComments }),
+        body: JSON.stringify({ action: 'approve', comments: approvalComments }),
       });
 
       if (!response.ok) {
@@ -250,10 +250,10 @@ export default function AccountingRequestDetailPage({ params }: { params: Promis
 
     setActionLoading(true);
     try {
-      const response = await fetch(`/api/accounting/requests/${requestId}/approve`, {
-        method: 'DELETE',
+      const response = await fetch(`/api/accounting/requests/${requestId}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: approvalRejectReason }),
+        body: JSON.stringify({ action: 'reject', reason: approvalRejectReason }),
       });
 
       if (!response.ok) {
