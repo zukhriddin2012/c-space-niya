@@ -275,9 +275,33 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // Also check latest attendance for debugging
+  const telegramId = request.nextUrl.searchParams.get('telegramId');
+  let latestAttendance = null;
+  if (telegramId) {
+    const { data: emp } = await supabaseAdmin
+      .from('employees')
+      .select('id')
+      .eq('telegram_id', telegramId)
+      .single();
+
+    if (emp) {
+      const { data: att } = await supabaseAdmin
+        .from('attendance')
+        .select('id, verification_type, check_in, date, status')
+        .eq('employee_id', emp.id)
+        .order('date', { ascending: false })
+        .order('check_in', { ascending: false })
+        .limit(1)
+        .single();
+      latestAttendance = att;
+    }
+  }
+
   return NextResponse.json({
     ip: clientIp,
     matched: !!matchedBranch,
     branch: matchedBranch ? { id: matchedBranch.id, name: matchedBranch.name } : null,
+    latestAttendance,
   });
 }
