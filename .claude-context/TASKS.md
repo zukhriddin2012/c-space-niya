@@ -1,0 +1,134 @@
+# C-Space HR - Task Tracker
+
+> This file tracks active tasks across Cowork sessions.
+> Update this file when starting/completing tasks.
+
+---
+
+## Active Sprint
+
+**Sprint:** January 2026 - Week 5
+**Started:** 2026-01-27
+**Goal:** Translation completeness, Org chart, UI polish
+
+---
+
+## Task Queue
+
+### 🟢 Completed
+
+| Task ID | Title | Completed | Session |
+|---------|-------|-----------|---------|
+| T001 | Org chart with manager hierarchy | 2026-01-28 | Main |
+| T002 | Translation fixes (Employees page) | 2026-01-29 | Main |
+| T003 | Remote badge fix in attendance | 2026-01-29 | Main |
+
+### 🟡 In Progress
+
+| Task ID | Title | Assigned | Started |
+|---------|-------|----------|---------|
+| - | - | - | - |
+
+### 🔴 Pending
+
+| Task ID | Title | Priority | Notes |
+|---------|-------|----------|-------|
+| T004 | Employee profile editing | High | Improve edit form UX |
+| T005 | Recruitment pipeline filters | Medium | Filter by position, date, source |
+| T006 | Shift notes feature | Medium | Allow managers to add notes to shifts |
+| T007 | Attendance export to Excel | Low | Export filtered attendance data |
+| T008 | Dashboard widget customization | Low | Let users reorder widgets |
+
+---
+
+## Task Template
+
+When starting a new task, copy this template:
+
+```markdown
+## Task: [TASK_ID] - [Title]
+
+**Status:** 🟡 In Progress
+**Started:** [Date]
+**Session:** [Cowork Session ID]
+
+### Objective
+[What needs to be done]
+
+### Files to Modify
+- [ ] `path/to/file1.tsx`
+- [ ] `path/to/file2.ts`
+
+### Acceptance Criteria
+- [ ] Criterion 1
+- [ ] Criterion 2
+
+### Notes
+[Any important context]
+
+### Completion
+- **Completed:** [Date]
+- **Changes Made:** [Summary]
+- **PR/Commit:** [Link if applicable]
+```
+
+---
+
+## Session Handoff Protocol
+
+When ending a session:
+
+1. **Update TASKS.md** - Move task to appropriate status
+2. **Update PROJECT_CONTEXT.md** - Add to "Recent Changes Log"
+3. **Update context.json** - Add to "recentChanges" array
+4. **Commit changes** - Push to repository
+
+When starting a session:
+
+1. **Read .claude-context/** - Get full context
+2. **Check TASKS.md** - See what's pending/in-progress
+3. **Claim a task** - Move to "In Progress" with your session info
+4. **Do the work**
+5. **Follow handoff protocol** above
+
+---
+
+## Quick Reference
+
+### Common Files by Feature
+
+**Employees:**
+- Page: `src/app/(dashboard)/employees/page.tsx`
+- Filters: `src/app/(dashboard)/employees/EmployeesFilters.tsx`
+- Table: `src/components/EmployeesTable.tsx`
+- Edit: `src/app/(dashboard)/employees/[id]/edit/page.tsx`
+
+**Attendance:**
+- Sheet: `src/app/(dashboard)/attendance/sheet/page.tsx`
+- Table: `src/app/(dashboard)/attendance/AttendanceTable.tsx`
+- Dashboard: `src/app/(dashboard)/attendance/dashboard/page.tsx`
+- API: `src/app/api/attendance/*/route.ts`
+
+**Recruitment:**
+- Board: `src/app/(dashboard)/recruitment/board/page.tsx`
+- Table: `src/app/(dashboard)/recruitment/page.tsx`
+- API: `src/app/api/candidates/route.ts`
+
+**Translations:**
+- Types: `src/lib/i18n/types.ts`
+- English: `src/lib/i18n/en.ts`
+- Russian: `src/lib/i18n/ru.ts`
+- Uzbek: `src/lib/i18n/uz.ts`
+
+### Testing Commands
+
+```bash
+# Type check
+npx tsc --noEmit
+
+# Dev server
+npm run dev
+
+# Build
+npm run build
+```

@@ -1,0 +1,123 @@
+{
+  "project": {
+    "name": "C-Space HR",
+    "description": "HR management system for C-Space coworking spaces",
+    "productionUrl": "https://hr.cspace.uz",
+    "repository": "https://github.com/zukhriddin2012/c-space-hr",
+    "lastUpdated": "2026-01-29"
+  },
+  "techStack": {
+    "framework": "Next.js 14 (App Router)",
+    "language": "TypeScript",
+    "styling": "Tailwind CSS",
+    "database": "Supabase (PostgreSQL)",
+    "hosting": "Vercel",
+    "auth": "Custom session-based"
+  },
+  "keyPaths": {
+    "pages": "src/app/(dashboard)/",
+    "api": "src/app/api/",
+    "components": "src/components/",
+    "database": "src/lib/db.ts",
+    "supabase": "src/lib/supabase.ts",
+    "auth": "src/lib/auth-server.ts",
+    "permissions": "src/lib/permissions.ts",
+    "translations": "src/lib/i18n/",
+    "migrations": "supabase/migrations/"
+  },
+  "modules": {
+    "employees": {
+      "path": "src/app/(dashboard)/employees/",
+      "api": "/api/employees",
+      "features": ["CRUD", "Filters", "Level badges", "Employment type badges"]
+    },
+    "attendance": {
+      "path": "src/app/(dashboard)/attendance/",
+      "api": "/api/attendance/*",
+      "features": ["Daily sheet", "Dashboard", "IP/GPS/Remote verification", "Reminders", "Multi-session support"]
+    },
+    "recruitment": {
+      "path": "src/app/(dashboard)/recruitment/",
+      "api": "/api/candidates",
+      "features": ["Kanban board", "Stage transitions", "Candidate profiles"]
+    },
+    "accounting": {
+      "path": "src/app/(dashboard)/accounting/",
+      "api": "/api/accounting/*",
+      "features": ["Request workflow", "Approvals", "SLA tracking"]
+    },
+    "orgChart": {
+      "path": "src/app/(dashboard)/org-chart/",
+      "api": "/api/org-chart",
+      "features": ["Manager hierarchy", "Expandable tree", "Dotted connectors"]
+    },
+    "branches": {
+      "path": "src/app/(dashboard)/branches/",
+      "features": ["Geofencing", "IP allowlist", "Budget tracking"]
+    }
+  },
+  "roles": [
+    { "name": "super_admin", "level": 1, "description": "Full system access" },
+    { "name": "ceo", "level": 2, "description": "Executive access" },
+    { "name": "hr", "level": 3, "description": "HR management" },
+    { "name": "chief_accountant", "level": 4, "description": "Accounting head" },
+    { "name": "accountant", "level": 5, "description": "Accounting staff" },
+    { "name": "recruiter", "level": 6, "description": "Recruitment only" },
+    { "name": "branch_manager", "level": 7, "description": "Branch-specific" },
+    { "name": "legal", "level": 8, "description": "Legal department" },
+    { "name": "employee", "level": 9, "description": "Self-service only" }
+  ],
+  "languages": ["en", "ru", "uz"],
+  "database": {
+    "tables": {
+      "employees": {
+        "key": "id",
+        "important_columns": ["employee_id", "full_name", "position", "level", "branch_id", "manager_id", "status", "telegram_id"]
+      },
+      "attendance": {
+        "key": "id",
+        "important_columns": ["employee_id", "date", "check_in", "check_out", "verification_type", "status"]
+      },
+      "branches": {
+        "key": "id",
+        "important_columns": ["name", "latitude", "longitude", "geofence_radius", "allowed_ips"]
+      },
+      "candidates": {
+        "key": "id",
+        "important_columns": ["name", "position_id", "stage", "rating"]
+      },
+      "positions": {
+        "key": "id",
+        "important_columns": ["name", "name_uz", "name_ru", "level"]
+      },
+      "departments": {
+        "key": "id",
+        "important_columns": ["name", "name_uz", "name_ru"]
+      },
+      "accounting_requests": {
+        "key": "id",
+        "important_columns": ["request_number", "request_type", "status", "priority", "amount"]
+      }
+    }
+  },
+  "conventions": {
+    "components": "PascalCase, .tsx extension",
+    "apiRoutes": "route.ts in folder structure",
+    "translations": "Add to types.ts first, then all 3 language files",
+    "database": "Use supabaseAdmin from @/lib/supabase",
+    "auth": "Use getSession() for server, withAuth() for API"
+  },
+  "currentWork": {
+    "recentChanges": [
+      "2026-01-29: Translation fixes for Employees page",
+      "2026-01-29: Remote badge fix in attendance",
+      "2026-01-28: Org chart with expandable tree",
+      "2026-01-28: New positions added"
+    ],
+    "pendingTasks": [
+      "Employee profile editing improvements",
+      "Recruitment pipeline filters",
+      "Shift notes feature"
+    ]
+  }
+}
