@@ -402,7 +402,7 @@ export default function SalaryImportPage() {
   const totalSalaryNaqd = records.reduce((sum, r) => sum + (r.salary_naqd || 0), 0);
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="max-w-7xl mx-auto p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-gray-900">Import Historical Salary Data</h1>
         <p className="text-gray-500 mt-1">Upload salary history or add records manually</p>
@@ -523,9 +523,9 @@ export default function SalaryImportPage() {
             <table className="w-full">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Employee</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Period</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Entity</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase w-48">Employee</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase w-28">Period</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase w-48">Legal Entity</th>
                   <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase">Avans Bank</th>
                   <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase">Avans Naqd</th>
                   <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase">Oylik Bank</th>
@@ -560,12 +560,13 @@ export default function SalaryImportPage() {
                       <select
                         value={record.legal_entity_id || 'cspace-hq'}
                         onChange={(e) => updateRecord(record.id, 'legal_entity_id', e.target.value)}
-                        className="px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                        className="w-44 px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none bg-white"
                       >
                         {LEGAL_ENTITIES.map(entity => (
                           <option key={entity.id} value={entity.id}>{entity.name}</option>
                         ))}
                       </select>
+                      <p className="text-xs text-gray-400 mt-1">{record.legal_entity_id}</p>
                     </td>
                     <td className="px-4 py-3">
                       <input
