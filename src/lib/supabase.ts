@@ -60,6 +60,8 @@ export interface Employee {
   system_role?: string; // Role for access control: general_manager, ceo, hr, branch_manager, recruiter, employee
   password?: string; // For authentication (demo only - use hashing in production)
   preferred_language?: 'uz' | 'ru' | 'en'; // Language preference for bot messages
+  is_growth_team?: boolean; // Part of the Growth Team with access to strategic projects
+  remote_work_enabled?: boolean; // Can check in remotely without GPS verification
   branches?: Branch;
   departments?: Department;
   positions?: Position;
