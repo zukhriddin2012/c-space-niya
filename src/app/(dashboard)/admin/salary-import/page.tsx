@@ -24,6 +24,11 @@ const LEGAL_ENTITIES = [
   { id: 'cspace_main', name: 'C-Space LLC' },
   { id: 'cspace_labzak', name: 'C-Space Labzak LLC' },
   { id: 'cspace_orient', name: 'C-Space Orient LLC' },
+  { id: 'cspace_aero', name: 'CS Aero LLC' },
+  { id: 'cspace_chust', name: 'C-Space Chust LLC' },
+  { id: 'cspace_yandex', name: 'C-Space Yandex LLC' },
+  { id: 'cspace_muqimiy', name: 'C-Space Muqimiy LLC' },
+  { id: 'cspace_elbek', name: 'C-Space Elbek LLC' },
 ];
 
 const MONTHS = [
