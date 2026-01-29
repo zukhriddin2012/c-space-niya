@@ -124,7 +124,8 @@ async function getAttendanceForDate(
       totalHours: s.total_hours,
       status: s.status as 'present' | 'late' | 'early_leave',
       isActive: !s.check_out,
-      source: s.verification_type === 'ip' ? 'web' as const : 'telegram' as const,
+      source: s.verification_type === 'ip' ? 'web' as const : s.verification_type === 'remote' ? 'web' as const : 'telegram' as const,
+      verificationType: s.verification_type as 'ip' | 'gps' | 'remote' | null,
     }));
 
     // Use the latest session for main display, but include all sessions
@@ -164,7 +165,8 @@ async function getAttendanceForDate(
       checkInTime: latestSession.check_in ? `${recordDate}T${latestSession.check_in}` : null,
       checkOutTime: latestSession.check_out ? `${date}T${latestSession.check_out}` : null,
       status: latestSession.status as 'present' | 'late' | 'absent' | 'early_leave',
-      source: latestSession.verification_type === 'ip' ? 'web' as const : 'telegram' as const,
+      source: latestSession.verification_type === 'ip' ? 'web' as const : latestSession.verification_type === 'remote' ? 'web' as const : 'telegram' as const,
+      verificationType: latestSession.verification_type as 'ip' | 'gps' | 'remote' | null,
       totalHours: latestSession.total_hours,
       isOvernight: latestSession.is_overnight || false,
       overnightFromDate: latestSession.overnight_from_date,

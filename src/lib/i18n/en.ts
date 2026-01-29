@@ -248,6 +248,7 @@ export const en: Translations = {
     verifiedBy: 'Verified By',
     ip: 'IP',
     gps: 'GPS',
+    remote: 'Remote',
     manual: 'Manual',
     // Button labels
     remind: 'Remind',

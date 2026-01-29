@@ -248,6 +248,7 @@ export const uz: Translations = {
     verifiedBy: 'Tasdiqlangan',
     ip: 'IP',
     gps: 'GPS',
+    remote: 'Masofaviy',
     manual: "Qo'lda",
     // Button labels
     remind: 'Eslatish',

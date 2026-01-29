@@ -248,6 +248,7 @@ export const ru: Translations = {
     verifiedBy: 'Подтверждено',
     ip: 'IP',
     gps: 'GPS',
+    remote: 'Удалённо',
     manual: 'Вручную',
     // Button labels
     remind: 'Напомнить',

@@ -29,6 +29,7 @@ interface AttendanceSession {
   status: 'present' | 'late' | 'early_leave';
   isActive: boolean;
   source?: 'telegram' | 'web' | 'manual' | null;
+  verificationType?: 'ip' | 'gps' | 'remote' | null;
 }
 
 interface ReminderInfo {
@@ -54,6 +55,7 @@ interface AttendanceRecord {
   checkOutTime: string | null;
   status: 'present' | 'late' | 'absent' | 'early_leave';
   source: 'telegram' | 'web' | 'manual' | null;
+  verificationType?: 'ip' | 'gps' | 'remote' | null;
   totalHours: number | null;
   isOvernight?: boolean;
   overnightFromDate?: string;
@@ -75,21 +77,33 @@ interface AttendanceTableProps {
   canEditAttendance: boolean;
 }
 
-function VerificationBadge({ source, t }: { source: string | null; t: any }) {
-  if (!source) return null;
+function VerificationBadge({ source, verificationType, t }: { source: string | null; verificationType?: string | null; t: any }) {
+  // Determine badge type based on verification_type first, then source
+  let badgeType = source;
 
-  const config: Record<string, { labelKey: 'ip' | 'gps' | 'manual'; className: string }> = {
+  if (verificationType === 'remote') {
+    badgeType = 'remote';
+  } else if (verificationType === 'ip') {
+    badgeType = 'web';
+  } else if (verificationType === 'gps') {
+    badgeType = 'telegram';
+  }
+
+  if (!badgeType) return null;
+
+  const config: Record<string, { labelKey: 'ip' | 'gps' | 'manual' | 'remote'; className: string }> = {
     web: { labelKey: 'ip', className: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
     telegram: { labelKey: 'gps', className: 'bg-amber-100 text-amber-700 border-amber-200' },
     manual: { labelKey: 'manual', className: 'bg-gray-100 text-gray-600 border-gray-200' },
+    remote: { labelKey: 'remote', className: 'bg-blue-100 text-blue-700 border-blue-200' },
   };
 
-  const badge = config[source];
+  const badge = config[badgeType];
   if (!badge) return null;
 
   return (
     <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${badge.className}`}>
-      {t.attendance[badge.labelKey]}
+      {t.attendance[badge.labelKey] || badge.labelKey.toUpperCase()}
     </span>
   );
 }
@@ -437,7 +451,7 @@ export default function AttendanceTable({ records, canEditAttendance }: Attendan
                                 <span className="text-indigo-500 text-xs ml-1">({formatShortDate(record.overnightFromDate)})</span>
                               )}
                             </span>
-                            <VerificationBadge source={record.source} t={t} />
+                            <VerificationBadge source={record.source} verificationType={record.verificationType} t={t} />
                           </div>
                         )}
                       </td>
@@ -514,7 +528,7 @@ export default function AttendanceTable({ records, canEditAttendance }: Attendan
                                 <div className="flex items-center gap-2 text-sm">
                                   <span className="text-gray-500">In:</span>{' '}
                                   <span className="font-medium">{formatTime(session.checkIn)}</span>
-                                  <VerificationBadge source={session.source || null} t={t} />
+                                  <VerificationBadge source={session.source || null} verificationType={session.verificationType} t={t} />
                                 </div>
                                 <div className="text-sm">
                                   <span className="text-gray-500">Out:</span>{' '}
@@ -593,7 +607,7 @@ export default function AttendanceTable({ records, canEditAttendance }: Attendan
                     <p className={`text-sm font-medium ${record.status === 'late' ? 'text-orange-600' : 'text-gray-900'}`}>
                       {formatTime(record.checkInTime)}
                     </p>
-                    <VerificationBadge source={record.source} t={t} />
+                    <VerificationBadge source={record.source} verificationType={record.verificationType} t={t} />
                   </div>
                 </div>
                 <div>
