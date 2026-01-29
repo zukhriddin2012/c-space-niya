@@ -405,3 +405,4 @@ function formatCurrency(amount: number): string {
   }
   return `${amount} UZS`;
 }
+// Deploy trigger: Thu Jan 29 02:26:11 UTC 2026
