@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 
+// Remote check-in endpoint for employees with remote work enabled
+
 // Get Tashkent time
 function getTashkentTime() {
   const now = new Date();
