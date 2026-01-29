@@ -21,14 +21,18 @@ interface SalaryRecord {
 }
 
 const LEGAL_ENTITIES = [
-  { id: 'cspace_main', name: 'C-Space LLC' },
-  { id: 'cspace_labzak', name: 'C-Space Labzak LLC' },
-  { id: 'cspace_orient', name: 'C-Space Orient LLC' },
-  { id: 'cspace_aero', name: 'CS Aero LLC' },
-  { id: 'cspace_chust', name: 'C-Space Chust LLC' },
-  { id: 'cspace_yandex', name: 'C-Space Yandex LLC' },
-  { id: 'cspace_muqimiy', name: 'C-Space Muqimiy LLC' },
-  { id: 'cspace_elbek', name: 'C-Space Elbek LLC' },
+  { id: 'cspace-hq', name: 'C-SPACE (HQ)' },
+  { id: 'cspace-yunusabad', name: 'C-SPACE YUNUSABAD' },
+  { id: 'cs-labzak', name: 'CS LABZAK' },
+  { id: 'cs-elbek', name: 'CS-ELBEK' },
+  { id: 'cs-aero', name: 'CS AERO' },
+  { id: 'cs-yunus-obod', name: 'CS YUNUS-OBOD' },
+  { id: 'cspace-orient', name: 'C-Space Orient' },
+  { id: 'cspace-muqumiy', name: 'CSPACE MUQUMIY' },
+  { id: 'cspace-fargona', name: 'C-SPACE FARGONA' },
+  { id: 'cspace-maksim-gorkiy', name: 'C-SPACE MAKSIM GORKIY' },
+  { id: 'cspace-newport', name: 'C-SPACE NEWPORT' },
+  { id: 'cspace-park', name: 'C-SPACE PARK' },
 ];
 
 const MONTHS = [
@@ -150,7 +154,7 @@ export default function SalaryImportPage() {
       salary_bank: 0,
       salary_naqd: 0,
       total: 0,
-      legal_entity_id: 'cspace_main',
+      legal_entity_id: 'cspace-hq',
       matched: false,
     };
     setRecords([...records, newRecord]);
@@ -229,7 +233,7 @@ export default function SalaryImportPage() {
           const month = parseInt(cols[2]) || selectedMonth;
 
           let advance_bank = 0, advance_naqd = 0, salary_bank = 0, salary_naqd = 0;
-          let legal_entity_id = 'cspace_main';
+          let legal_entity_id = 'cspace-hq';
           let notes = '';
 
           if (hasBankNaqdColumns) {
@@ -239,7 +243,7 @@ export default function SalaryImportPage() {
             salary_bank = parseAmount(cols[5] || '0');
             salary_naqd = parseAmount(cols[6] || '0');
             if (hasLegalEntity) {
-              legal_entity_id = cols[7]?.trim() || 'cspace_main';
+              legal_entity_id = cols[7]?.trim() || 'cspace-hq';
               notes = cols[8]?.trim() || '';
             } else {
               notes = cols[7]?.trim() || '';
@@ -317,7 +321,7 @@ export default function SalaryImportPage() {
             salary_bank: 0,
             salary_naqd: 0,
             total: 0,
-            legal_entity_id: 'cspace_main',
+            legal_entity_id: 'cspace-hq',
             branch: currentBranch,
             matched: !!match,
           };
@@ -374,9 +378,9 @@ export default function SalaryImportPage() {
   const downloadTemplate = () => {
     const headers = ['employee_name', 'year', 'month', 'advance_bank', 'advance_naqd', 'salary_bank', 'salary_naqd', 'legal_entity_id', 'notes'];
     const sampleData = [
-      ['Zuxriddin Abduraxmonov', '2025', '1', '1500000', '0', '3500000', '0', 'cspace_main', 'HQ - GM'],
-      ['Ruxshona Nabijonova', '2025', '1', '1000000', '0', '2500000', '0', 'cspace_main', 'HQ - Supervisor'],
-      ['Nodir Mahmudov', '2025', '1', '1000000', '500000', '3500000', '500000', 'cspace_labzak', 'Yunusabad - BM'],
+      ['Zuxriddin Abduraxmonov', '2025', '1', '1500000', '0', '3500000', '0', 'cspace-hq', 'HQ - GM'],
+      ['Ruxshona Nabijonova', '2025', '1', '1000000', '0', '2500000', '0', 'cspace-hq', 'HQ - Supervisor'],
+      ['Nodir Mahmudov', '2025', '1', '1000000', '500000', '3500000', '500000', 'cs-labzak', 'Labzak - BM'],
     ];
 
     const csv = [headers.join(','), ...sampleData.map(row => row.join(','))].join('\n');
@@ -554,7 +558,7 @@ export default function SalaryImportPage() {
                     </td>
                     <td className="px-4 py-3">
                       <select
-                        value={record.legal_entity_id || 'cspace_main'}
+                        value={record.legal_entity_id || 'cspace-hq'}
                         onChange={(e) => updateRecord(record.id, 'legal_entity_id', e.target.value)}
                         className="px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
                       >

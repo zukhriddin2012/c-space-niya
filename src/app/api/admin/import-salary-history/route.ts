@@ -56,7 +56,7 @@ export const POST = withAuth(async (request: NextRequest) => {
         const employeeUuid = employeeMap.get(record.employee_id!);
         return {
           employee_id: employeeUuid,
-          legal_entity_id: record.legal_entity_id || 'cspace_main',
+          legal_entity_id: record.legal_entity_id || 'cspace-hq',
           year: record.year,
           month: record.month,
           gross_salary: record.total,
