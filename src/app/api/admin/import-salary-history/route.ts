@@ -18,6 +18,14 @@ interface SalaryRecord {
   notes?: string;
 }
 
+interface WageSyncResult {
+  synced: number;
+  created: number;
+  updated: number;
+  skipped: number;
+  errors: string[];
+}
+
 // POST /api/admin/import-salary-history - Import historical salary data
 export const POST = withAuth(async (request: NextRequest) => {
   try {
@@ -100,13 +108,141 @@ export const POST = withAuth(async (request: NextRequest) => {
       return NextResponse.json({ error: 'Failed to import payslips: ' + upsertError.message }, { status: 500 });
     }
 
+    // Now sync employee_wages based on most recent payslip data
+    const wageSync = await syncEmployeeWagesFromPayslips(supabase, uniqueRecords);
+
     return NextResponse.json({
       message: 'Salary history imported successfully',
       imported: upserted?.length || 0,
       duplicatesInFile: payslipRecords.length - uniqueRecords.length,
+      wageSync: wageSync,
     });
   } catch (error) {
     console.error('Error importing salary history:', error);
     return NextResponse.json({ error: 'Failed to import salary history' }, { status: 500 });
   }
 }, { permission: PERMISSIONS.EMPLOYEES_EDIT_SALARY });
+
+/**
+ * Sync employee_wages table based on imported payslip data.
+ * For each employee with payslip data, ensure they have a corresponding
+ * entry in employee_wages for each legal entity.
+ */
+async function syncEmployeeWagesFromPayslips(
+  db: typeof supabase,
+  payslipRecords: Array<{
+    employee_id: string;
+    legal_entity_id: string;
+    year: number;
+    month: number;
+    advance_bank: number;
+    advance_naqd: number;
+    salary_bank: number;
+    salary_naqd: number;
+  }>
+): Promise<WageSyncResult> {
+  const result: WageSyncResult = {
+    synced: 0,
+    created: 0,
+    updated: 0,
+    skipped: 0,
+    errors: [],
+  };
+
+  if (!db) return result;
+
+  // Group payslips by employee + legal entity, keeping only the most recent
+  const latestPayslips = new Map<string, typeof payslipRecords[0]>();
+
+  for (const record of payslipRecords) {
+    const key = `${record.employee_id}-${record.legal_entity_id}`;
+    const existing = latestPayslips.get(key);
+
+    // Keep the most recent record (by year, then month)
+    if (!existing ||
+        record.year > existing.year ||
+        (record.year === existing.year && record.month > existing.month)) {
+      latestPayslips.set(key, record);
+    }
+  }
+
+  // Process each unique employee+legal_entity combination
+  for (const [key, payslip] of latestPayslips) {
+    try {
+      // Calculate monthly wage from payslip (salary_bank is the primary wage indicator)
+      // advance_bank and salary_bank are bank payments, naqd are cash payments
+      const totalMonthly = (payslip.advance_bank || 0) + (payslip.advance_naqd || 0) +
+                           (payslip.salary_bank || 0) + (payslip.salary_naqd || 0);
+
+      // Check if employee_wages entry exists
+      const { data: existingWage, error: fetchError } = await db
+        .from('employee_wages')
+        .select('id, wage_amount, is_active')
+        .eq('employee_id', payslip.employee_id)
+        .eq('legal_entity_id', payslip.legal_entity_id)
+        .single();
+
+      if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = no rows returned
+        result.errors.push(`Error checking wage for ${key}: ${fetchError.message}`);
+        continue;
+      }
+
+      if (existingWage) {
+        // Update existing entry if the wage differs significantly (>5% difference)
+        const existingAmount = Number(existingWage.wage_amount) || 0;
+        const difference = Math.abs(existingAmount - totalMonthly);
+        const percentDiff = existingAmount > 0 ? (difference / existingAmount) * 100 : 100;
+
+        if (percentDiff > 5) {
+          // Significant difference - update the wage
+          const { error: updateError } = await db
+            .from('employee_wages')
+            .update({
+              wage_amount: totalMonthly,
+              notes: `Auto-updated from payslip import (${payslip.year}-${String(payslip.month).padStart(2, '0')})`,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', existingWage.id);
+
+          if (updateError) {
+            result.errors.push(`Error updating wage for ${key}: ${updateError.message}`);
+          } else {
+            result.updated++;
+            result.synced++;
+          }
+        } else {
+          // Wage is already approximately correct
+          result.skipped++;
+        }
+      } else {
+        // Create new employee_wages entry
+        const { error: insertError } = await db
+          .from('employee_wages')
+          .insert({
+            employee_id: payslip.employee_id,
+            legal_entity_id: payslip.legal_entity_id,
+            wage_amount: totalMonthly,
+            wage_type: 'official',
+            is_active: true,
+            notes: `Auto-created from payslip import (${payslip.year}-${String(payslip.month).padStart(2, '0')})`,
+          });
+
+        if (insertError) {
+          // Check if it's a duplicate error (race condition)
+          if (insertError.code === '23505') {
+            result.skipped++;
+          } else {
+            result.errors.push(`Error creating wage for ${key}: ${insertError.message}`);
+          }
+        } else {
+          result.created++;
+          result.synced++;
+        }
+      }
+    } catch (err) {
+      result.errors.push(`Unexpected error for ${key}: ${String(err)}`);
+    }
+  }
+
+  return result;
+}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { TrendingUp, TrendingDown, Minus, Activity } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Activity, AlertTriangle, CheckCircle } from 'lucide-react';
 
 interface SalaryHistoryRecord {
   year: number;
@@ -14,6 +14,36 @@ interface SalaryStats {
   highest: number;
   average: number;
   growth: number;
+}
+
+interface WageSource {
+  source_type: 'primary' | 'additional';
+  source_id: string;
+  source_name: string;
+  wage_amount: number;
+}
+
+interface ReconciliationData {
+  configuredMonthly: number;
+  lastPaidMonthly: number;
+  difference: number;
+  status: 'synced' | 'underpaid' | 'overpaid' | 'no_history';
+  warnings: string[];
+}
+
+interface UnifiedWageData {
+  currentWages: {
+    primary: WageSource[];
+    additional: WageSource[];
+    primaryTotal: number;
+    additionalTotal: number;
+    grandTotal: number;
+  };
+  history: {
+    months: SalaryHistoryRecord[];
+    stats: SalaryStats;
+  };
+  reconciliation: ReconciliationData;
 }
 
 interface WageTrendChartProps {
@@ -38,28 +68,55 @@ function formatCurrency(amount: number): string {
 }
 
 export default function WageTrendChart({ employeeId }: WageTrendChartProps) {
-  const [history, setHistory] = useState<SalaryHistoryRecord[]>([]);
-  const [stats, setStats] = useState<SalaryStats>({ current: 0, highest: 0, average: 0, growth: 0 });
+  const [data, setData] = useState<UnifiedWageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
+  const [showReconciliation, setShowReconciliation] = useState(false);
   const chartRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
-    async function fetchHistory() {
+    async function fetchData() {
       try {
-        const response = await fetch(`/api/employees/${employeeId}/salary-history`);
+        // Try unified API first, fallback to salary-history
+        const response = await fetch(`/api/employees/${employeeId}/unified-wages`);
         if (response.ok) {
-          const data = await response.json();
-          setHistory(data.history || []);
-          setStats(data.stats || { current: 0, highest: 0, average: 0, growth: 0 });
+          const unifiedData = await response.json();
+          setData(unifiedData);
+        } else {
+          // Fallback to old API
+          const fallbackResponse = await fetch(`/api/employees/${employeeId}/salary-history`);
+          if (fallbackResponse.ok) {
+            const oldData = await fallbackResponse.json();
+            // Convert to unified format
+            setData({
+              currentWages: {
+                primary: [],
+                additional: [],
+                primaryTotal: 0,
+                additionalTotal: 0,
+                grandTotal: 0,
+              },
+              history: {
+                months: oldData.history || [],
+                stats: oldData.stats || { current: 0, highest: 0, average: 0, growth: 0 },
+              },
+              reconciliation: {
+                configuredMonthly: 0,
+                lastPaidMonthly: 0,
+                difference: 0,
+                status: 'no_history',
+                warnings: [],
+              },
+            });
+          }
         }
       } catch (err) {
-        console.error('Error fetching salary history:', err);
+        console.error('Error fetching wage data:', err);
       } finally {
         setLoading(false);
       }
     }
-    fetchHistory();
+    fetchData();
   }, [employeeId]);
 
   if (loading) {
@@ -73,7 +130,7 @@ export default function WageTrendChart({ employeeId }: WageTrendChartProps) {
     );
   }
 
-  if (history.length === 0) {
+  if (!data || data.history.months.length === 0) {
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
         <div className="flex items-center gap-2 mb-4">
@@ -87,6 +144,8 @@ export default function WageTrendChart({ employeeId }: WageTrendChartProps) {
       </div>
     );
   }
+
+  const { history: { months: history, stats }, currentWages, reconciliation } = data;
 
   // Chart dimensions
   const width = 600;
@@ -119,6 +178,11 @@ export default function WageTrendChart({ employeeId }: WageTrendChartProps) {
   const growthColor = stats.growth > 0 ? 'text-green-600' : stats.growth < 0 ? 'text-red-600' : 'text-gray-500';
   const growthBg = stats.growth > 0 ? 'bg-green-50' : stats.growth < 0 ? 'bg-red-50' : 'bg-gray-50';
 
+  // Reconciliation status
+  const hasWarnings = reconciliation.warnings.length > 0;
+  const reconcileStatusColor = reconciliation.status === 'synced' ? 'text-green-600' :
+                               reconciliation.status === 'no_history' ? 'text-gray-400' : 'text-amber-600';
+
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
       {/* Header with inline stats */}
@@ -127,6 +191,20 @@ export default function WageTrendChart({ employeeId }: WageTrendChartProps) {
           <Activity size={20} className="text-purple-600" />
           <h3 className="text-lg font-semibold text-gray-900">Wage Trend</h3>
           <span className="text-sm text-gray-500">(Last 12 months)</span>
+          {/* Reconciliation indicator */}
+          {reconciliation.status !== 'no_history' && (
+            <button
+              onClick={() => setShowReconciliation(!showReconciliation)}
+              className={`ml-2 p-1 rounded-full transition-colors ${hasWarnings ? 'bg-amber-50 hover:bg-amber-100' : 'bg-green-50 hover:bg-green-100'}`}
+              title={hasWarnings ? 'Data reconciliation warnings' : 'Data synced'}
+            >
+              {hasWarnings ? (
+                <AlertTriangle size={14} className="text-amber-500" />
+              ) : (
+                <CheckCircle size={14} className="text-green-500" />
+              )}
+            </button>
+          )}
         </div>
 
         {/* Inline Stats */}
@@ -154,6 +232,68 @@ export default function WageTrendChart({ employeeId }: WageTrendChartProps) {
           </div>
         </div>
       </div>
+
+      {/* Reconciliation details (collapsible) */}
+      {showReconciliation && (
+        <div className={`mb-4 p-4 rounded-lg ${hasWarnings ? 'bg-amber-50 border border-amber-200' : 'bg-green-50 border border-green-200'}`}>
+          <div className="flex items-start justify-between mb-2">
+            <h4 className={`text-sm font-semibold ${reconcileStatusColor}`}>
+              Data Reconciliation
+            </h4>
+            <span className={`text-xs px-2 py-0.5 rounded-full ${
+              reconciliation.status === 'synced' ? 'bg-green-100 text-green-700' :
+              reconciliation.status === 'underpaid' ? 'bg-amber-100 text-amber-700' :
+              reconciliation.status === 'overpaid' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
+            }`}>
+              {reconciliation.status === 'synced' ? 'Synced' :
+               reconciliation.status === 'underpaid' ? 'Underpaid' :
+               reconciliation.status === 'overpaid' ? 'Overpaid' : 'No History'}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 text-sm mb-3">
+            <div>
+              <p className="text-gray-500 text-xs">Configured Monthly</p>
+              <p className="font-semibold">{formatCurrency(reconciliation.configuredMonthly)}</p>
+            </div>
+            <div>
+              <p className="text-gray-500 text-xs">Last Paid</p>
+              <p className="font-semibold">{formatCurrency(reconciliation.lastPaidMonthly)}</p>
+            </div>
+          </div>
+
+          {/* Current wage sources */}
+          {(currentWages.primary.length > 0 || currentWages.additional.length > 0) && (
+            <div className="border-t border-gray-200 pt-3 mt-3">
+              <p className="text-xs text-gray-500 mb-2">Configured Wage Sources:</p>
+              <div className="flex flex-wrap gap-2">
+                {currentWages.primary.map((w, i) => (
+                  <span key={i} className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
+                    {w.source_name}: {formatCompact(w.wage_amount)}
+                  </span>
+                ))}
+                {currentWages.additional.map((w, i) => (
+                  <span key={i} className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                    {w.source_name}: {formatCompact(w.wage_amount)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Warnings */}
+          {hasWarnings && (
+            <div className="mt-3 border-t border-amber-200 pt-3">
+              <p className="text-xs text-amber-700 font-medium mb-1">Warnings:</p>
+              <ul className="text-xs text-amber-600 space-y-1">
+                {reconciliation.warnings.map((warning, i) => (
+                  <li key={i}>• {warning}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Chart */}
       <div className="relative">
