@@ -69,9 +69,10 @@ After reading, I'll tell you the specific task to work on.
 C-Space HR Project - Task: [TASK_NAME]
 
 Context files are in `.claude-context/` folder. Key info:
-- Next.js 14 + TypeScript + Tailwind + Supabase
+- Next.js 16 + TypeScript + Tailwind 4 + Supabase + Vitest
 - Production: https://hr.cspace.uz
 - Translations: src/lib/i18n/ (en.ts, ru.ts, uz.ts, types.ts)
+- Tests: npm run test:run
 
 Task: [DESCRIBE TASK]
 
@@ -139,6 +140,7 @@ Task: [DESCRIBE what needs translation]
 
 Before ending your session:
 
+- [ ] Run `npm run test:run` - all tests pass
 - [ ] Run `npx tsc --noEmit` - no errors
 - [ ] Update `.claude-context/TASKS.md` - mark task complete
 - [ ] Update `.claude-context/PROJECT_CONTEXT.md` - add to changelog
