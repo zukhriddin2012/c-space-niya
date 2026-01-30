@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transactions UI - Design Options</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .option-card { transition: all 0.3s ease; }
+    .option-card:hover { transform: translateY(-4px); }
+    .active-option { border-color: #8B5CF6 !important; box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2); }
+
+    /* Option A - Notion/Airtable style */
+    .notion-row:hover { background: #F9FAFB; }
+    .notion-cell { border-bottom: 1px solid #E5E7EB; }
+    .notion-cell:focus-within { background: #EEF2FF; box-shadow: inset 0 0 0 2px #6366F1; }
+
+    /* Option B - Google Sheets style */
+    .sheets-cell { border: 1px solid #E2E8F0; }
+    .sheets-cell:focus-within { border-color: #1A73E8; box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2); }
+    .sheets-header { background: #F8FAFC; border-bottom: 2px solid #E2E8F0; }
+
+    /* Option C - Linear/Vercel style */
+    .linear-row { border-bottom: 1px solid rgba(0,0,0,0.05); }
+    .linear-row:hover { background: rgba(139, 92, 246, 0.04); }
+    .linear-input:focus { outline: none; }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-8">
+  <div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="text-center mb-12">
+      <h1 class="text-3xl font-bold text-gray-900 mb-2">Transactions Spreadsheet</h1>
+      <p class="text-gray-500">Choose the design that fits C-Space style best</p>
+    </div>
+
+    <!-- Option A: Notion/Airtable Style -->
+    <div class="mb-16">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-semibold">Option A</span>
+        <h2 class="text-xl font-bold text-gray-900">Modern Database View</h2>
+        <span class="text-gray-400">— Notion / Airtable inspired</span>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200">
+        <!-- Toolbar -->
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white">
+          <div class="flex items-center gap-4">
+            <button class="p-2 hover:bg-gray-100 rounded-lg text-gray-500">
+              <i class="fas fa-arrow-left"></i>
+            </button>
+            <div>
+              <h3 class="font-semibold text-gray-900 text-lg">Transactions</h3>
+              <p class="text-xs text-gray-400">Labzak Branch • January 2026</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="relative">
+              <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+              <input type="text" placeholder="Filter..." class="pl-9 pr-4 py-2 bg-gray-50 border-0 rounded-lg text-sm w-48 focus:ring-2 focus:ring-purple-500">
+            </div>
+            <button class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 flex items-center gap-2">
+              <i class="fas fa-filter text-xs"></i> Filter
+            </button>
+            <button class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium flex items-center gap-2">
+              <i class="fas fa-plus text-xs"></i> New
+            </button>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="bg-gray-50/80">
+                <th class="w-12 px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">#</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div class="flex items-center gap-2">
+                    <i class="far fa-calendar text-gray-400"></i> Date
+                  </div>
+                </th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div class="flex items-center gap-2">
+                    <i class="fas fa-tag text-gray-400"></i> Type
+                  </div>
+                </th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div class="flex items-center gap-2">
+                    <i class="fas fa-cube text-gray-400"></i> Service
+                  </div>
+                </th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div class="flex items-center gap-2">
+                    <i class="far fa-user text-gray-400"></i> Customer
+                  </div>
+                </th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div class="flex items-center gap-2">
+                    <i class="far fa-credit-card text-gray-400"></i> Payment
+                  </div>
+                </th>
+                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                <th class="w-12"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="notion-row group">
+                <td class="notion-cell px-4 py-3 text-gray-400 text-sm">1</td>
+                <td class="notion-cell px-4 py-3">
+                  <input type="date" value="2026-01-30" class="bg-transparent border-0 text-sm text-gray-900 focus:outline-none w-full">
+                </td>
+                <td class="notion-cell px-4 py-3">
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 text-green-700 rounded-full text-xs font-medium">
+                    <i class="fas fa-arrow-up text-[10px]"></i> Revenue
+                  </span>
+                </td>
+                <td class="notion-cell px-4 py-3">
+                  <select class="bg-transparent border-0 text-sm text-gray-900 focus:outline-none">
+                    <option>Meeting</option>
+                    <option>Office</option>
+                    <option>Dedicated</option>
+                  </select>
+                </td>
+                <td class="notion-cell px-4 py-3">
+                  <input type="text" value="Oybek Dadashev" class="bg-transparent border-0 text-sm text-gray-900 focus:outline-none w-full" placeholder="Enter name...">
+                </td>
+                <td class="notion-cell px-4 py-3">
+                  <div class="flex items-center gap-2">
+                    <span class="w-6 h-6 bg-cyan-100 rounded flex items-center justify-center">
+                      <i class="fas fa-mobile-alt text-cyan-600 text-xs"></i>
+                    </span>
+                    <span class="text-sm">Payme</span>
+                  </div>
+                </td>
+                <td class="notion-cell px-4 py-3 text-right">
+                  <span class="text-green-600 font-semibold">+150,000</span>
+                </td>
+                <td class="notion-cell px-4 py-3">
+                  <button class="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-100 rounded text-gray-400">
+                    <i class="fas fa-ellipsis-h"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr class="notion-row group bg-gray-50/30">
+                <td class="notion-cell px-4 py-3 text-gray-400 text-sm">2</td>
+                <td class="notion-cell px-4 py-3">
+                  <input type="date" value="2026-01-30" class="bg-transparent border-0 text-sm text-gray-900 focus:outline-none w-full">
+                </td>
+                <td class="notion-cell px-4 py-3">
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-red-50 text-red-700 rounded-full text-xs font-medium">
+                    <i class="fas fa-arrow-down text-[10px]"></i> Expense
+                  </span>
+                </td>
+                <td class="notion-cell px-4 py-3">
+                  <select class="bg-transparent border-0 text-sm text-gray-900 focus:outline-none">
+                    <option>Goods</option>
+                    <option>Utility</option>
+                  </select>
+                </td>
+                <td class="notion-cell px-4 py-3">
+                  <input type="text" value="Makro" class="bg-transparent border-0 text-sm text-gray-900 focus:outline-none w-full">
+                </td>
+                <td class="notion-cell px-4 py-3">
+                  <div class="flex items-center gap-2">
+                    <span class="w-6 h-6 bg-green-100 rounded flex items-center justify-center">
+                      <i class="fas fa-money-bill text-green-600 text-xs"></i>
+                    </span>
+                    <span class="text-sm">Cash</span>
+                  </div>
+                </td>
+                <td class="notion-cell px-4 py-3 text-right">
+                  <span class="text-red-600 font-semibold">-85,000</span>
+                </td>
+                <td class="notion-cell px-4 py-3">
+                  <button class="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-100 rounded text-gray-400">
+                    <i class="fas fa-ellipsis-h"></i>
+                  </button>
+                </td>
+              </tr>
+              <!-- New row input -->
+              <tr class="bg-purple-50/50 border-2 border-dashed border-purple-200">
+                <td class="px-4 py-3 text-purple-400 text-sm">+</td>
+                <td class="px-4 py-3" colspan="7">
+                  <span class="text-purple-500 text-sm">Click to add new transaction...</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 bg-gray-50 border-t flex items-center justify-between">
+          <span class="text-sm text-gray-500">Showing 2 of 156 transactions</span>
+          <div class="flex items-center gap-6">
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-gray-500">Revenue:</span>
+              <span class="font-semibold text-green-600">+897.2M</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-gray-500">Expenses:</span>
+              <span class="font-semibold text-red-600">-234.5M</span>
+            </div>
+            <div class="flex items-center gap-2 pl-4 border-l">
+              <span class="text-sm text-gray-500">Net:</span>
+              <span class="font-bold text-purple-600">662.7M UZS</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 p-4 bg-purple-50 rounded-xl">
+        <p class="text-sm text-purple-800"><strong>Pros:</strong> Clean, modern, familiar to Notion/Airtable users. Inline editing feels natural. Good visual hierarchy.</p>
+        <p class="text-sm text-purple-700 mt-1"><strong>Cons:</strong> Less data-dense than traditional spreadsheets.</p>
+      </div>
+    </div>
+
+    <!-- Option B: Google Sheets Style -->
+    <div class="mb-16">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">Option B</span>
+        <h2 class="text-xl font-bold text-gray-900">Classic Spreadsheet</h2>
+        <span class="text-gray-400">— Google Sheets inspired</span>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-xl overflow-hidden border border-gray-300">
+        <!-- Toolbar - Google Sheets style -->
+        <div class="px-3 py-2 border-b border-gray-200 flex items-center gap-2 bg-gray-50">
+          <button class="p-2 hover:bg-gray-200 rounded text-gray-600" title="Undo">
+            <i class="fas fa-undo text-sm"></i>
+          </button>
+          <button class="p-2 hover:bg-gray-200 rounded text-gray-600" title="Redo">
+            <i class="fas fa-redo text-sm"></i>
+          </button>
+          <div class="w-px h-5 bg-gray-300 mx-1"></div>
+          <button class="p-2 hover:bg-gray-200 rounded text-gray-600">
+            <i class="fas fa-bold text-sm"></i>
+          </button>
+          <div class="w-px h-5 bg-gray-300 mx-1"></div>
+          <select class="px-2 py-1.5 border border-gray-300 rounded text-sm bg-white">
+            <option>Labzak</option>
+            <option>Yunusabad</option>
+          </select>
+          <div class="flex-1"></div>
+          <div class="flex items-center gap-1 bg-white border border-gray-300 rounded px-2">
+            <i class="fas fa-search text-gray-400 text-sm"></i>
+            <input type="text" placeholder="Find..." class="border-0 py-1.5 text-sm focus:outline-none w-32">
+          </div>
+          <button class="px-3 py-1.5 bg-green-600 text-white rounded text-sm font-medium hover:bg-green-700">
+            <i class="fas fa-plus mr-1"></i> Insert Row
+          </button>
+        </div>
+
+        <!-- Formula bar -->
+        <div class="px-3 py-1.5 border-b border-gray-200 flex items-center gap-2 bg-white">
+          <span class="px-2 py-1 bg-gray-100 border border-gray-300 rounded text-xs font-mono text-gray-600 min-w-[60px] text-center">A1</span>
+          <span class="text-gray-400">fx</span>
+          <input type="text" value="2026-01-30" class="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse">
+            <thead>
+              <tr class="sheets-header">
+                <th class="sheets-cell w-10 px-2 py-2 text-center text-xs font-medium text-gray-500 bg-gray-100"></th>
+                <th class="sheets-cell w-10 px-2 py-2 text-center text-xs font-medium text-gray-500 bg-gray-100">A</th>
+                <th class="sheets-cell px-2 py-2 text-center text-xs font-medium text-gray-500 bg-gray-100">B</th>
+                <th class="sheets-cell px-2 py-2 text-center text-xs font-medium text-gray-500 bg-gray-100">C</th>
+                <th class="sheets-cell px-2 py-2 text-center text-xs font-medium text-gray-500 bg-gray-100">D</th>
+                <th class="sheets-cell px-2 py-2 text-center text-xs font-medium text-gray-500 bg-gray-100">E</th>
+                <th class="sheets-cell px-2 py-2 text-center text-xs font-medium text-gray-500 bg-gray-100">F</th>
+                <th class="sheets-cell px-2 py-2 text-center text-xs font-medium text-gray-500 bg-gray-100">G</th>
+              </tr>
+              <tr class="sheets-header">
+                <th class="sheets-cell w-10 px-2 py-2 text-center text-xs font-medium text-gray-500 bg-gray-100">1</th>
+                <th class="sheets-cell px-3 py-2 text-left text-xs font-semibold text-gray-700 bg-blue-50">Date</th>
+                <th class="sheets-cell px-3 py-2 text-left text-xs font-semibold text-gray-700 bg-blue-50">Type</th>
+                <th class="sheets-cell px-3 py-2 text-left text-xs font-semibold text-gray-700 bg-blue-50">Service</th>
+                <th class="sheets-cell px-3 py-2 text-left text-xs font-semibold text-gray-700 bg-blue-50">Customer/Vendor</th>
+                <th class="sheets-cell px-3 py-2 text-left text-xs font-semibold text-gray-700 bg-blue-50">Payment</th>
+                <th class="sheets-cell px-3 py-2 text-right text-xs font-semibold text-gray-700 bg-blue-50">Amount</th>
+                <th class="sheets-cell px-3 py-2 text-left text-xs font-semibold text-gray-700 bg-blue-50">Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="sheets-cell px-2 py-1 text-center text-xs text-gray-500 bg-gray-50">2</td>
+                <td class="sheets-cell px-2 py-1 bg-blue-100 ring-2 ring-blue-500 ring-inset">
+                  <input type="text" value="30.01.2026" class="w-full bg-transparent text-sm focus:outline-none">
+                </td>
+                <td class="sheets-cell px-2 py-1">
+                  <span class="text-sm text-green-700">Revenue</span>
+                </td>
+                <td class="sheets-cell px-2 py-1">
+                  <span class="text-sm">Meeting</span>
+                </td>
+                <td class="sheets-cell px-2 py-1">
+                  <span class="text-sm">Oybek Dadashev</span>
+                </td>
+                <td class="sheets-cell px-2 py-1">
+                  <span class="text-sm">Payme</span>
+                </td>
+                <td class="sheets-cell px-2 py-1 text-right">
+                  <span class="text-sm text-green-700 font-medium">150,000</span>
+                </td>
+                <td class="sheets-cell px-2 py-1">
+                  <span class="text-sm text-gray-500">2 hours</span>
+                </td>
+              </tr>
+              <tr>
+                <td class="sheets-cell px-2 py-1 text-center text-xs text-gray-500 bg-gray-50">3</td>
+                <td class="sheets-cell px-2 py-1">
+                  <span class="text-sm">30.01.2026</span>
+                </td>
+                <td class="sheets-cell px-2 py-1">
+                  <span class="text-sm text-red-700">Expense</span>
+                </td>
+                <td class="sheets-cell px-2 py-1">
+                  <span class="text-sm">Goods</span>
+                </td>
+                <td class="sheets-cell px-2 py-1">
+                  <span class="text-sm">Makro</span>
+                </td>
+                <td class="sheets-cell px-2 py-1">
+                  <span class="text-sm">Cash</span>
+                </td>
+                <td class="sheets-cell px-2 py-1 text-right">
+                  <span class="text-sm text-red-700 font-medium">-85,000</span>
+                </td>
+                <td class="sheets-cell px-2 py-1">
+                  <span class="text-sm text-gray-500">Coffee, snacks</span>
+                </td>
+              </tr>
+              <tr>
+                <td class="sheets-cell px-2 py-1 text-center text-xs text-gray-500 bg-gray-50">4</td>
+                <td class="sheets-cell px-2 py-1">
+                  <span class="text-sm">29.01.2026</span>
+                </td>
+                <td class="sheets-cell px-2 py-1">
+                  <span class="text-sm text-green-700">Revenue</span>
+                </td>
+                <td class="sheets-cell px-2 py-1">
+                  <span class="text-sm">Office</span>
+                </td>
+                <td class="sheets-cell px-2 py-1">
+                  <span class="text-sm">TechStart LLC</span>
+                </td>
+                <td class="sheets-cell px-2 py-1">
+                  <span class="text-sm">Bank</span>
+                </td>
+                <td class="sheets-cell px-2 py-1 text-right">
+                  <span class="text-sm text-green-700 font-medium">5,500,000</span>
+                </td>
+                <td class="sheets-cell px-2 py-1">
+                  <span class="text-sm text-gray-500">Jan rent</span>
+                </td>
+              </tr>
+              <tr>
+                <td class="sheets-cell px-2 py-1 text-center text-xs text-gray-500 bg-gray-50">5</td>
+                <td class="sheets-cell px-2 py-1"></td>
+                <td class="sheets-cell px-2 py-1"></td>
+                <td class="sheets-cell px-2 py-1"></td>
+                <td class="sheets-cell px-2 py-1"></td>
+                <td class="sheets-cell px-2 py-1"></td>
+                <td class="sheets-cell px-2 py-1"></td>
+                <td class="sheets-cell px-2 py-1"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Status bar -->
+        <div class="px-3 py-2 bg-gray-100 border-t border-gray-300 flex items-center justify-between text-xs text-gray-600">
+          <div class="flex items-center gap-4">
+            <span>Sheet1</span>
+            <span class="text-gray-400">|</span>
+            <span>156 rows</span>
+          </div>
+          <div class="flex items-center gap-4">
+            <span>Sum: <strong class="text-gray-900">5,565,000</strong></span>
+            <span>Average: <strong class="text-gray-900">1,855,000</strong></span>
+            <span>Count: <strong class="text-gray-900">3</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 p-4 bg-blue-50 rounded-xl">
+        <p class="text-sm text-blue-800"><strong>Pros:</strong> Very familiar to users who use Google Sheets daily. High data density. Formula bar for quick edits.</p>
+        <p class="text-sm text-blue-700 mt-1"><strong>Cons:</strong> Can feel dated. Less visually distinctive.</p>
+      </div>
+    </div>
+
+    <!-- Option C: Linear/Vercel Style -->
+    <div class="mb-16">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="px-3 py-1 bg-violet-100 text-violet-700 rounded-full text-sm font-semibold">Option C</span>
+        <h2 class="text-xl font-bold text-gray-900">Minimal Data Table</h2>
+        <span class="text-gray-400">— Linear / Vercel inspired</span>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+        <!-- Header -->
+        <div class="px-6 py-5 border-b border-gray-100">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+              <h3 class="text-xl font-semibold text-gray-900">Transactions</h3>
+              <div class="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
+                <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                <span class="text-sm font-medium text-gray-700">Labzak</span>
+                <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-1 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                <i class="fas fa-calendar text-gray-400 text-sm"></i>
+                <span class="text-sm text-gray-600">Jan 1 - Jan 30, 2026</span>
+              </div>
+              <button class="p-2 hover:bg-gray-100 rounded-lg text-gray-500">
+                <i class="fas fa-download"></i>
+              </button>
+              <button class="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm font-medium">
+                Add Entry
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick filters -->
+          <div class="flex items-center gap-2 mt-4">
+            <button class="px-3 py-1.5 bg-violet-100 text-violet-700 rounded-lg text-sm font-medium">All</button>
+            <button class="px-3 py-1.5 hover:bg-gray-100 text-gray-600 rounded-lg text-sm">Revenue</button>
+            <button class="px-3 py-1.5 hover:bg-gray-100 text-gray-600 rounded-lg text-sm">Expenses</button>
+            <div class="w-px h-5 bg-gray-200 mx-2"></div>
+            <div class="relative">
+              <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-300"></i>
+              <input type="text" placeholder="Search transactions..." class="pl-9 pr-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm w-64 focus:outline-none focus:border-violet-500">
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-4 border-b border-gray-100">
+          <div class="px-6 py-4 border-r border-gray-100">
+            <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Revenue</p>
+            <p class="text-2xl font-semibold text-green-600">897.2M</p>
+          </div>
+          <div class="px-6 py-4 border-r border-gray-100">
+            <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Expenses</p>
+            <p class="text-2xl font-semibold text-red-500">234.5M</p>
+          </div>
+          <div class="px-6 py-4 border-r border-gray-100">
+            <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Net Profit</p>
+            <p class="text-2xl font-semibold text-gray-900">662.7M</p>
+          </div>
+          <div class="px-6 py-4">
+            <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Transactions</p>
+            <p class="text-2xl font-semibold text-gray-900">156</p>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="text-left border-b border-gray-100">
+                <th class="px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Date</th>
+                <th class="px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Description</th>
+                <th class="px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Category</th>
+                <th class="px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Payment</th>
+                <th class="px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider text-right">Amount</th>
+                <th class="w-10"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="linear-row group cursor-pointer">
+                <td class="px-6 py-4">
+                  <span class="text-sm text-gray-500">Today</span>
+                </td>
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                      <i class="fas fa-arrow-up text-green-600 text-xs"></i>
+                    </div>
+                    <div>
+                      <p class="text-sm font-medium text-gray-900">Oybek Dadashev</p>
+                      <p class="text-xs text-gray-400">Meeting room • 2 hours</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4">
+                  <span class="px-2.5 py-1 bg-purple-100 text-purple-700 rounded-md text-xs font-medium">Meeting</span>
+                </td>
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-2">
+                    <i class="fas fa-mobile-alt text-cyan-500"></i>
+                    <span class="text-sm text-gray-600">Payme</span>
+                  </div>
+                </td>
+                <td class="px-6 py-4 text-right">
+                  <span class="text-sm font-semibold text-green-600">+150,000</span>
+                </td>
+                <td class="px-4 py-4">
+                  <button class="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-gray-100 rounded-lg">
+                    <i class="fas fa-ellipsis-h text-gray-400"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr class="linear-row group cursor-pointer">
+                <td class="px-6 py-4">
+                  <span class="text-sm text-gray-500">Today</span>
+                </td>
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                      <i class="fas fa-arrow-down text-red-600 text-xs"></i>
+                    </div>
+                    <div>
+                      <p class="text-sm font-medium text-gray-900">Makro</p>
+                      <p class="text-xs text-gray-400">Coffee, snacks for kitchen</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4">
+                  <span class="px-2.5 py-1 bg-orange-100 text-orange-700 rounded-md text-xs font-medium">Goods</span>
+                </td>
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-2">
+                    <i class="fas fa-money-bill text-green-500"></i>
+                    <span class="text-sm text-gray-600">Cash</span>
+                  </div>
+                </td>
+                <td class="px-6 py-4 text-right">
+                  <span class="text-sm font-semibold text-red-500">-85,000</span>
+                </td>
+                <td class="px-4 py-4">
+                  <button class="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-gray-100 rounded-lg">
+                    <i class="fas fa-ellipsis-h text-gray-400"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr class="linear-row group cursor-pointer">
+                <td class="px-6 py-4">
+                  <span class="text-sm text-gray-500">Yesterday</span>
+                </td>
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                      <i class="fas fa-arrow-up text-green-600 text-xs"></i>
+                    </div>
+                    <div>
+                      <p class="text-sm font-medium text-gray-900">TechStart LLC</p>
+                      <p class="text-xs text-gray-400">Private Office • January rent</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4">
+                  <span class="px-2.5 py-1 bg-blue-100 text-blue-700 rounded-md text-xs font-medium">Office</span>
+                </td>
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-2">
+                    <i class="fas fa-university text-gray-500"></i>
+                    <span class="text-sm text-gray-600">Bank</span>
+                  </div>
+                </td>
+                <td class="px-6 py-4 text-right">
+                  <span class="text-sm font-semibold text-green-600">+5,500,000</span>
+                </td>
+                <td class="px-4 py-4">
+                  <button class="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-gray-100 rounded-lg">
+                    <i class="fas fa-ellipsis-h text-gray-400"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
+          <span class="text-sm text-gray-500">Showing 1-20 of 156</span>
+          <div class="flex items-center gap-1">
+            <button class="px-3 py-1.5 hover:bg-gray-100 rounded-lg text-sm text-gray-600">Previous</button>
+            <button class="px-3 py-1.5 bg-violet-100 text-violet-700 rounded-lg text-sm font-medium">1</button>
+            <button class="px-3 py-1.5 hover:bg-gray-100 rounded-lg text-sm text-gray-600">2</button>
+            <button class="px-3 py-1.5 hover:bg-gray-100 rounded-lg text-sm text-gray-600">3</button>
+            <span class="text-gray-400">...</span>
+            <button class="px-3 py-1.5 hover:bg-gray-100 rounded-lg text-sm text-gray-600">8</button>
+            <button class="px-3 py-1.5 hover:bg-gray-100 rounded-lg text-sm text-gray-600">Next</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 p-4 bg-violet-50 rounded-xl">
+        <p class="text-sm text-violet-800"><strong>Pros:</strong> Very clean and modern. Great visual hierarchy. Combines overview stats with transaction list. Professional SaaS look.</p>
+        <p class="text-sm text-violet-700 mt-1"><strong>Cons:</strong> Less like a traditional spreadsheet. Editing requires click-to-edit modal.</p>
+      </div>
+    </div>
+
+    <!-- Comparison Table -->
+    <div class="bg-white rounded-2xl shadow-xl p-8 border border-gray-200">
+      <h2 class="text-xl font-bold text-gray-900 mb-6">Quick Comparison</h2>
+      <table class="w-full">
+        <thead>
+          <tr class="border-b border-gray-200">
+            <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Feature</th>
+            <th class="text-center py-3 px-4 text-sm font-medium text-purple-600">Option A</th>
+            <th class="text-center py-3 px-4 text-sm font-medium text-blue-600">Option B</th>
+            <th class="text-center py-3 px-4 text-sm font-medium text-violet-600">Option C</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="border-b border-gray-100">
+            <td class="py-3 px-4 text-sm text-gray-700">Inline Editing</td>
+            <td class="py-3 px-4 text-center"><i class="fas fa-check text-green-500"></i></td>
+            <td class="py-3 px-4 text-center"><i class="fas fa-check text-green-500"></i></td>
+            <td class="py-3 px-4 text-center"><i class="fas fa-times text-gray-300"></i> Modal</td>
+          </tr>
+          <tr class="border-b border-gray-100">
+            <td class="py-3 px-4 text-sm text-gray-700">Data Density</td>
+            <td class="py-3 px-4 text-center">Medium</td>
+            <td class="py-3 px-4 text-center">High</td>
+            <td class="py-3 px-4 text-center">Low-Medium</td>
+          </tr>
+          <tr class="border-b border-gray-100">
+            <td class="py-3 px-4 text-sm text-gray-700">Visual Appeal</td>
+            <td class="py-3 px-4 text-center">⭐⭐⭐⭐</td>
+            <td class="py-3 px-4 text-center">⭐⭐⭐</td>
+            <td class="py-3 px-4 text-center">⭐⭐⭐⭐⭐</td>
+          </tr>
+          <tr class="border-b border-gray-100">
+            <td class="py-3 px-4 text-sm text-gray-700">Familiarity (Google Sheets)</td>
+            <td class="py-3 px-4 text-center">⭐⭐⭐</td>
+            <td class="py-3 px-4 text-center">⭐⭐⭐⭐⭐</td>
+            <td class="py-3 px-4 text-center">⭐⭐</td>
+          </tr>
+          <tr class="border-b border-gray-100">
+            <td class="py-3 px-4 text-sm text-gray-700">Quick Add Row</td>
+            <td class="py-3 px-4 text-center"><i class="fas fa-check text-green-500"></i></td>
+            <td class="py-3 px-4 text-center"><i class="fas fa-check text-green-500"></i></td>
+            <td class="py-3 px-4 text-center">Button → Modal</td>
+          </tr>
+          <tr>
+            <td class="py-3 px-4 text-sm text-gray-700">Summary Stats</td>
+            <td class="py-3 px-4 text-center">Footer</td>
+            <td class="py-3 px-4 text-center">Status bar</td>
+            <td class="py-3 px-4 text-center">Header cards</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="mt-8 p-4 bg-gray-50 rounded-xl">
+        <p class="text-sm text-gray-600">
+          <strong>Recommendation:</strong> If your team loves Google Sheets, go with <strong class="text-blue-600">Option B</strong>.
+          For a modern look that still feels like a spreadsheet, choose <strong class="text-purple-600">Option A</strong>.
+          For the most polished, modern SaaS feel, pick <strong class="text-violet-600">Option C</strong>.
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
