@@ -168,7 +168,8 @@ export async function getTransactionsWithCount(
 
   let totalRevenue = 0;
   let totalExpenses = 0;
-  (allFiltered || []).forEach(t => {
+  const filtered = allFiltered as { transaction_type: string; amount: number }[] | null;
+  (filtered || []).forEach(t => {
     if (t.transaction_type === 'revenue') {
       totalRevenue += t.amount || 0;
     } else if (t.transaction_type === 'expense') {
