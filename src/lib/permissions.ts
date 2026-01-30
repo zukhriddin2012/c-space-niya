@@ -96,6 +96,7 @@ export const ROLE_HIERARCHY: Record<UserRole, number> = {
   hr: 75,
   accountant: 70,
   legal_manager: 65,
+  reports_manager: 62,
   branch_manager: 60,
   recruiter: 50,
   employee: 10,
@@ -330,6 +331,19 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     PERMISSIONS.ACCOUNTING_REQUESTS_EDIT_OWN,
     PERMISSIONS.ACCOUNTING_REQUESTS_CANCEL_OWN,
   ],
+
+  reports_manager: [
+    // Finance and reports access
+    PERMISSIONS.EMPLOYEES_VIEW,
+    PERMISSIONS.BRANCHES_VIEW,
+    PERMISSIONS.DASHBOARD_VIEW,
+    PERMISSIONS.FEEDBACK_SUBMIT,
+    PERMISSIONS.REPORTS_VIEW,
+    PERMISSIONS.REPORTS_EXPORT,
+    // View accounting reports
+    PERMISSIONS.ACCOUNTING_REQUESTS_VIEW,
+    PERMISSIONS.ACCOUNTING_REQUESTS_REPORTS,
+  ],
 };
 
 // Check if a role has a specific permission
@@ -366,6 +380,7 @@ export function getRoleLabel(role: UserRole): string {
     accountant: 'Accountant',
     hr: 'HR Manager',
     legal_manager: 'Legal Manager',
+    reports_manager: 'Reports Manager',
     branch_manager: 'Branch Manager',
     recruiter: 'Recruiter',
     employee: 'Employee',
