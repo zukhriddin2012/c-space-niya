@@ -62,6 +62,7 @@ export interface ImportBatch {
 
 export interface ServiceMapping {
   service_name: string;
+  service_name_variants?: string[];
   account_code: string;
 }
 
@@ -327,7 +328,7 @@ export async function getServiceMappings(): Promise<ServiceMapping[]> {
     return [];
   }
 
-  return data || [];
+  return (data as ServiceMapping[]) || [];
 }
 
 export async function getExpenseMappings(): Promise<ServiceMapping[]> {
@@ -335,7 +336,7 @@ export async function getExpenseMappings(): Promise<ServiceMapping[]> {
 
   const { data, error } = await supabaseAdmin!
     .from('finance_expense_mappings')
-    .select('category_name as service_name, category_name_variants as service_name_variants, account_code')
+    .select('category_name, category_name_variants, account_code')
     .eq('is_active', true);
 
   if (error) {
@@ -343,7 +344,14 @@ export async function getExpenseMappings(): Promise<ServiceMapping[]> {
     return [];
   }
 
-  return data || [];
+  // Map category fields to service_name fields
+  interface ExpenseMapping { category_name: string; category_name_variants?: string[]; account_code: string }
+  const mappings = (data as ExpenseMapping[]) || [];
+  return mappings.map(m => ({
+    service_name: m.category_name,
+    service_name_variants: m.category_name_variants,
+    account_code: m.account_code,
+  }));
 }
 
 // ============================================
