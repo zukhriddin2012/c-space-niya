@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, MapPin, Users, CheckCircle, Clock, Wallet, Edit, Circle, LayoutGrid, List, Moon, Sun, Lock, Construction, Star, Building2, Wrench } from 'lucide-react';
+import { Plus, MapPin, Users, CheckCircle, Clock, Wallet, Edit, Circle, LayoutGrid, List, Moon, Sun, Lock, Construction, Star, Building2, Wrench, DollarSign } from 'lucide-react';
 
 // Operational status configuration
 const statusConfig: Record<string, { icon: React.ElementType; label: string; bg: string; text: string; border: string }> = {
@@ -167,19 +167,18 @@ function BranchCard({
       {/* Actions */}
       <div className="flex gap-2">
         <Link
+          href={`/branches/${branch.id}/finances`}
+          className="flex-1 px-4 py-2 text-center text-sm font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors flex items-center justify-center gap-1.5"
+        >
+          <DollarSign size={16} />
+          Finances
+        </Link>
+        <Link
           href={`/branches/${branch.id}`}
           className="flex-1 px-4 py-2 text-center text-sm font-medium text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
         >
-          {canManage ? 'Edit Settings' : 'View Details'}
+          {canManage ? 'Settings' : 'Details'}
         </Link>
-        {canManage && (
-          <Link
-            href={`/branches/${branch.id}`}
-            className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-          >
-            <Edit size={18} />
-          </Link>
-        )}
       </div>
     </div>
   );
@@ -280,6 +279,13 @@ function BranchRow({
           </div>
           <div className="flex items-center gap-2">
             <Link
+              href={`/branches/${branch.id}/finances`}
+              className="px-3 py-1.5 text-sm font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors flex items-center gap-1"
+            >
+              <DollarSign size={14} />
+              Finances
+            </Link>
+            <Link
               href={`/branches/${branch.id}`}
               className="px-3 py-1.5 text-sm font-medium text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
             >
@@ -352,12 +358,21 @@ function BranchRow({
           </div>
         </div>
 
-        <Link
-          href={`/branches/${branch.id}`}
-          className="block w-full px-4 py-2 text-center text-sm font-medium text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
-        >
-          {canManage ? 'Edit Settings' : 'View Details'}
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href={`/branches/${branch.id}/finances`}
+            className="flex-1 px-4 py-2 text-center text-sm font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors flex items-center justify-center gap-1"
+          >
+            <DollarSign size={14} />
+            Finances
+          </Link>
+          <Link
+            href={`/branches/${branch.id}`}
+            className="flex-1 px-4 py-2 text-center text-sm font-medium text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
+          >
+            {canManage ? 'Settings' : 'Details'}
+          </Link>
+        </div>
       </div>
     </>
   );
