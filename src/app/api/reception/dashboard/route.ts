@@ -282,19 +282,8 @@ export const GET = withAuth(async (request: NextRequest) => {
       }),
     ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 10);
 
-    // DEBUG: Count transactions with debt for debugging
-    const debugDebtCount = transactions.filter(t => t.debt > 0).length;
-
     return NextResponse.json({
       dateRange: { from: dateFrom, to: dateTo },
-      // DEBUG info - remove after fixing
-      _debug: {
-        totalTransactions: transactions.length,
-        transactionsWithDebt: debugDebtCount,
-        calculatedDebt: totalDebt,
-        branchId: branchId || 'not set',
-        batchesFetched: Math.ceil(transactions.length / 1000)
-      },
       // Income Statement format
       income: {
         paid: totalPaid,
