@@ -118,6 +118,7 @@ export default function ReceptionDashboard() {
   const [customFrom, setCustomFrom] = useState<string>('');
   const [customTo, setCustomTo] = useState<string>('');
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
+  const [pickerYear, setPickerYear] = useState<number>(new Date().getFullYear());
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const dateRange = useMemo(() =>
@@ -242,33 +243,57 @@ export default function ReceptionDashboard() {
                 </div>
               </div>
 
-              {/* Year Picker */}
+              {/* Year Selector - Select year first, then quarter/month will use this year */}
               <div className="p-2 border-b border-gray-100">
-                <p className="px-2 py-1 text-xs font-semibold text-gray-400 uppercase">Year</p>
-                <div className="grid grid-cols-3 gap-1">
-                  {[2024, 2025, 2026].map((year) => (
+                <div className="flex items-center justify-between mb-2">
+                  <p className="px-2 text-xs font-semibold text-gray-400 uppercase">Select Year</p>
+                  <div className="flex items-center gap-1">
                     <button
-                      key={year}
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={(e) => {
                         e.stopPropagation();
-                        setCustomFrom(`${year}-01-01`);
-                        setCustomTo(`${year}-12-31`);
-                        setSelectedPeriod('custom');
-                        setShowPeriodDropdown(false);
+                        setPickerYear(prev => prev - 1);
                       }}
-                      className="px-3 py-2 text-sm rounded-lg text-center transition-colors hover:bg-purple-100 hover:text-purple-700 text-gray-700 cursor-pointer active:bg-purple-200"
+                      className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500"
                     >
-                      {year}
+                      ←
                     </button>
-                  ))}
+                    <span className="px-3 py-1 text-sm font-bold text-purple-700 bg-purple-100 rounded-lg min-w-[60px] text-center">
+                      {pickerYear}
+                    </span>
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPickerYear(prev => prev + 1);
+                      }}
+                      className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500"
+                    >
+                      →
+                    </button>
+                  </div>
                 </div>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCustomFrom(`${pickerYear}-01-01`);
+                    setCustomTo(`${pickerYear}-12-31`);
+                    setSelectedPeriod('custom');
+                    setShowPeriodDropdown(false);
+                  }}
+                  className="w-full px-3 py-2 text-sm rounded-lg text-center transition-colors bg-gray-50 hover:bg-purple-100 hover:text-purple-700 text-gray-700 cursor-pointer font-medium"
+                >
+                  Full Year {pickerYear}
+                </button>
               </div>
 
-              {/* Quarter Picker */}
+              {/* Quarter Picker - Uses selected year */}
               <div className="p-2 border-b border-gray-100">
-                <p className="px-2 py-1 text-xs font-semibold text-gray-400 uppercase">Quarter</p>
+                <p className="px-2 py-1 text-xs font-semibold text-gray-400 uppercase">Quarter of {pickerYear}</p>
                 <div className="grid grid-cols-4 gap-1">
                   {[
                     { label: 'Q1', start: '01-01', end: '03-31' },
@@ -282,9 +307,8 @@ export default function ReceptionDashboard() {
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={(e) => {
                         e.stopPropagation();
-                        const year = new Date().getFullYear();
-                        setCustomFrom(`${year}-${q.start}`);
-                        setCustomTo(`${year}-${q.end}`);
+                        setCustomFrom(`${pickerYear}-${q.start}`);
+                        setCustomTo(`${pickerYear}-${q.end}`);
                         setSelectedPeriod('custom');
                         setShowPeriodDropdown(false);
                       }}
@@ -296,13 +320,13 @@ export default function ReceptionDashboard() {
                 </div>
               </div>
 
-              {/* Month Picker */}
+              {/* Month Picker - Uses selected year */}
               <div className="p-2 border-b border-gray-100">
-                <p className="px-2 py-1 text-xs font-semibold text-gray-400 uppercase">Month</p>
+                <p className="px-2 py-1 text-xs font-semibold text-gray-400 uppercase">Month of {pickerYear}</p>
                 <div className="grid grid-cols-4 gap-1">
                   {[
                     { label: 'Jan', month: '01', days: '31' },
-                    { label: 'Feb', month: '02', days: '28' },
+                    { label: 'Feb', month: '02', days: pickerYear % 4 === 0 ? '29' : '28' },
                     { label: 'Mar', month: '03', days: '31' },
                     { label: 'Apr', month: '04', days: '30' },
                     { label: 'May', month: '05', days: '31' },
@@ -320,9 +344,8 @@ export default function ReceptionDashboard() {
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={(e) => {
                         e.stopPropagation();
-                        const year = new Date().getFullYear();
-                        setCustomFrom(`${year}-${m.month}-01`);
-                        setCustomTo(`${year}-${m.month}-${m.days}`);
+                        setCustomFrom(`${pickerYear}-${m.month}-01`);
+                        setCustomTo(`${pickerYear}-${m.month}-${m.days}`);
                         setSelectedPeriod('custom');
                         setShowPeriodDropdown(false);
                       }}
