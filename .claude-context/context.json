@@ -1,10 +1,21 @@
 {
+  "company": {
+    "name": "C-Space",
+    "purpose": "We create the right environment so that the right people feel empowered",
+    "bhag": "1,200 Partnerships by December 2040",
+    "strategy": "Vertical Integration",
+    "xFactor": "6-Day Decision (10x faster than industry)",
+    "coreValues": ["Do The Right Thing", "All In", "Innovate", "Radical Transparency", "Architects Not Firefighters"],
+    "brandPromises": ["Hotel Quality Hospitality", "Right Community", "Location Roaming"],
+    "guarantees": ["3-Day Request Resolution", "1-Hour Contract", "50% Off Meeting Rooms", "30-Day Exit"],
+    "strategyDoc": "../../docs/COMPANY_STRATEGY.md"
+  },
   "project": {
     "name": "C-Space HR",
     "description": "HR management system for C-Space coworking spaces",
     "productionUrl": "https://hr.cspace.uz",
     "repository": "https://github.com/zukhriddin2012/c-space-hr",
-    "lastUpdated": "2026-01-30"
+    "lastUpdated": "2026-01-31"
   },
   "techStack": {
     "framework": "Next.js 16 (App Router)",
