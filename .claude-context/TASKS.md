@@ -33,6 +33,7 @@
 | T018 | Reception Mode Phase 3 - Full Screen UI | 2026-01-31 | Main |
 | T019 | Reception Mode Phase 4 - Branch Context | 2026-01-31 | Main |
 | T020 | Fix "No branch assigned" in Reception Mode | 2026-01-31 | Main |
+| T021 | Labzak Historical Data Import (2024-2025) | 2026-01-31 | Main |
 
 ### 🟡 In Progress
 
