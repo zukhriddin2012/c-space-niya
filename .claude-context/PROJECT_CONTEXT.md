@@ -379,6 +379,7 @@ const { data, error } = await supabaseAdmin
 - **Multi-branch Access Control**: Branch-scoped data and permissions
   - Database migration for `reception_branch_access` table with RLS
   - CEO/GM see all branches, BMs see their branch, receptionists see granted
+  - Fixed: FK type mismatch, RLS policy column, employee lookup by ID/email
 - **API Endpoints**:
   - `GET /api/reception/branches` - User's accessible branches
   - `GET/POST /api/reception/admin/branch-access` - Grant/list access
