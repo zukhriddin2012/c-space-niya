@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, Wallet, Banknote, ArrowLeftRight, Receipt } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { TrendingUp, TrendingDown, Wallet, Banknote, ArrowLeftRight, Receipt, Building2 } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import { formatCurrency } from '@/modules/reception/lib/constants';
+import { useReceptionMode } from '@/contexts/ReceptionModeContext';
 
 interface DashboardStats {
   transactions: {
@@ -28,30 +29,39 @@ interface DashboardStats {
     icon: string;
     amount: number;
     date: string;
+    branchName?: string;
   }>;
+  showBranchColumn?: boolean;
 }
 
 export default function ReceptionDashboard() {
+  const { selectedBranchId } = useReceptionMode();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await fetch('/api/reception/dashboard');
-        if (!response.ok) throw new Error('Failed to fetch dashboard data');
-        const data = await response.json();
-        setStats(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load dashboard');
-      } finally {
-        setIsLoading(false);
+  const fetchStats = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams();
+      if (selectedBranchId) {
+        params.append('branchId', selectedBranchId);
       }
-    };
+      const response = await fetch(`/api/reception/dashboard?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch dashboard data');
+      const data = await response.json();
+      setStats(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load dashboard');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedBranchId]);
 
+  useEffect(() => {
     fetchStats();
-  }, []);
+  }, [fetchStats]);
 
   if (isLoading) {
     return (
@@ -194,7 +204,15 @@ export default function ReceptionDashboard() {
                 <span className="text-xl">{item.icon}</span>
                 <div>
                   <p className="font-medium text-gray-900">{item.title}</p>
-                  <p className="text-xs text-gray-500">{item.subtitle} • {item.number}</p>
+                  <p className="text-xs text-gray-500">
+                    {item.subtitle} • {item.number}
+                    {stats.showBranchColumn && item.branchName && (
+                      <span className="ml-2 inline-flex items-center gap-1">
+                        <Building2 className="w-3 h-3" />
+                        {item.branchName}
+                      </span>
+                    )}
+                  </p>
                 </div>
               </div>
               <div className="text-right">

@@ -485,3 +485,49 @@ export function transformExpense(row: ExpenseRow): Expense {
     updatedAt: row.updated_at,
   };
 }
+
+// ============================================
+// BRANCH ACCESS TYPES
+// ============================================
+
+export interface ReceptionBranchAccess {
+  id: string;
+  userId: string;
+  branchId: string;
+  grantedBy: string;
+  grantedAt: string;
+  notes?: string;
+  // Joined data
+  userName?: string;
+  branchName?: string;
+  grantedByName?: string;
+}
+
+export interface BranchOption {
+  id: string;
+  name: string;
+  code?: string;
+  isAllBranches?: boolean;  // For "All Branches" option (executives only)
+  isAssigned?: boolean;      // Is this the user's assigned branch?
+  isGranted?: boolean;       // Was access granted via reception_branch_access?
+}
+
+export interface ReceptionBranchAccessRow {
+  id: string;
+  user_id: string;
+  branch_id: string;
+  granted_by: string;
+  granted_at: string;
+  notes: string | null;
+}
+
+export function transformBranchAccess(row: ReceptionBranchAccessRow): ReceptionBranchAccess {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    branchId: row.branch_id,
+    grantedBy: row.granted_by,
+    grantedAt: row.granted_at,
+    notes: row.notes ?? undefined,
+  };
+}

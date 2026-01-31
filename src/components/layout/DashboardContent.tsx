@@ -3,6 +3,7 @@
 import { useState, lazy, Suspense } from 'react';
 import { useReceptionMode } from '@/contexts/ReceptionModeContext';
 import { ReceptionHeader, ReceptionTab } from './ReceptionHeader';
+import { BranchSwitchModal } from '@/components/reception/BranchSwitchModal';
 
 // Lazy load reception components to keep bundle small
 const ReceptionDashboard = lazy(() => import('@/components/reception/ReceptionDashboard'));
@@ -48,6 +49,9 @@ export function DashboardContent({ children }: DashboardContentProps) {
         <footer className="bg-white border-t border-gray-200 px-4 py-2 text-center text-xs text-gray-500">
           C-Space HR Platform • Reception Mode • {new Date().toLocaleDateString()}
         </footer>
+
+        {/* Branch Switch Confirmation Modal */}
+        <BranchSwitchModal />
       </div>
     );
   }

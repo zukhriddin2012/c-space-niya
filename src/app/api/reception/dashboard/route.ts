@@ -26,7 +26,7 @@ export const GET = withAuth(async (request: NextRequest) => {
       .gte('transaction_date', dateFrom)
       .lte('transaction_date', dateTo);
 
-    if (branchId) {
+    if (branchId && branchId !== 'all') {
       transactionsQuery = transactionsQuery.eq('branch_id', branchId);
     }
 
@@ -43,7 +43,7 @@ export const GET = withAuth(async (request: NextRequest) => {
       .gte('expense_date', dateFrom)
       .lte('expense_date', dateTo);
 
-    if (branchId) {
+    if (branchId && branchId !== 'all') {
       expensesQuery = expensesQuery.eq('branch_id', branchId);
     }
 
@@ -144,32 +144,50 @@ export const GET = withAuth(async (request: NextRequest) => {
     })).sort((a, b) => b.amount - a.amount);
 
     // Get recent activity (last 5 transactions + expenses combined)
-    const { data: recentTransactions } = await supabaseAdmin!
+    let recentTransactionsQuery = supabaseAdmin!
       .from('transactions')
       .select(`
         id, transaction_number, customer_name, amount, transaction_date, created_at,
-        service_type:service_types(name, icon)
+        service_type:service_types(name, icon),
+        branch:branches(name)
       `)
       .eq('is_voided', false)
       .order('created_at', { ascending: false })
       .limit(5);
 
-    const { data: recentExpenses } = await supabaseAdmin!
+    if (branchId && branchId !== 'all') {
+      recentTransactionsQuery = recentTransactionsQuery.eq('branch_id', branchId);
+    }
+
+    const { data: recentTransactions } = await recentTransactionsQuery;
+
+    let recentExpensesQuery = supabaseAdmin!
       .from('expenses')
       .select(`
         id, expense_number, subject, amount, expense_date, created_at,
-        expense_type:expense_types(name, icon)
+        expense_type:expense_types(name, icon),
+        branch:branches(name)
       `)
       .eq('is_voided', false)
       .order('created_at', { ascending: false })
       .limit(5);
 
+    if (branchId && branchId !== 'all') {
+      recentExpensesQuery = recentExpensesQuery.eq('branch_id', branchId);
+    }
+
+    const { data: recentExpenses } = await recentExpensesQuery;
+
     // Type for joined service/expense types
     type JoinedType = { name: string; icon: string } | null;
+    type JoinedBranch = { name: string } | null;
+
+    const showBranchColumn = !branchId || branchId === 'all';
 
     const recentActivity = [
       ...(recentTransactions || []).map(t => {
         const serviceType = t.service_type as unknown as JoinedType;
+        const branch = t.branch as unknown as JoinedBranch;
         return {
           type: 'transaction' as const,
           id: t.id,
@@ -180,10 +198,12 @@ export const GET = withAuth(async (request: NextRequest) => {
           amount: Number(t.amount),
           date: t.transaction_date,
           createdAt: t.created_at,
+          branchName: branch?.name,
         };
       }),
       ...(recentExpenses || []).map(e => {
         const expenseType = e.expense_type as unknown as JoinedType;
+        const branch = e.branch as unknown as JoinedBranch;
         return {
           type: 'expense' as const,
           id: e.id,
@@ -194,6 +214,7 @@ export const GET = withAuth(async (request: NextRequest) => {
           amount: -Number(e.amount),
           date: e.expense_date,
           createdAt: e.created_at,
+          branchName: branch?.name,
         };
       }),
     ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 10);
@@ -215,6 +236,7 @@ export const GET = withAuth(async (request: NextRequest) => {
       },
       netIncome: totalIncome - totalExpenses,
       recentActivity,
+      showBranchColumn,
     });
   } catch (error) {
     console.error('Server error:', error);

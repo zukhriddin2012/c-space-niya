@@ -43,7 +43,7 @@ export const GET = withAuth(async (request: NextRequest, { user }) => {
     }
 
     // Apply filters
-    if (branchId) {
+    if (branchId && branchId !== 'all') {
       query = query.eq('branch_id', branchId);
     }
     if (serviceTypeId) {
@@ -108,10 +108,13 @@ export const GET = withAuth(async (request: NextRequest, { user }) => {
 
     return NextResponse.json({
       data: transactions,
-      total: count || 0,
-      page,
-      pageSize,
-      totalPages: Math.ceil((count || 0) / pageSize),
+      pagination: {
+        total: count || 0,
+        page,
+        pageSize,
+        totalPages: Math.ceil((count || 0) / pageSize),
+      },
+      showBranchColumn: !branchId || branchId === 'all',
     });
   } catch (error) {
     console.error('Server error:', error);

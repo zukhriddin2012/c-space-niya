@@ -31,6 +31,7 @@
 | T016 | Reception Mode Phase 1 - Admin Config | 2026-01-31 | Main |
 | T017 | Reception Mode Phase 2 - Core Functionality | 2026-01-31 | Main |
 | T018 | Reception Mode Phase 3 - Full Screen UI | 2026-01-31 | Main |
+| T019 | Reception Mode Phase 4 - Branch Context | 2026-01-31 | Main |
 
 ### 🟡 In Progress
 
@@ -126,15 +127,22 @@ When starting a session:
 - Table: `src/app/(dashboard)/recruitment/page.tsx`
 - API: `src/app/api/candidates/route.ts`
 
-**Reception Mode:**
-- Layout: `src/app/(dashboard)/reception/layout.tsx`
-- Dashboard: `src/app/(dashboard)/reception/page.tsx`
-- Transactions: `src/app/(dashboard)/reception/transactions/page.tsx`
-- Expenses: `src/app/(dashboard)/reception/expenses/page.tsx`
-- Admin: `src/app/(dashboard)/reception/admin/page.tsx`
-- Types: `src/modules/reception/types/index.ts`
+**Reception Mode (Full-Screen Interface):**
+- Toggle: `src/components/layout/ReceptionModeToggle.tsx` (header button)
+- Context: `src/contexts/ReceptionModeContext.tsx` (mode + branch state)
+- Header: `src/components/layout/ReceptionHeader.tsx` (purple tabs + branch selector)
+- Content Switcher: `src/components/layout/DashboardContent.tsx`
+- Components: `src/components/reception/`
+  - `ReceptionDashboard.tsx` - Stats & activity feed (branch-filtered)
+  - `ReceptionTransactions.tsx` - Transaction CRUD (branch-filtered)
+  - `ReceptionExpenses.tsx` - Expense CRUD (branch-filtered)
+  - `ReceptionSettings.tsx` - Admin config + Branch Access management
+  - `BranchSelector.tsx` - Branch switcher dropdown
+  - `BranchSwitchModal.tsx` - Branch switch confirmation
+- Types: `src/modules/reception/types/index.ts` (includes BranchOption, ReceptionBranchAccess)
 - Constants: `src/modules/reception/lib/constants.ts`
-- API: `src/app/api/reception/` (transactions, expenses, dashboard, admin)
+- API: `src/app/api/reception/` (transactions, expenses, dashboard, admin, branches)
+- Migration: `supabase/migrations/20260131_reception_branch_access.sql`
 
 **Translations:**
 - Types: `src/lib/i18n/types.ts`

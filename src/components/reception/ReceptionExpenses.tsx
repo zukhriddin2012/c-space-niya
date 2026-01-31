@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, Filter, X, Eye, Ban, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Search, Filter, X, Eye, Ban, ChevronLeft, ChevronRight, Building2 } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Modal from '@/components/ui/Modal';
 import Badge from '@/components/ui/Badge';
 import { formatCurrency, EXPENSE_PAYMENT_METHODS_LIST } from '@/modules/reception/lib/constants';
+import { useReceptionMode } from '@/contexts/ReceptionModeContext';
 import type { Expense, ExpenseType, CreateExpenseInput } from '@/modules/reception/types';
 
 interface ExpenseFormData {
@@ -29,6 +30,7 @@ const initialFormData: ExpenseFormData = {
 };
 
 export default function ReceptionExpenses() {
+  const { selectedBranchId } = useReceptionMode();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [expenseTypes, setExpenseTypes] = useState<ExpenseType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -50,6 +52,7 @@ export default function ReceptionExpenses() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [showBranchColumn, setShowBranchColumn] = useState(false);
   const pageSize = 15;
 
   useEffect(() => {
@@ -71,6 +74,7 @@ export default function ReceptionExpenses() {
       const params = new URLSearchParams();
       params.append('page', page.toString());
       params.append('pageSize', pageSize.toString());
+      if (selectedBranchId) params.append('branchId', selectedBranchId);
       if (searchQuery) params.append('search', searchQuery);
       if (filterExpenseType) params.append('expenseTypeId', filterExpenseType);
       if (filterPaymentMethod) params.append('paymentMethod', filterPaymentMethod);
@@ -83,12 +87,13 @@ export default function ReceptionExpenses() {
       setExpenses(data.data || []);
       setTotalCount(data.pagination?.total || 0);
       setTotalPages(data.pagination?.totalPages || 1);
+      setShowBranchColumn(data.showBranchColumn || false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load expenses');
     } finally {
       setIsLoading(false);
     }
-  }, [page, searchQuery, filterExpenseType, filterPaymentMethod, filterDateFrom, filterDateTo]);
+  }, [page, selectedBranchId, searchQuery, filterExpenseType, filterPaymentMethod, filterDateFrom, filterDateTo]);
 
   useEffect(() => {
     fetchExpenses();
@@ -242,6 +247,9 @@ export default function ReceptionExpenses() {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subject</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment</th>
+                {showBranchColumn && (
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Branch</th>
+                )}
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
@@ -249,17 +257,25 @@ export default function ReceptionExpenses() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {isLoading ? (
-                <tr><td colSpan={6} className="px-4 py-12 text-center">
+                <tr><td colSpan={showBranchColumn ? 7 : 6} className="px-4 py-12 text-center">
                   <div className="animate-spin w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full mx-auto" />
                 </td></tr>
               ) : expenses.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-12 text-center text-gray-500">No expenses</td></tr>
+                <tr><td colSpan={showBranchColumn ? 7 : 6} className="px-4 py-12 text-center text-gray-500">No expenses</td></tr>
               ) : (
                 expenses.map((e) => (
                   <tr key={e.id} className={e.isVoided ? 'bg-gray-50 opacity-60' : 'hover:bg-gray-50'}>
                     <td className="px-4 py-3 font-medium text-gray-900">{e.subject}</td>
                     <td className="px-4 py-3"><span>{e.expenseType?.icon}</span> {e.expenseType?.name}</td>
                     <td className="px-4 py-3"><span>{e.paymentMethod === 'cash' ? '💵' : '🏦'}</span> {e.paymentMethod}</td>
+                    {showBranchColumn && (
+                      <td className="px-4 py-3">
+                        <span className="inline-flex items-center gap-1 text-sm text-gray-600">
+                          <Building2 className="w-3 h-3" />
+                          {e.branchName || '-'}
+                        </span>
+                      </td>
+                    )}
                     <td className="px-4 py-3 text-right font-semibold text-red-600">{formatCurrency(e.amount)}</td>
                     <td className="px-4 py-3">{e.isVoided ? <Badge variant="danger">Voided</Badge> : <Badge variant="success">Active</Badge>}</td>
                     <td className="px-4 py-3 text-right">
