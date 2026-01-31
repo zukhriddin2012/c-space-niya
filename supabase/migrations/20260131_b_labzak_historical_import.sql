@@ -2,6 +2,7 @@
 -- Date: 2026-01-31
 -- Source: All payments - LABZAK spreadsheet
 -- Records: 2231 transactions, 1913 expenses
+-- NOTE: Run AFTER 20260131_a_clients_table.sql
 
 -- ============================================
 -- 1. ADD MISSING SERVICE TYPES
@@ -2260,7 +2261,7 @@ INSERT INTO staging_transactions (customer_name, service_code, amount, payment_c
   ('All', 'meeting', 22685500.0, 'cash', '2025-12-01');
 
 -- ============================================
--- 4. INSERT TRANSACTIONS FROM STAGING
+-- 4. INSERT TRANSACTIONS FROM STAGING (WITH CLIENT_ID)
 -- ============================================
 DO $$
 DECLARE
@@ -2268,6 +2269,7 @@ DECLARE
   r RECORD;
   v_service_type_id UUID;
   v_payment_method_id UUID;
+  v_client_id UUID;
   v_txn_number TEXT;
   v_counter INT := 0;
 BEGIN
@@ -2282,23 +2284,30 @@ BEGIN
   FOR r IN SELECT * FROM staging_transactions ORDER BY transaction_date LOOP
     v_counter := v_counter + 1;
     
+    -- Get service type ID
     SELECT id INTO v_service_type_id FROM service_types WHERE code = r.service_code;
     IF v_service_type_id IS NULL THEN
       SELECT id INTO v_service_type_id FROM service_types WHERE code = 'other';
     END IF;
     
+    -- Get payment method ID
     SELECT id INTO v_payment_method_id FROM payment_methods WHERE code = r.payment_code;
     IF v_payment_method_id IS NULL THEN
       SELECT id INTO v_payment_method_id FROM payment_methods WHERE code = 'cash';
     END IF;
     
+    -- Get client ID (match by normalized name)
+    SELECT id INTO v_client_id FROM clients 
+    WHERE name_normalized = UPPER(r.customer_name) AND branch_id = 'labzak'
+    LIMIT 1;
+    
     v_txn_number := 'TXN-IMP-' || LPAD(v_counter::TEXT, 5, '0');
     
     INSERT INTO transactions (
-      transaction_number, customer_name, service_type_id, amount,
+      transaction_number, customer_name, client_id, service_type_id, amount,
       payment_method_id, branch_id, agent_id, transaction_date, notes
     ) VALUES (
-      v_txn_number, r.customer_name, v_service_type_id, r.amount,
+      v_txn_number, r.customer_name, v_client_id, v_service_type_id, r.amount,
       v_payment_method_id, 'labzak', default_agent_id, r.transaction_date,
       'Historical import from Labzak spreadsheet'
     ) ON CONFLICT (transaction_number) DO NOTHING;
@@ -4290,8 +4299,10 @@ DO $$
 DECLARE
   txn_count INT;
   exp_count INT;
+  client_linked INT;
 BEGIN
   SELECT COUNT(*) INTO txn_count FROM transactions WHERE notes LIKE '%Historical import%';
   SELECT COUNT(*) INTO exp_count FROM expenses WHERE expense_number LIKE 'EXP-IMP-%';
-  RAISE NOTICE 'Import complete: % transactions, % expenses for Labzak', txn_count, exp_count;
+  SELECT COUNT(*) INTO client_linked FROM transactions WHERE client_id IS NOT NULL AND notes LIKE '%Historical import%';
+  RAISE NOTICE 'Import complete: % transactions (% linked to clients), % expenses', txn_count, client_linked, exp_count;
 END $$;
