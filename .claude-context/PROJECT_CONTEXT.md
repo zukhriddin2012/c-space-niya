@@ -1,7 +1,7 @@
 # C-Space HR System - Project Context
 
 > **Last Updated:** 2026-01-31
-> **Updated By:** Claude (Reception Mode Phase 1 - Admin Configuration)
+> **Updated By:** Claude (Reception Mode Phase 2 - Core Functionality)
 
 ## Quick Start for New Sessions
 
@@ -374,6 +374,19 @@ const { data, error } = await supabaseAdmin
 ---
 
 ## Recent Changes Log
+
+### 2026-01-31 (Reception Mode Phase 2)
+- **Reception Mode Core Functionality**: Complete transaction and expense management
+  - Dashboard page (`/reception`): Stats overview, income/expense breakdowns, recent activity
+  - Transactions page (`/reception/transactions`): Record sales, filters, search, void with reason
+  - Expenses page (`/reception/expenses`): Record expenses, filters, search, void with reason
+- **API Endpoints**:
+  - `GET/POST /api/reception/transactions` - List and create transactions
+  - `GET/DELETE /api/reception/transactions/[id]` - View and void transactions
+  - `GET/POST /api/reception/expenses` - List and create expenses
+  - `GET/DELETE /api/reception/expenses/[id]` - View and void expenses
+  - `GET /api/reception/dashboard` - Aggregated statistics
+- **Features**: Auto-numbering (TXN/EXP-YYYYMM-XXXX), soft delete, payment validation, pagination
 
 ### 2026-01-31 (Reception Mode Phase 1)
 - **Reception Mode Admin Configuration**: Foundation for transaction/expense tracking
