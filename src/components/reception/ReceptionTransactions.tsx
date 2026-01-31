@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, Filter, X, Eye, Ban, ChevronLeft, ChevronRight, Building2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Plus, Search, Filter, X, Eye, Ban, ChevronLeft, ChevronRight, Building2, Calendar } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -9,7 +9,45 @@ import Modal from '@/components/ui/Modal';
 import Badge from '@/components/ui/Badge';
 import { formatCurrency } from '@/modules/reception/lib/constants';
 import { useReceptionMode } from '@/contexts/ReceptionModeContext';
+import { ClientAutocomplete, CreateClientModal } from '@/components/reception';
+import type { ClientOption } from '@/components/reception';
 import type { Transaction, ServiceType, PaymentMethodConfig, CreateTransactionInput } from '@/modules/reception/types';
+
+type QuickDateFilter = 'today' | 'yesterday' | 'week' | 'month' | 'custom' | 'all';
+
+// Helper to get date range for quick filters
+function getDateRange(filter: QuickDateFilter): { from: string; to: string } | null {
+  const today = new Date();
+  const formatDate = (d: Date) => d.toISOString().split('T')[0];
+
+  switch (filter) {
+    case 'today':
+      return { from: formatDate(today), to: formatDate(today) };
+    case 'yesterday': {
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      return { from: formatDate(yesterday), to: formatDate(yesterday) };
+    }
+    case 'week': {
+      const weekStart = new Date(today);
+      weekStart.setDate(today.getDate() - today.getDay());
+      return { from: formatDate(weekStart), to: formatDate(today) };
+    }
+    case 'month': {
+      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+      return { from: formatDate(monthStart), to: formatDate(today) };
+    }
+    case 'all':
+    case 'custom':
+    default:
+      return null;
+  }
+}
+
+// Check if a date string is today
+function isToday(dateStr: string): boolean {
+  return dateStr === new Date().toISOString().split('T')[0];
+}
 
 interface TransactionFormData {
   customerName: string;
@@ -46,12 +84,16 @@ export default function ReceptionTransactions() {
   const [voidReason, setVoidReason] = useState('');
   const [formData, setFormData] = useState<TransactionFormData>(initialFormData);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [selectedClient, setSelectedClient] = useState<ClientOption | null>(null);
+  const [showCreateClientModal, setShowCreateClientModal] = useState(false);
+  const [createClientInitialName, setCreateClientInitialName] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterServiceType, setFilterServiceType] = useState('');
   const [filterPaymentMethod, setFilterPaymentMethod] = useState('');
-  const [filterDateFrom, setFilterDateFrom] = useState('');
-  const [filterDateTo, setFilterDateTo] = useState('');
+  const [quickDateFilter, setQuickDateFilter] = useState<QuickDateFilter>('today');
+  const [filterDateFrom, setFilterDateFrom] = useState(() => new Date().toISOString().split('T')[0]);
+  const [filterDateTo, setFilterDateTo] = useState(() => new Date().toISOString().split('T')[0]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -77,6 +119,14 @@ export default function ReceptionTransactions() {
     fetchConfig();
   }, []);
 
+  // Compute effective date range based on quick filter or custom dates
+  const effectiveDateRange = useMemo(() => {
+    if (quickDateFilter === 'custom') {
+      return { from: filterDateFrom, to: filterDateTo };
+    }
+    return getDateRange(quickDateFilter);
+  }, [quickDateFilter, filterDateFrom, filterDateTo]);
+
   const fetchTransactions = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -88,8 +138,10 @@ export default function ReceptionTransactions() {
       if (searchQuery) params.append('search', searchQuery);
       if (filterServiceType) params.append('serviceTypeId', filterServiceType);
       if (filterPaymentMethod) params.append('paymentMethodId', filterPaymentMethod);
-      if (filterDateFrom) params.append('dateFrom', filterDateFrom);
-      if (filterDateTo) params.append('dateTo', filterDateTo);
+      if (effectiveDateRange) {
+        params.append('dateFrom', effectiveDateRange.from);
+        params.append('dateTo', effectiveDateRange.to);
+      }
 
       const response = await fetch(`/api/reception/transactions?${params}`);
       if (!response.ok) throw new Error('Failed to fetch transactions');
@@ -103,7 +155,7 @@ export default function ReceptionTransactions() {
     } finally {
       setIsLoading(false);
     }
-  }, [page, selectedBranchId, searchQuery, filterServiceType, filterPaymentMethod, filterDateFrom, filterDateTo]);
+  }, [page, selectedBranchId, searchQuery, filterServiceType, filterPaymentMethod, effectiveDateRange]);
 
   useEffect(() => {
     fetchTransactions();
@@ -111,7 +163,7 @@ export default function ReceptionTransactions() {
 
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
-    if (!formData.customerName.trim()) errors.customerName = 'Customer name is required';
+    if (!selectedClient?.name && !formData.customerName.trim()) errors.customerName = 'Customer is required';
     if (!formData.serviceTypeId) errors.serviceTypeId = 'Service type is required';
     if (!formData.amount || parseFloat(formData.amount) <= 0) errors.amount = 'Valid amount is required';
     if (!formData.paymentMethodId) errors.paymentMethodId = 'Payment method is required';
@@ -129,7 +181,8 @@ export default function ReceptionTransactions() {
     setIsSubmitting(true);
     try {
       const payload: CreateTransactionInput = {
-        customerName: formData.customerName.trim(),
+        customerName: selectedClient?.name || formData.customerName.trim(),
+        clientId: selectedClient?.id,
         serviceTypeId: formData.serviceTypeId,
         amount: parseFloat(formData.amount),
         paymentMethodId: formData.paymentMethodId,
@@ -149,6 +202,7 @@ export default function ReceptionTransactions() {
       setShowAddModal(false);
       setFormData(initialFormData);
       setFormErrors({});
+      setSelectedClient(null);
       fetchTransactions();
     } catch (err) {
       setFormErrors({ submit: err instanceof Error ? err.message : 'Failed to create transaction' });
@@ -181,16 +235,37 @@ export default function ReceptionTransactions() {
     }
   };
 
+  const handleQuickDateFilter = (filter: QuickDateFilter) => {
+    setQuickDateFilter(filter);
+    if (filter !== 'custom') {
+      const range = getDateRange(filter);
+      if (range) {
+        setFilterDateFrom(range.from);
+        setFilterDateTo(range.to);
+      }
+    }
+    setPage(1);
+  };
+
+  const handleCustomDateChange = (from: string, to: string) => {
+    setQuickDateFilter('custom');
+    setFilterDateFrom(from);
+    setFilterDateTo(to);
+    setPage(1);
+  };
+
   const clearFilters = () => {
     setSearchQuery('');
     setFilterServiceType('');
     setFilterPaymentMethod('');
-    setFilterDateFrom('');
-    setFilterDateTo('');
+    setQuickDateFilter('today');
+    const today = new Date().toISOString().split('T')[0];
+    setFilterDateFrom(today);
+    setFilterDateTo(today);
     setPage(1);
   };
 
-  const hasActiveFilters = searchQuery || filterServiceType || filterPaymentMethod || filterDateFrom || filterDateTo;
+  const hasActiveFilters = searchQuery || filterServiceType || filterPaymentMethod || quickDateFilter !== 'today';
 
   return (
     <div className="space-y-4">
@@ -206,12 +281,40 @@ export default function ReceptionTransactions() {
       </div>
 
       <Card>
+        {/* Quick Date Filters */}
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <Calendar className="w-4 h-4 text-gray-400" />
+          {(['today', 'yesterday', 'week', 'month', 'all'] as QuickDateFilter[]).map((filter) => (
+            <button
+              key={filter}
+              onClick={() => handleQuickDateFilter(filter)}
+              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                quickDateFilter === filter
+                  ? 'bg-purple-100 text-purple-700'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              {filter === 'today' && 'Today'}
+              {filter === 'yesterday' && 'Yesterday'}
+              {filter === 'week' && 'This Week'}
+              {filter === 'month' && 'This Month'}
+              {filter === 'all' && 'All Time'}
+            </button>
+          ))}
+          {quickDateFilter === 'custom' && (
+            <span className="px-3 py-1.5 text-sm font-medium bg-purple-100 text-purple-700 rounded-lg">
+              {filterDateFrom} → {filterDateTo}
+            </span>
+          )}
+        </div>
+
+        {/* Search and Filter Toggle */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by customer name..."
+              placeholder="Search by customer, TXN#..."
               value={searchQuery}
               onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
               className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -219,11 +322,12 @@ export default function ReceptionTransactions() {
           </div>
           <Button variant={showFilters ? 'primary' : 'secondary'} onClick={() => setShowFilters(!showFilters)}>
             <Filter className="w-4 h-4 mr-2" />
-            Filters
-            {hasActiveFilters && <span className="ml-2 w-2 h-2 bg-purple-500 rounded-full" />}
+            More Filters
+            {(filterServiceType || filterPaymentMethod) && <span className="ml-2 w-2 h-2 bg-purple-500 rounded-full" />}
           </Button>
         </div>
 
+        {/* Advanced Filters */}
         {showFilters && (
           <div className="mt-4 pt-4 border-t border-gray-100">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -237,14 +341,22 @@ export default function ReceptionTransactions() {
                 <option value="">All Payments</option>
                 {paymentMethods.map((pm) => (<option key={pm.id} value={pm.id}>{pm.icon} {pm.name}</option>))}
               </select>
-              <input type="date" value={filterDateFrom} onChange={(e) => { setFilterDateFrom(e.target.value); setPage(1); }}
-                className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
-              <input type="date" value={filterDateTo} onChange={(e) => { setFilterDateTo(e.target.value); setPage(1); }}
-                className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
+              <input
+                type="date"
+                value={filterDateFrom}
+                onChange={(e) => handleCustomDateChange(e.target.value, filterDateTo)}
+                className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+              <input
+                type="date"
+                value={filterDateTo}
+                onChange={(e) => handleCustomDateChange(filterDateFrom, e.target.value)}
+                className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
             </div>
             {hasActiveFilters && (
               <div className="mt-3 flex justify-end">
-                <Button variant="ghost" size="sm" onClick={clearFilters}><X className="w-4 h-4 mr-1" />Clear</Button>
+                <Button variant="ghost" size="sm" onClick={clearFilters}><X className="w-4 h-4 mr-1" />Reset to Today</Button>
               </div>
             )}
           </div>
@@ -258,6 +370,7 @@ export default function ReceptionTransactions() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Service</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment</th>
@@ -271,14 +384,24 @@ export default function ReceptionTransactions() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {isLoading ? (
-                <tr><td colSpan={showBranchColumn ? 7 : 6} className="px-4 py-12 text-center">
+                <tr><td colSpan={showBranchColumn ? 8 : 7} className="px-4 py-12 text-center">
                   <div className="animate-spin w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full mx-auto" />
                 </td></tr>
               ) : transactions.length === 0 ? (
-                <tr><td colSpan={showBranchColumn ? 7 : 6} className="px-4 py-12 text-center text-gray-500">No transactions</td></tr>
+                <tr><td colSpan={showBranchColumn ? 8 : 7} className="px-4 py-12 text-center text-gray-500">No transactions found</td></tr>
               ) : (
                 transactions.map((t) => (
                   <tr key={t.id} className={t.isVoided ? 'bg-gray-50 opacity-60' : 'hover:bg-gray-50'}>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600">
+                          {new Date(t.transactionDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                        </span>
+                        {isToday(t.transactionDate) && (
+                          <span className="px-1.5 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded">Today</span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-4 py-3 font-medium text-gray-900">{t.customerName}</td>
                     <td className="px-4 py-3"><span>{t.serviceType?.icon}</span> {t.serviceType?.name}</td>
                     <td className="px-4 py-3"><span>{t.paymentMethod?.icon}</span> {t.paymentMethod?.name}</td>
@@ -306,24 +429,50 @@ export default function ReceptionTransactions() {
             </tbody>
           </table>
         </div>
-        {totalPages > 1 && (
-          <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
-            <p className="text-sm text-gray-500">{totalCount} transactions</p>
+        <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
+          <p className="text-sm text-gray-500">
+            {totalCount > 0 ? (
+              <>Showing {((page - 1) * pageSize) + 1}-{Math.min(page * pageSize, totalCount)} of {totalCount} transactions</>
+            ) : (
+              'No transactions'
+            )}
+          </p>
+          {totalPages > 1 && (
             <div className="flex items-center gap-2">
-              <Button variant="secondary" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}><ChevronLeft className="w-4 h-4" /></Button>
-              <span className="text-sm">{page}/{totalPages}</span>
-              <Button variant="secondary" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}><ChevronRight className="w-4 h-4" /></Button>
+              <Button variant="secondary" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <span className="text-sm font-medium">{page} / {totalPages}</span>
+              <Button variant="secondary" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+                <ChevronRight className="w-4 h-4" />
+              </Button>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </Card>
 
-      <Modal isOpen={showAddModal} onClose={() => { setShowAddModal(false); setFormData(initialFormData); setFormErrors({}); }} title="New Transaction" size="lg">
+      <Modal isOpen={showAddModal} onClose={() => { setShowAddModal(false); setFormData(initialFormData); setFormErrors({}); setSelectedClient(null); }} title="New Transaction" size="lg">
         <form onSubmit={handleSubmit} className="space-y-4">
           {formErrors.submit && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">{formErrors.submit}</div>}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
-              <Input label="Customer Name" value={formData.customerName} onChange={(e) => setFormData({ ...formData, customerName: e.target.value })} placeholder="Enter customer name" error={formErrors.customerName} required />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Customer / Client *</label>
+              <ClientAutocomplete
+                value={selectedClient}
+                onChange={(client) => {
+                  setSelectedClient(client);
+                  if (client) {
+                    setFormData({ ...formData, customerName: client.name });
+                  }
+                }}
+                onCreateNew={(searchTerm) => {
+                  setCreateClientInitialName(searchTerm);
+                  setShowCreateClientModal(true);
+                }}
+                branchId={selectedBranchId || undefined}
+                placeholder="Search or create client..."
+                error={formErrors.customerName}
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Service Type *</label>
@@ -356,7 +505,7 @@ export default function ReceptionTransactions() {
             </div>
           </div>
           <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button type="button" variant="secondary" onClick={() => { setShowAddModal(false); setFormData(initialFormData); setFormErrors({}); }}>Cancel</Button>
+            <Button type="button" variant="secondary" onClick={() => { setShowAddModal(false); setFormData(initialFormData); setFormErrors({}); setSelectedClient(null); }}>Cancel</Button>
             <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Creating...' : 'Create'}</Button>
           </div>
         </form>
@@ -403,6 +552,22 @@ export default function ReceptionTransactions() {
           </div>
         )}
       </Modal>
+
+      <CreateClientModal
+        isOpen={showCreateClientModal}
+        onClose={() => {
+          setShowCreateClientModal(false);
+          setCreateClientInitialName('');
+        }}
+        onCreated={(newClient) => {
+          setSelectedClient(newClient);
+          setFormData({ ...formData, customerName: newClient.name });
+          setShowCreateClientModal(false);
+          setCreateClientInitialName('');
+        }}
+        branchId={selectedBranchId || undefined}
+        initialName={createClientInitialName}
+      />
     </div>
   );
 }

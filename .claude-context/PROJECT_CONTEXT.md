@@ -375,6 +375,26 @@ const { data, error } = await supabaseAdmin
 
 ## Recent Changes Log
 
+### 2026-01-31 (Transaction Filters & Client Autocomplete)
+- **Quick Date Filters**: Added one-click filter buttons
+  - Today, Yesterday, This Week, This Month, All Time
+  - "Today" badge appears on transactions from today
+  - Improved pagination: "Showing X-Y of Z transactions"
+  - File: `src/components/reception/ReceptionTransactions.tsx`
+- **Client Autocomplete**: Replace free text input with searchable client picker
+  - Debounced search (300ms) queries `/api/reception/clients/search`
+  - Shows client type badges (Company/Individual)
+  - Keyboard navigation (arrow keys + Enter)
+  - "Create new client" option at bottom
+  - New components: `ClientAutocomplete.tsx`, `CreateClientModal.tsx`
+  - New API endpoints:
+    - `GET /api/reception/clients/search?q=&branchId=` - Search clients
+    - `POST /api/reception/clients` - Create new client
+  - Migration: `20260131_add_client_id_to_transactions.sql` - FK to clients table
+- **Type Updates**: Added `clientId` to `CreateTransactionInput` type
+  - Transactions now link to clients table when selected from autocomplete
+  - Maintains backward compatibility with manual customer names
+
 ### 2026-01-31 (Dashboard Batch Fetching + Date Picker)
 - **Fixed Supabase 1000 Row Limit Bug**: Dashboard was showing incorrect totals
   - Root cause: Supabase JS client defaults to 1000 rows per query

@@ -9,3 +9,8 @@ export { default as ReceptionSettings } from './ReceptionSettings';
 // Branch Components
 export { BranchSelector } from './BranchSelector';
 export { BranchSwitchModal } from './BranchSwitchModal';
+
+// Client Components
+export { ClientAutocomplete } from './ClientAutocomplete';
+export { CreateClientModal } from './CreateClientModal';
+export type { ClientOption } from './ClientAutocomplete';

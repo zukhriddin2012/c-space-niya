@@ -179,6 +179,7 @@ export const POST = withAuth(async (request: NextRequest, { user }) => {
       .from('transactions')
       .insert({
         customer_name: body.customerName.trim(),
+        client_id: body.clientId || null,
         customer_phone: body.customerPhone?.trim() || null,
         customer_company: body.customerCompany?.trim() || null,
         service_type_id: body.serviceTypeId,

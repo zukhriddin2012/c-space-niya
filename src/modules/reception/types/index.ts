@@ -144,6 +144,7 @@ export interface Transaction {
 
 export interface CreateTransactionInput {
   customerName: string;
+  clientId?: string;  // Link to clients table if selected from autocomplete
   customerPhone?: string;
   customerCompany?: string;
   serviceTypeId: string;
