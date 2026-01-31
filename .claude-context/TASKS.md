@@ -30,6 +30,7 @@
 | T014 | Remote work check-in feature | 2026-01-29 | Main |
 | T016 | Reception Mode Phase 1 - Admin Config | 2026-01-31 | Main |
 | T017 | Reception Mode Phase 2 - Core Functionality | 2026-01-31 | Main |
+| T018 | Reception Mode Phase 3 - Full Screen UI | 2026-01-31 | Main |
 
 ### 🟡 In Progress
 
