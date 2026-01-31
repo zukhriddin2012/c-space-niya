@@ -23,6 +23,8 @@ export const GET = withAuth(async (request: NextRequest) => {
     const dateFrom = searchParams.get('dateFrom') || firstOfMonth.toISOString().split('T')[0];
     const dateTo = searchParams.get('dateTo') || today.toISOString().split('T')[0];
 
+    console.log('DEBUG: Date params received - dateFrom:', dateFrom, 'dateTo:', dateTo, 'branchId:', branchId);
+
     // Get transactions summary (Income/Paid) - includes debt column
     // Use select('*') to ensure all columns including newly added 'debt' are returned
     let transactionsQuery = supabaseAdmin!

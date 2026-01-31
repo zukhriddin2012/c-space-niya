@@ -64,11 +64,32 @@ export async function GET(request: NextRequest) {
       .order('transaction_date', { ascending: false })
       .limit(1);
 
+    // Test with same date filter as dashboard "All Time" (2020-01-01 to today)
+    const todayStr = new Date().toISOString().split('T')[0];
+    const { data: withDateFilter, error: dateFilterError } = await supabaseAdmin!
+      .from('transactions')
+      .select('id, transaction_number, debt')
+      .gt('debt', 0)
+      .eq('is_voided', false)
+      .gte('transaction_date', '2020-01-01')
+      .lte('transaction_date', todayStr);
+
+    const dateFilterTotal = (withDateFilter || []).reduce((sum, t) => {
+      const raw = t as Record<string, unknown>;
+      return sum + Number(raw.debt || 0);
+    }, 0);
+
     return NextResponse.json({
       hasDebtColumn: columns.includes('debt'),
       columns,
       recordsWithDebt: summary?.length || 0,
       calculatedTotalDebt: totalDebt,
+      withDateFilter: {
+        count: withDateFilter?.length || 0,
+        totalDebt: dateFilterTotal,
+        dateRange: '2020-01-01 to ' + todayStr,
+        error: dateFilterError?.message
+      },
       sampleRecords: rawDebt,
       debtOnlyRecords,
       debtDateRange: {
