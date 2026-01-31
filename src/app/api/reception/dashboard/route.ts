@@ -5,7 +5,7 @@ import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase';
 
 // ============================================
 // GET /api/reception/dashboard
-// Get dashboard statistics
+// Get dashboard statistics (Income Statement format)
 // ============================================
 export const GET = withAuth(async (request: NextRequest) => {
   try {
@@ -22,7 +22,7 @@ export const GET = withAuth(async (request: NextRequest) => {
     const dateFrom = searchParams.get('dateFrom') || firstOfMonth.toISOString().split('T')[0];
     const dateTo = searchParams.get('dateTo') || today.toISOString().split('T')[0];
 
-    // Get transactions summary
+    // Get transactions summary (Income/Paid)
     let transactionsQuery = supabaseAdmin!
       .from('transactions')
       .select('amount, service_type_id, payment_method_id', { count: 'exact' })
@@ -37,12 +37,17 @@ export const GET = withAuth(async (request: NextRequest) => {
     const { data: transactions, count: transactionCount } = await transactionsQuery;
 
     // Calculate totals
-    const totalIncome = (transactions || []).reduce((sum, t) => sum + Number(t.amount), 0);
+    const totalPaid = (transactions || []).reduce((sum, t) => sum + Number(t.amount), 0);
 
-    // Get expenses summary
+    // Get expenses summary with expense type info for categorization
     let expensesQuery = supabaseAdmin!
       .from('expenses')
-      .select('amount, expense_type_id, payment_method', { count: 'exact' })
+      .select(`
+        amount,
+        expense_type_id,
+        payment_method,
+        expense_type:expense_types(id, name, code, icon)
+      `, { count: 'exact' })
       .eq('is_voided', false)
       .gte('expense_date', dateFrom)
       .lte('expense_date', dateTo);
@@ -53,11 +58,70 @@ export const GET = withAuth(async (request: NextRequest) => {
 
     const { data: expenses, count: expenseCount } = await expensesQuery;
 
-    const totalExpenses = (expenses || []).reduce((sum, e) => sum + Number(e.amount), 0);
-    const cashExpenses = (expenses || []).filter(e => e.payment_method === 'cash').reduce((sum, e) => sum + Number(e.amount), 0);
-    const bankExpenses = (expenses || []).filter(e => e.payment_method === 'bank').reduce((sum, e) => sum + Number(e.amount), 0);
+    // Define CapEx codes (capital expenditures - equipment, renovation, etc.)
+    const capexCodes = ['equipment', 'renovation', 'furniture', 'capex', 'investment'];
 
-    // Get breakdown by service type
+    // Calculate OpEx and CapEx
+    type JoinedExpenseType = { id: string; name: string; code: string; icon: string } | null;
+
+    let totalOpEx = 0;
+    let totalCapEx = 0;
+
+    (expenses || []).forEach(e => {
+      const amount = Number(e.amount);
+      const expType = e.expense_type as unknown as JoinedExpenseType;
+      const code = expType?.code?.toLowerCase() || '';
+      if (capexCodes.some(c => code.includes(c))) {
+        totalCapEx += amount;
+      } else {
+        totalOpEx += amount;
+      }
+    });
+
+    // Get breakdown by expense type (Top 5)
+    const expenseTypeBreakdown: Record<string, {
+      name: string;
+      code: string;
+      icon: string;
+      count: number;
+      amount: number
+    }> = {};
+
+    (expenses || []).forEach(e => {
+      const expType = e.expense_type as unknown as JoinedExpenseType;
+      if (!expType) return;
+
+      const key = expType.id;
+      if (!expenseTypeBreakdown[key]) {
+        expenseTypeBreakdown[key] = {
+          name: expType.name,
+          code: expType.code,
+          icon: expType.icon || '📦',
+          count: 0,
+          amount: 0
+        };
+      }
+      expenseTypeBreakdown[key].count++;
+      expenseTypeBreakdown[key].amount += Number(e.amount);
+    });
+
+    const topExpenseCategories = Object.entries(expenseTypeBreakdown)
+      .map(([id, data]) => ({
+        id,
+        name: data.name,
+        code: data.code,
+        icon: data.icon,
+        count: data.count,
+        amount: data.amount,
+      }))
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 5);
+
+    // Calculate profits
+    const operatingProfit = totalPaid - totalOpEx;
+    const profit = operatingProfit - totalCapEx;
+
+    // Get breakdown by service type (for income details)
     const serviceTypeBreakdown: Record<string, { count: number; amount: number }> = {};
     (transactions || []).forEach(t => {
       const key = t.service_type_id;
@@ -87,67 +151,7 @@ export const GET = withAuth(async (request: NextRequest) => {
       amount: serviceTypeBreakdown[st.id]?.amount || 0,
     })).sort((a, b) => b.amount - a.amount);
 
-    // Get breakdown by payment method
-    const paymentMethodBreakdown: Record<string, { count: number; amount: number }> = {};
-    (transactions || []).forEach(t => {
-      const key = t.payment_method_id;
-      if (!paymentMethodBreakdown[key]) {
-        paymentMethodBreakdown[key] = { count: 0, amount: 0 };
-      }
-      paymentMethodBreakdown[key].count++;
-      paymentMethodBreakdown[key].amount += Number(t.amount);
-    });
-
-    // Get payment method names
-    const paymentMethodIds = Object.keys(paymentMethodBreakdown);
-    let paymentMethods: { id: string; name: string; icon: string }[] = [];
-    if (paymentMethodIds.length > 0) {
-      const { data } = await supabaseAdmin!
-        .from('payment_methods')
-        .select('id, name, icon')
-        .in('id', paymentMethodIds);
-      paymentMethods = data || [];
-    }
-
-    const byPaymentMethod = paymentMethods.map(pm => ({
-      paymentMethodId: pm.id,
-      paymentMethodName: pm.name,
-      icon: pm.icon,
-      count: paymentMethodBreakdown[pm.id]?.count || 0,
-      amount: paymentMethodBreakdown[pm.id]?.amount || 0,
-    })).sort((a, b) => b.amount - a.amount);
-
-    // Get breakdown by expense type
-    const expenseTypeBreakdown: Record<string, { count: number; amount: number }> = {};
-    (expenses || []).forEach(e => {
-      const key = e.expense_type_id;
-      if (!expenseTypeBreakdown[key]) {
-        expenseTypeBreakdown[key] = { count: 0, amount: 0 };
-      }
-      expenseTypeBreakdown[key].count++;
-      expenseTypeBreakdown[key].amount += Number(e.amount);
-    });
-
-    // Get expense type names
-    const expenseTypeIds = Object.keys(expenseTypeBreakdown);
-    let expenseTypes: { id: string; name: string; icon: string }[] = [];
-    if (expenseTypeIds.length > 0) {
-      const { data } = await supabaseAdmin!
-        .from('expense_types')
-        .select('id, name, icon')
-        .in('id', expenseTypeIds);
-      expenseTypes = data || [];
-    }
-
-    const byExpenseType = expenseTypes.map(et => ({
-      expenseTypeId: et.id,
-      expenseTypeName: et.name,
-      icon: et.icon,
-      count: expenseTypeBreakdown[et.id]?.count || 0,
-      amount: expenseTypeBreakdown[et.id]?.amount || 0,
-    })).sort((a, b) => b.amount - a.amount);
-
-    // Get recent activity (last 5 transactions + expenses combined)
+    // Get recent activity (last 10 transactions + expenses combined)
     let recentTransactionsQuery = supabaseAdmin!
       .from('transactions')
       .select(`
@@ -225,20 +229,24 @@ export const GET = withAuth(async (request: NextRequest) => {
 
     return NextResponse.json({
       dateRange: { from: dateFrom, to: dateTo },
-      transactions: {
-        total: totalIncome,
+      // Income Statement format
+      income: {
+        paid: totalPaid,
+        debt: 0, // TODO: Add debt tracking if needed
         count: transactionCount || 0,
         byServiceType,
-        byPaymentMethod,
       },
       expenses: {
-        total: totalExpenses,
+        opex: totalOpEx,
+        capex: totalCapEx,
+        total: totalOpEx + totalCapEx,
         count: expenseCount || 0,
-        byCash: cashExpenses,
-        byBank: bankExpenses,
-        byExpenseType,
+        topCategories: topExpenseCategories,
       },
-      netIncome: totalIncome - totalExpenses,
+      profit: {
+        operating: operatingProfit,
+        net: profit,
+      },
       recentActivity,
       showBranchColumn,
     });

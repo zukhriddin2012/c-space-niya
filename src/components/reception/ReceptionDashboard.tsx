@@ -1,32 +1,45 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { TrendingUp, TrendingDown, Wallet, ArrowLeftRight, Receipt, Building2, Calendar, ChevronDown } from 'lucide-react';
+import { ArrowLeftRight, Building2, Calendar, ChevronDown } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import { formatCurrency } from '@/modules/reception/lib/constants';
 import { useReceptionMode } from '@/contexts/ReceptionModeContext';
 
-type PeriodType = 'today' | 'this_week' | 'this_month' | 'last_month' | 'this_year' | 'all_time' | 'custom';
+type PeriodType = 'today' | 'this_week' | 'this_month' | 'last_month' | 'this_quarter' | 'this_year' | 'all_time' | 'custom';
 
 interface DateRange {
   from: string;
   to: string;
 }
 
+interface ExpenseCategory {
+  id: string;
+  name: string;
+  code: string;
+  icon: string;
+  count: number;
+  amount: number;
+}
+
 interface DashboardStats {
   dateRange?: DateRange;
-  transactions: {
-    total: number;
+  income: {
+    paid: number;
+    debt: number;
     count: number;
     byServiceType: Array<{ serviceTypeId: string; serviceTypeName: string; icon: string; amount: number; count: number }>;
-    byPaymentMethod: Array<{ paymentMethodId: string; paymentMethodName: string; icon: string; amount: number; count: number }>;
   };
   expenses: {
+    opex: number;
+    capex: number;
     total: number;
     count: number;
-    byCash: number;
-    byBank: number;
-    byExpenseType: Array<{ expenseTypeId: string; expenseTypeName: string; icon: string; amount: number; count: number }>;
+    topCategories: ExpenseCategory[];
+  };
+  profit: {
+    operating: number;
+    net: number;
   };
   recentActivity: Array<{
     type: 'transaction' | 'expense';
@@ -47,6 +60,7 @@ const periodLabels: Record<PeriodType, string> = {
   this_week: 'This Week',
   this_month: 'This Month',
   last_month: 'Last Month',
+  this_quarter: 'This Quarter',
   this_year: 'This Year',
   all_time: 'All Time',
   custom: 'Custom Range',
@@ -61,7 +75,7 @@ function getDateRange(period: PeriodType, customFrom?: string, customTo?: string
       return { from: todayStr, to: todayStr };
     case 'this_week': {
       const startOfWeek = new Date(today);
-      startOfWeek.setDate(today.getDate() - today.getDay() + 1); // Monday
+      startOfWeek.setDate(today.getDate() - today.getDay() + 1);
       return { from: startOfWeek.toISOString().split('T')[0], to: todayStr };
     }
     case 'this_month': {
@@ -72,6 +86,11 @@ function getDateRange(period: PeriodType, customFrom?: string, customTo?: string
       const startOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
       const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
       return { from: startOfLastMonth.toISOString().split('T')[0], to: endOfLastMonth.toISOString().split('T')[0] };
+    }
+    case 'this_quarter': {
+      const quarter = Math.floor(today.getMonth() / 3);
+      const startOfQuarter = new Date(today.getFullYear(), quarter * 3, 1);
+      return { from: startOfQuarter.toISOString().split('T')[0], to: todayStr };
     }
     case 'this_year': {
       const startOfYear = new Date(today.getFullYear(), 0, 1);
@@ -84,6 +103,19 @@ function getDateRange(period: PeriodType, customFrom?: string, customTo?: string
     default:
       return { from: todayStr, to: todayStr };
   }
+}
+
+function formatCompactNumber(num: number): string {
+  if (num >= 1_000_000_000) {
+    return (num / 1_000_000_000).toFixed(1).replace(/\.0$/, '') + 'B';
+  }
+  if (num >= 1_000_000) {
+    return (num / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+  }
+  if (num >= 1_000) {
+    return (num / 1_000).toFixed(0) + 'K';
+  }
+  return num.toLocaleString();
 }
 
 export default function ReceptionDashboard() {
@@ -127,7 +159,6 @@ export default function ReceptionDashboard() {
     fetchStats();
   }, [fetchStats]);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = () => setShowPeriodDropdown(false);
     if (showPeriodDropdown) {
@@ -145,12 +176,13 @@ export default function ReceptionDashboard() {
 
   const formatDateRangeDisplay = () => {
     if (selectedPeriod === 'all_time') return 'All Time';
+    const fromDate = new Date(dateRange.from);
+    const toDate = new Date(dateRange.to);
+    const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
     if (dateRange.from === dateRange.to) {
-      return new Date(dateRange.from).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      return fromDate.toLocaleDateString('en-US', options);
     }
-    const fromDate = new Date(dateRange.from).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const toDate = new Date(dateRange.to).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    return `${fromDate} - ${toDate}`;
+    return `${fromDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${toDate.toLocaleDateString('en-US', options)}`;
   };
 
   if (error) {
@@ -161,16 +193,12 @@ export default function ReceptionDashboard() {
     );
   }
 
-  const income = stats?.transactions.total || 0;
-  const expenses = stats?.expenses.total || 0;
-  const netBalance = income - expenses;
-
   return (
     <div className="space-y-6">
       {/* Header with Period Selector */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Income Statement</h1>
           <p className="text-gray-500">{formatDateRangeDisplay()}</p>
         </div>
 
@@ -193,11 +221,10 @@ export default function ReceptionDashboard() {
               onClick={(e) => e.stopPropagation()}
               className="absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden"
             >
-              {/* Quick Select Options */}
               <div className="p-2 border-b border-gray-100">
                 <p className="px-2 py-1 text-xs font-semibold text-gray-400 uppercase">Quick Select</p>
                 <div className="grid grid-cols-2 gap-1">
-                  {(['today', 'this_week', 'this_month', 'last_month', 'this_year', 'all_time'] as PeriodType[]).map((period) => (
+                  {(['today', 'this_week', 'this_month', 'last_month', 'this_quarter', 'this_year', 'all_time'] as PeriodType[]).map((period) => (
                     <button
                       key={period}
                       onClick={() => handlePeriodSelect(period)}
@@ -213,7 +240,6 @@ export default function ReceptionDashboard() {
                 </div>
               </div>
 
-              {/* Custom Range */}
               <div className="p-3">
                 <p className="px-1 py-1 text-xs font-semibold text-gray-400 uppercase mb-2">Custom Range</p>
                 <div className="flex gap-2 items-center">
@@ -224,7 +250,7 @@ export default function ReceptionDashboard() {
                       setCustomFrom(e.target.value);
                       setSelectedPeriod('custom');
                     }}
-                    className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
                   <span className="text-gray-400">to</span>
                   <input
@@ -234,13 +260,13 @@ export default function ReceptionDashboard() {
                       setCustomTo(e.target.value);
                       setSelectedPeriod('custom');
                     }}
-                    className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
                 </div>
                 {selectedPeriod === 'custom' && (
                   <button
                     onClick={() => setShowPeriodDropdown(false)}
-                    className="mt-3 w-full px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors"
+                    className="mt-3 w-full px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700"
                   >
                     Apply
                   </button>
@@ -258,96 +284,99 @@ export default function ReceptionDashboard() {
         </div>
       ) : (
         <>
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <p className="text-sm text-green-700">Income</p>
-                  <p className="text-xl font-bold text-green-900">{formatCurrency(income)}</p>
-                </div>
+          {/* Income Row: Paid | Debt */}
+          <div className="grid grid-cols-2 gap-4">
+            <Card className="border-2 border-blue-200 bg-white">
+              <div className="p-2">
+                <p className="text-sm text-blue-600 font-medium">Paid</p>
+                <p className="text-3xl font-bold text-blue-700">{formatCompactNumber(stats?.income.paid || 0)}</p>
               </div>
             </Card>
-
-            <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-red-500 rounded-xl flex items-center justify-center">
-                  <TrendingDown className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <p className="text-sm text-red-700">Expenses</p>
-                  <p className="text-xl font-bold text-red-900">{formatCurrency(expenses)}</p>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center">
-                  <Wallet className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <p className="text-sm text-purple-700">Net Balance</p>
-                  <p className={`text-xl font-bold ${netBalance >= 0 ? 'text-purple-900' : 'text-red-700'}`}>
-                    {formatCurrency(netBalance)}
-                  </p>
-                </div>
-              </div>
-            </Card>
-
-          </div>
-
-          {/* Two Column Layout */}
-          <div className="grid lg:grid-cols-2 gap-6">
-            {/* Income by Service Type */}
-            <Card>
-              <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <ArrowLeftRight className="w-4 h-4 text-purple-600" />
-                Income by Service Type
-              </h3>
-              <div className="space-y-3">
-                {stats?.transactions.byServiceType.map((item) => (
-                  <div key={item.serviceTypeId} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{item.icon}</span>
-                      <span className="text-gray-700">{item.serviceTypeName}</span>
-                      <span className="text-xs text-gray-400">({item.count})</span>
-                    </div>
-                    <span className="font-semibold text-green-600">{formatCurrency(item.amount)}</span>
-                  </div>
-                ))}
-                {(!stats?.transactions.byServiceType || stats.transactions.byServiceType.length === 0) && (
-                  <p className="text-gray-400 text-sm">No transactions in this period</p>
-                )}
-              </div>
-            </Card>
-
-            {/* Expenses by Type */}
-            <Card>
-              <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Receipt className="w-4 h-4 text-purple-600" />
-                Expenses by Type
-              </h3>
-              <div className="space-y-3">
-                {stats?.expenses.byExpenseType.map((item) => (
-                  <div key={item.expenseTypeId} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{item.icon}</span>
-                      <span className="text-gray-700">{item.expenseTypeName}</span>
-                      <span className="text-xs text-gray-400">({item.count})</span>
-                    </div>
-                    <span className="font-semibold text-red-600">{formatCurrency(item.amount)}</span>
-                  </div>
-                ))}
-                {(!stats?.expenses.byExpenseType || stats.expenses.byExpenseType.length === 0) && (
-                  <p className="text-gray-400 text-sm">No expenses in this period</p>
-                )}
+            <Card className="border-2 border-blue-200 bg-white">
+              <div className="p-2">
+                <p className="text-sm text-red-600 font-medium">Debt</p>
+                <p className="text-3xl font-bold text-red-600">{formatCompactNumber(stats?.income.debt || 0)}</p>
               </div>
             </Card>
           </div>
+
+          {/* Expenses Row: OpEx | CapEx */}
+          <div className="grid grid-cols-2 gap-4">
+            <Card className="border-2 border-blue-200 bg-white">
+              <div className="p-2">
+                <p className="text-sm text-blue-600 font-medium">OpEx</p>
+                <p className="text-3xl font-bold text-blue-700">{formatCompactNumber(stats?.expenses.opex || 0)}</p>
+              </div>
+            </Card>
+            <Card className="border-2 border-blue-200 bg-white">
+              <div className="p-2">
+                <p className="text-sm text-blue-600 font-medium">CapEx</p>
+                <p className="text-3xl font-bold text-blue-700">{formatCompactNumber(stats?.expenses.capex || 0)}</p>
+              </div>
+            </Card>
+          </div>
+
+          {/* Top 5 Expense Categories */}
+          <Card className="border-2 border-green-200 bg-white">
+            <div className="p-2">
+              <h3 className="font-semibold text-gray-900 mb-4">Top 5 Expense Categories</h3>
+              {(stats?.expenses.topCategories && stats.expenses.topCategories.length > 0) ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                  {stats.expenses.topCategories.map((cat) => (
+                    <div key={cat.id} className="text-center">
+                      <p className="text-sm text-red-600 font-medium">{cat.name}</p>
+                      <p className="text-xl font-bold text-red-700">{formatCompactNumber(cat.amount)}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-400 text-sm text-center py-4">No expenses in this period</p>
+              )}
+            </div>
+          </Card>
+
+          {/* Profit Row: Operating Profit | Profit */}
+          <div className="grid grid-cols-2 gap-4">
+            <Card className="border-2 border-green-200 bg-white">
+              <div className="p-2">
+                <p className="text-sm text-green-600 font-medium">Operating Profit</p>
+                <p className={`text-3xl font-bold ${(stats?.profit.operating || 0) >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                  {formatCompactNumber(stats?.profit.operating || 0)}
+                </p>
+              </div>
+            </Card>
+            <Card className="border-2 border-green-200 bg-white">
+              <div className="p-2">
+                <p className="text-sm text-green-600 font-medium">Profit</p>
+                <p className={`text-3xl font-bold ${(stats?.profit.net || 0) >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                  {formatCompactNumber(stats?.profit.net || 0)}
+                </p>
+              </div>
+            </Card>
+          </div>
+
+          {/* Income by Service Type */}
+          <Card>
+            <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <ArrowLeftRight className="w-4 h-4 text-purple-600" />
+              Income by Service Type
+            </h3>
+            <div className="space-y-3">
+              {stats?.income.byServiceType.map((item) => (
+                <div key={item.serviceTypeId} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">{item.icon}</span>
+                    <span className="text-gray-700">{item.serviceTypeName}</span>
+                    <span className="text-xs text-gray-400">({item.count})</span>
+                  </div>
+                  <span className="font-semibold text-green-600">{formatCurrency(item.amount)}</span>
+                </div>
+              ))}
+              {(!stats?.income.byServiceType || stats.income.byServiceType.length === 0) && (
+                <p className="text-gray-400 text-sm">No transactions in this period</p>
+              )}
+            </div>
+          </Card>
 
           {/* Recent Activity */}
           <Card>
