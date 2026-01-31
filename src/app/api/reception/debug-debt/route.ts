@@ -42,12 +42,39 @@ export async function GET(request: NextRequest) {
 
     const columns = sampleRow ? Object.keys(sampleRow) : [];
 
+    // Check TXN-DEBT records specifically - what dates do they have?
+    const { data: debtOnlyRecords } = await supabaseAdmin!
+      .from('transactions')
+      .select('transaction_number, transaction_date, debt')
+      .like('transaction_number', 'TXN-DEBT%')
+      .limit(10);
+
+    // Check date range of all debt records
+    const { data: dateRange } = await supabaseAdmin!
+      .from('transactions')
+      .select('transaction_date')
+      .gt('debt', 0)
+      .order('transaction_date', { ascending: true })
+      .limit(1);
+
+    const { data: dateRangeMax } = await supabaseAdmin!
+      .from('transactions')
+      .select('transaction_date')
+      .gt('debt', 0)
+      .order('transaction_date', { ascending: false })
+      .limit(1);
+
     return NextResponse.json({
       hasDebtColumn: columns.includes('debt'),
       columns,
       recordsWithDebt: summary?.length || 0,
       calculatedTotalDebt: totalDebt,
       sampleRecords: rawDebt,
+      debtOnlyRecords,
+      debtDateRange: {
+        earliest: dateRange?.[0]?.transaction_date,
+        latest: dateRangeMax?.[0]?.transaction_date
+      },
       errors: {
         stats: statsError?.message,
         raw: rawError?.message,
