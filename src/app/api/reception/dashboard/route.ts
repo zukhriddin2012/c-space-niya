@@ -39,6 +39,22 @@ export const GET = withAuth(async (request: NextRequest) => {
     // Calculate totals
     const totalPaid = (transactions || []).reduce((sum, t) => sum + Number(t.amount), 0);
 
+    // Get outstanding debt (receivables)
+    let receivablesQuery = supabaseAdmin!
+      .from('receivables')
+      .select('amount, paid_amount, status')
+      .eq('status', 'outstanding');
+
+    if (branchId && branchId !== 'all') {
+      receivablesQuery = receivablesQuery.eq('branch_id', branchId);
+    }
+
+    const { data: receivables } = await receivablesQuery;
+    const totalDebt = (receivables || []).reduce((sum, r) => {
+      const outstanding = Number(r.amount) - Number(r.paid_amount || 0);
+      return sum + outstanding;
+    }, 0);
+
     // Get expenses summary with expense type info for categorization
     let expensesQuery = supabaseAdmin!
       .from('expenses')
@@ -232,7 +248,7 @@ export const GET = withAuth(async (request: NextRequest) => {
       // Income Statement format
       income: {
         paid: totalPaid,
-        debt: 0, // TODO: Add debt tracking if needed
+        debt: totalDebt,
         count: transactionCount || 0,
         byServiceType,
       },
