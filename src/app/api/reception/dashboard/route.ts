@@ -27,12 +27,14 @@ export const GET = withAuth(async (request: NextRequest) => {
 
     // Get transactions summary (Income/Paid) - includes debt column
     // Use select('*') to ensure all columns including newly added 'debt' are returned
+    // IMPORTANT: Supabase defaults to 1000 row limit, we need all rows for accurate totals
     let transactionsQuery = supabaseAdmin!
       .from('transactions')
       .select('*', { count: 'exact' })
       .eq('is_voided', false)
       .gte('transaction_date', dateFrom)
-      .lte('transaction_date', dateTo);
+      .lte('transaction_date', dateTo)
+      .limit(10000);
 
     if (branchId && branchId !== 'all') {
       transactionsQuery = transactionsQuery.eq('branch_id', branchId);
