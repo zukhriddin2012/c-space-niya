@@ -211,8 +211,10 @@ export const GET = withAuth(async (request: NextRequest) => {
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 5);
 
-    // Calculate profits
-    const operatingProfit = totalPaid - totalOpEx;
+    // Calculate profits (using Amount, not Paid)
+    // Operating Profit = Amount - OpEx
+    // Profit = Operating Profit - CapEx
+    const operatingProfit = totalAmount - totalOpEx;
     const profit = operatingProfit - totalCapEx;
 
     // Get breakdown by service type (for income details)
