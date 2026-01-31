@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { TrendingUp, TrendingDown, Wallet, Banknote, ArrowLeftRight, Receipt, Building2, Calendar, ChevronDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, ArrowLeftRight, Receipt, Building2, Calendar, ChevronDown } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import { formatCurrency } from '@/modules/reception/lib/constants';
 import { useReceptionMode } from '@/contexts/ReceptionModeContext';
@@ -164,7 +164,6 @@ export default function ReceptionDashboard() {
   const income = stats?.transactions.total || 0;
   const expenses = stats?.expenses.total || 0;
   const netBalance = income - expenses;
-  const cashExpenses = stats?.expenses.byCash || 0;
 
   return (
     <div className="space-y-6">
@@ -260,7 +259,7 @@ export default function ReceptionDashboard() {
       ) : (
         <>
           {/* Stats Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
@@ -299,17 +298,6 @@ export default function ReceptionDashboard() {
               </div>
             </Card>
 
-            <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-amber-500 rounded-xl flex items-center justify-center">
-                  <Banknote className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <p className="text-sm text-amber-700">Cash Expenses</p>
-                  <p className="text-xl font-bold text-amber-900">{formatCurrency(cashExpenses)}</p>
-                </div>
-              </div>
-            </Card>
           </div>
 
           {/* Two Column Layout */}
