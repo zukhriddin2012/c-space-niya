@@ -1,0 +1,60 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase';
+
+// DEBUG ENDPOINT - Get raw debt data
+export async function GET(request: NextRequest) {
+  if (!isSupabaseAdminConfigured()) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  }
+
+  try {
+    // Get total debt using raw SQL
+    const { data: debtStats, error: statsError } = await supabaseAdmin!
+      .rpc('get_debt_stats');
+
+    // If RPC doesn't exist, try direct query
+    let directQuery = null;
+    const { data: rawDebt, error: rawError } = await supabaseAdmin!
+      .from('transactions')
+      .select('id, transaction_number, amount, debt')
+      .gt('debt', 0)
+      .eq('is_voided', false)
+      .limit(20);
+
+    // Get count and sum
+    const { data: summary, error: summaryError } = await supabaseAdmin!
+      .from('transactions')
+      .select('debt')
+      .gt('debt', 0)
+      .eq('is_voided', false);
+
+    const totalDebt = (summary || []).reduce((sum, t) => {
+      const raw = t as Record<string, unknown>;
+      return sum + Number(raw.debt || 0);
+    }, 0);
+
+    // Also check what columns exist
+    const { data: sampleRow } = await supabaseAdmin!
+      .from('transactions')
+      .select('*')
+      .limit(1)
+      .single();
+
+    const columns = sampleRow ? Object.keys(sampleRow) : [];
+
+    return NextResponse.json({
+      hasDebtColumn: columns.includes('debt'),
+      columns,
+      recordsWithDebt: summary?.length || 0,
+      calculatedTotalDebt: totalDebt,
+      sampleRecords: rawDebt,
+      errors: {
+        stats: statsError?.message,
+        raw: rawError?.message,
+        summary: summaryError?.message
+      }
+    });
+  } catch (error) {
+    return NextResponse.json({ error: String(error) }, { status: 500 });
+  }
+}
