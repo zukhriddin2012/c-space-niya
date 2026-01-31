@@ -6,6 +6,7 @@ import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase';
 // ============================================
 // GET /api/reception/dashboard
 // Get dashboard statistics (Income Statement format)
+// Updated: 2026-01-31 - Added debt column support
 // ============================================
 export const GET = withAuth(async (request: NextRequest) => {
   try {
