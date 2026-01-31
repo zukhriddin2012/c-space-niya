@@ -94,37 +94,73 @@ export const GET = withAuth(async (request: NextRequest) => {
     const transactions = allTransactions;
 
     // Get expenses summary with expense type info for categorization
-    let expensesQuery = supabaseAdmin!
-      .from('expenses')
-      .select(`
-        amount,
-        expense_type_id,
-        payment_method,
-        expense_type:expense_types(id, name, code, icon)
-      `, { count: 'exact' })
-      .eq('is_voided', false)
-      .gte('expense_date', dateFrom)
-      .lte('expense_date', dateTo);
+    // Fetch ALL expenses in batches (same approach as transactions)
+    type ExpenseWithType = {
+      amount: number;
+      expense_type_id: string;
+      payment_method: string;
+      expense_type: { id: string; name: string; code: string; icon: string } | null;
+    };
 
-    if (branchId && branchId !== 'all') {
-      expensesQuery = expensesQuery.eq('branch_id', branchId);
+    const allExpenses: ExpenseWithType[] = [];
+    let expenseOffset = 0;
+    let hasMoreExpenses = true;
+    let expenseCount = 0;
+
+    while (hasMoreExpenses) {
+      let expenseBatchQuery = supabaseAdmin!
+        .from('expenses')
+        .select(`
+          amount,
+          expense_type_id,
+          payment_method,
+          expense_type:expense_types(id, name, code, icon)
+        `, { count: 'exact' })
+        .eq('is_voided', false)
+        .gte('expense_date', dateFrom)
+        .lte('expense_date', dateTo)
+        .range(expenseOffset, expenseOffset + batchSize - 1);
+
+      if (branchId && branchId !== 'all') {
+        expenseBatchQuery = expenseBatchQuery.eq('branch_id', branchId);
+      }
+
+      const { data: expenseBatch, count } = await expenseBatchQuery;
+
+      if (count !== null && expenseCount === 0) {
+        expenseCount = count;
+      }
+
+      if (expenseBatch && expenseBatch.length > 0) {
+        expenseBatch.forEach(e => {
+          const raw = e as Record<string, unknown>;
+          const expType = raw.expense_type as { id: string; name: string; code: string; icon: string } | null;
+          allExpenses.push({
+            amount: Number(raw.amount || 0),
+            expense_type_id: String(raw.expense_type_id || ''),
+            payment_method: String(raw.payment_method || ''),
+            expense_type: expType
+          });
+        });
+        expenseOffset += batchSize;
+        hasMoreExpenses = expenseBatch.length === batchSize;
+      } else {
+        hasMoreExpenses = false;
+      }
     }
 
-    const { data: expenses, count: expenseCount } = await expensesQuery;
+    const expenses = allExpenses;
 
     // Define CapEx codes (capital expenditures - equipment, renovation, etc.)
     const capexCodes = ['equipment', 'renovation', 'furniture', 'capex', 'investment'];
 
     // Calculate OpEx and CapEx
-    type JoinedExpenseType = { id: string; name: string; code: string; icon: string } | null;
-
     let totalOpEx = 0;
     let totalCapEx = 0;
 
-    (expenses || []).forEach(e => {
-      const amount = Number(e.amount);
-      const expType = e.expense_type as unknown as JoinedExpenseType;
-      const code = expType?.code?.toLowerCase() || '';
+    expenses.forEach(e => {
+      const amount = e.amount;
+      const code = e.expense_type?.code?.toLowerCase() || '';
       if (capexCodes.some(c => code.includes(c))) {
         totalCapEx += amount;
       } else {
@@ -141,8 +177,8 @@ export const GET = withAuth(async (request: NextRequest) => {
       amount: number
     }> = {};
 
-    (expenses || []).forEach(e => {
-      const expType = e.expense_type as unknown as JoinedExpenseType;
+    expenses.forEach(e => {
+      const expType = e.expense_type;
       if (!expType) return;
 
       const key = expType.id;
@@ -156,7 +192,7 @@ export const GET = withAuth(async (request: NextRequest) => {
         };
       }
       expenseTypeBreakdown[key].count++;
-      expenseTypeBreakdown[key].amount += Number(e.amount);
+      expenseTypeBreakdown[key].amount += e.amount;
     });
 
     const topExpenseCategories = Object.entries(expenseTypeBreakdown)
