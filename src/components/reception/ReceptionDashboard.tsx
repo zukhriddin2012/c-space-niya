@@ -239,10 +239,13 @@ export default function ReceptionDashboard() {
                       <label className="block text-xs text-gray-500 mb-1">From</label>
                       <input
                         type="date"
-                        value={selectedPeriod === 'custom' ? customFrom : dateRange.from}
+                        value={customFrom || dateRange.from}
+                        onFocus={() => {
+                          if (!customFrom) setCustomFrom(dateRange.from);
+                          if (!customTo) setCustomTo(dateRange.to);
+                        }}
                         onChange={(e) => {
                           setCustomFrom(e.target.value);
-                          if (!customTo) setCustomTo(dateRange.to);
                           setSelectedPeriod('custom');
                         }}
                         className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -252,10 +255,13 @@ export default function ReceptionDashboard() {
                       <label className="block text-xs text-gray-500 mb-1">To</label>
                       <input
                         type="date"
-                        value={selectedPeriod === 'custom' ? customTo : dateRange.to}
+                        value={customTo || dateRange.to}
+                        onFocus={() => {
+                          if (!customFrom) setCustomFrom(dateRange.from);
+                          if (!customTo) setCustomTo(dateRange.to);
+                        }}
                         onChange={(e) => {
                           setCustomTo(e.target.value);
-                          if (!customFrom) setCustomFrom(dateRange.from);
                           setSelectedPeriod('custom');
                         }}
                         className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -264,8 +270,10 @@ export default function ReceptionDashboard() {
                   </div>
                   <button
                     onClick={() => {
-                      if (!customFrom) setCustomFrom(dateRange.from);
-                      if (!customTo) setCustomTo(dateRange.to);
+                      const fromDate = customFrom || dateRange.from;
+                      const toDate = customTo || dateRange.to;
+                      setCustomFrom(fromDate);
+                      setCustomTo(toDate);
                       setSelectedPeriod('custom');
                       setShowPeriodDropdown(false);
                     }}
