@@ -39,7 +39,26 @@ export const GET = withAuth(async (request: NextRequest) => {
     const { data: transactions, count: transactionCount } = await transactionsQuery;
 
     // Type assertion to handle debt column (added after types were generated)
-    type TransactionWithDebt = { amount: number; debt?: number; service_type_id: string; payment_method_id: string };
+    type TransactionWithDebt = { amount: number; debt?: number; service_type_id: string; payment_method_id: string; transaction_number?: string };
+
+    // DEBUG: Log sample transactions to see if debt column is being returned
+    const sampleWithDebt = (transactions || [])
+      .filter(t => {
+        const raw = t as Record<string, unknown>;
+        return raw.debt && Number(raw.debt) > 0;
+      })
+      .slice(0, 5)
+      .map(t => {
+        const raw = t as Record<string, unknown>;
+        return {
+          transaction_number: raw.transaction_number,
+          amount: raw.amount,
+          debt: raw.debt,
+          keys: Object.keys(raw)
+        };
+      });
+    console.log('DEBUG: Total transactions:', transactions?.length);
+    console.log('DEBUG: Sample transactions with debt > 0:', JSON.stringify(sampleWithDebt, null, 2));
 
     // Calculate totals - Paid is the amount, Debt is unpaid portion
     const totalPaid = (transactions || []).reduce((sum, t) => {
@@ -47,9 +66,11 @@ export const GET = withAuth(async (request: NextRequest) => {
       return sum + Number(txn.amount || 0);
     }, 0);
     const totalDebt = (transactions || []).reduce((sum, t) => {
-      const txn = t as unknown as TransactionWithDebt;
-      return sum + Number(txn.debt || 0);
+      const raw = t as Record<string, unknown>;
+      return sum + Number(raw.debt || 0);
     }, 0);
+
+    console.log('DEBUG: Calculated totalDebt:', totalDebt);
 
     // Get expenses summary with expense type info for categorization
     let expensesQuery = supabaseAdmin!
