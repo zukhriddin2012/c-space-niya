@@ -11,17 +11,16 @@ import {
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase';
 import type { User } from '@/types';
 
-type RouteContext = {
-  params: Promise<{ id: string }>;
-};
-
 // GET /api/shifts/schedules/[id] - Get schedule with assignments
 export const GET = withAuth(async (
   request: NextRequest,
-  context: { user: User } & RouteContext
+  context: { user: User; params?: Record<string, string> }
 ) => {
   try {
-    const { id } = await context.params;
+    const id = context.params?.id;
+    if (!id) {
+      return NextResponse.json({ error: 'Schedule ID is required' }, { status: 400 });
+    }
 
     if (!isSupabaseAdminConfigured()) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
@@ -58,10 +57,14 @@ export const GET = withAuth(async (
 // PATCH /api/shifts/schedules/[id] - Update schedule (publish, lock, update notes)
 export const PATCH = withAuth(async (
   request: NextRequest,
-  context: { user: User } & RouteContext
+  context: { user: User; params?: Record<string, string> }
 ) => {
   try {
-    const { id } = await context.params;
+    const id = context.params?.id;
+    if (!id) {
+      return NextResponse.json({ error: 'Schedule ID is required' }, { status: 400 });
+    }
+
     const body = await request.json();
     const { action, notes } = body;
 

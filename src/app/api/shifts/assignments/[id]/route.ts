@@ -9,10 +9,6 @@ import {
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase';
 import type { User } from '@/types';
 
-type RouteContext = {
-  params: Promise<{ id: string }>;
-};
-
 // Helper to get assignment with schedule info
 async function getAssignmentWithSchedule(id: string) {
   if (!isSupabaseAdminConfigured()) return null;
@@ -35,10 +31,13 @@ async function getAssignmentWithSchedule(id: string) {
 // GET /api/shifts/assignments/[id] - Get single assignment
 export const GET = withAuth(async (
   request: NextRequest,
-  context: { user: User } & RouteContext
+  context: { user: User; params?: Record<string, string> }
 ) => {
   try {
-    const { id } = await context.params;
+    const id = context.params?.id;
+    if (!id) {
+      return NextResponse.json({ error: 'Assignment ID is required' }, { status: 400 });
+    }
 
     const assignment = await getAssignmentWithSchedule(id);
 
@@ -56,10 +55,14 @@ export const GET = withAuth(async (
 // PATCH /api/shifts/assignments/[id] - Update or confirm assignment
 export const PATCH = withAuth(async (
   request: NextRequest,
-  context: { user: User } & RouteContext
+  context: { user: User; params?: Record<string, string> }
 ) => {
   try {
-    const { id } = await context.params;
+    const id = context.params?.id;
+    if (!id) {
+      return NextResponse.json({ error: 'Assignment ID is required' }, { status: 400 });
+    }
+
     const body = await request.json();
     const { action, employee_id, role, notes } = body;
 
@@ -144,10 +147,13 @@ export const PATCH = withAuth(async (
 // DELETE /api/shifts/assignments/[id] - Remove assignment
 export const DELETE = withAuth(async (
   request: NextRequest,
-  context: { user: User } & RouteContext
+  context: { user: User; params?: Record<string, string> }
 ) => {
   try {
-    const { id } = await context.params;
+    const id = context.params?.id;
+    if (!id) {
+      return NextResponse.json({ error: 'Assignment ID is required' }, { status: 400 });
+    }
 
     // Get current assignment
     const assignment = await getAssignmentWithSchedule(id);
