@@ -9,7 +9,7 @@ import Modal from '@/components/ui/Modal';
 import Badge from '@/components/ui/Badge';
 import { formatCurrency } from '@/modules/reception/lib/constants';
 import { useReceptionMode } from '@/contexts/ReceptionModeContext';
-import { useTranslation } from '@/lib/i18n/LanguageContext';
+import { useTranslation } from '@/contexts/LanguageContext';
 import { ClientAutocomplete, CreateClientModal } from '@/components/reception';
 import type { ClientOption } from '@/components/reception';
 import type { Transaction, ServiceType, PaymentMethodConfig, CreateTransactionInput } from '@/modules/reception/types';

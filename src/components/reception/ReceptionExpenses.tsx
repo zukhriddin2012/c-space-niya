@@ -9,7 +9,7 @@ import Modal from '@/components/ui/Modal';
 import Badge from '@/components/ui/Badge';
 import { formatCurrency, EXPENSE_PAYMENT_METHODS_LIST } from '@/modules/reception/lib/constants';
 import { useReceptionMode } from '@/contexts/ReceptionModeContext';
-import { useTranslation } from '@/lib/i18n/LanguageContext';
+import { useTranslation } from '@/contexts/LanguageContext';
 import type { Expense, ExpenseType, CreateExpenseInput } from '@/modules/reception/types';
 
 interface ExpenseFormData {

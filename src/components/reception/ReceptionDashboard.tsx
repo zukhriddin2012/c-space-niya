@@ -5,7 +5,7 @@ import { ArrowLeftRight, Building2, Calendar, ChevronDown } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import { formatCurrency } from '@/modules/reception/lib/constants';
 import { useReceptionMode } from '@/contexts/ReceptionModeContext';
-import { useTranslation } from '@/lib/i18n/LanguageContext';
+import { useTranslation } from '@/contexts/LanguageContext';
 
 type PeriodType = 'today' | 'this_week' | 'this_month' | 'last_month' | 'this_quarter' | 'this_year' | 'all_time' | 'custom';
 

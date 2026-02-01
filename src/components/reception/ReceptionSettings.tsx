@@ -8,7 +8,7 @@ import Input from '@/components/ui/Input';
 import Modal from '@/components/ui/Modal';
 import Badge from '@/components/ui/Badge';
 import { useReceptionMode } from '@/contexts/ReceptionModeContext';
-import { useTranslation } from '@/lib/i18n/LanguageContext';
+import { useTranslation } from '@/contexts/LanguageContext';
 import type { ServiceType, ExpenseType, PaymentMethodConfig, ReceptionBranchAccess } from '@/modules/reception/types';
 
 type Tab = 'services' | 'expenses' | 'payments' | 'branch_access';
