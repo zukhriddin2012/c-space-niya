@@ -120,7 +120,9 @@ export default function EmployeeSelector({
                     {employee.full_name}
                   </span>
                   {employee.is_floater && (
-                    <Star className="h-4 w-4 text-amber-500 flex-shrink-0" title="Floater" />
+                    <span title="Floater">
+                      <Star className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                    </span>
                   )}
                 </div>
                 <p className="text-sm text-gray-500 truncate">{employee.position}</p>
