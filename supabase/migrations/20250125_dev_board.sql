@@ -95,7 +95,7 @@ CREATE INDEX IF NOT EXISTS idx_dev_task_activity_task ON dev_task_activity(task_
 -- INSERT DEFAULT PROJECTS
 -- ============================================================================
 INSERT INTO dev_projects (id, name, description, color, icon) VALUES
-  ('11111111-1111-1111-1111-111111111111', 'People Platform', 'C-Space People Management System', '#8B5CF6', 'building'),
+  ('11111111-1111-1111-1111-111111111111', 'Niya Platform', 'C-Space Niya - HR & Operations', '#8B5CF6', 'building'),
   ('22222222-2222-2222-2222-222222222222', 'Telegram Bot', 'Attendance & Check-in Bot', '#10B981', 'message-circle')
 ON CONFLICT (id) DO NOTHING;
 

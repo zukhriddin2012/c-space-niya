@@ -1,6 +1,6 @@
-# C-Space People
+# C-Space Niya
 
-A comprehensive people management platform for C-Space Coworking, built with Next.js.
+A comprehensive HR & operations platform for C-Space Coworking, built with Next.js.
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 

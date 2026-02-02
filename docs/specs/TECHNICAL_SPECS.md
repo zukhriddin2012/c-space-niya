@@ -1,8 +1,8 @@
-# C-Space People - Technical Specifications
+# C-Space Niya - Technical Specifications
 
 ## Overview
 
-**C-Space People** is a comprehensive HR management web application built for C-Space coworking company. It provides employee management, attendance tracking, payroll processing, leave management, and role-based access control.
+**C-Space Niya** is a comprehensive HR & operations management web application built for C-Space coworking company. It provides employee management, attendance tracking, payroll processing, leave management, and role-based access control.
 
 **Repository:** https://github.com/zukhriddin2012/c-space-niya
 **Branch:** test

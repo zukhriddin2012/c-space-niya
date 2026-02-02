@@ -418,8 +418,8 @@ export default function Sidebar({ user }: SidebarProps) {
           />
           {!isCollapsed && (
             <div>
-              <h1 className="font-semibold text-gray-900">C-Space People</h1>
-              <p className="text-xs text-gray-500">People Management</p>
+              <h1 className="font-semibold text-gray-900">C-Space Niya</h1>
+              <p className="text-xs text-gray-500">HR & Operations</p>
             </div>
           )}
         </Link>
