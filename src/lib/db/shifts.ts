@@ -665,9 +665,10 @@ export async function getAvailableEmployeesForShift(
     employeesQuery = employeesQuery.eq('can_work_night', true);
   }
 
-  // Filter by branch if specified (include floaters)
+  // Filter by branch if specified (include floaters and employees with no branch set)
+  // Note: Include null primary_branch_id since column was recently added
   if (branchId) {
-    employeesQuery = employeesQuery.or(`primary_branch_id.eq.${branchId},is_floater.eq.true`);
+    employeesQuery = employeesQuery.or(`primary_branch_id.eq.${branchId},is_floater.eq.true,primary_branch_id.is.null`);
   }
 
   const { data: employees, error: empError } = await employeesQuery;
