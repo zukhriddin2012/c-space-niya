@@ -648,7 +648,7 @@ export async function getAvailableEmployeesForShift(
   date: string,
   shiftType: ShiftType,
   branchId?: string
-): Promise<{ id: string; full_name: string; position: string; is_floater: boolean }[]> {
+): Promise<{ id: string; full_name: string; position: string; is_floater: boolean; primary_branch_id: string | null }[]> {
   if (!isSupabaseAdminConfigured()) return [];
 
   // Get day of week (0=Sunday)
@@ -724,6 +724,7 @@ export async function getAvailableEmployeesForShift(
       full_name: emp.full_name,
       position: emp.position,
       is_floater: emp.is_floater || false,
+      primary_branch_id: emp.primary_branch_id || null,
     }));
 }
 

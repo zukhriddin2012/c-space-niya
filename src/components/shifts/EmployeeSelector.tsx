@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Search, User, Star, Loader2, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Search, User, Star, Loader2, AlertCircle, Building2 } from 'lucide-react';
 
 interface AvailableEmployee {
   id: string;
   full_name: string;
   position: string;
   is_floater: boolean;
+  primary_branch_id: string | null;
 }
 
 interface EmployeeSelectorProps {
@@ -58,10 +59,29 @@ export default function EmployeeSelector({
     fetchEmployees();
   }, [date, shiftType, branchId]);
 
-  const filteredEmployees = employees.filter((emp) =>
-    emp.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    emp.position.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter and sort: branch employees first, then others
+  const filteredEmployees = useMemo(() => {
+    const filtered = employees.filter((emp) =>
+      emp.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      emp.position.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    // Sort: branch employees first, then floaters, then others
+    return filtered.sort((a, b) => {
+      const aIsBranch = a.primary_branch_id === branchId;
+      const bIsBranch = b.primary_branch_id === branchId;
+
+      if (aIsBranch && !bIsBranch) return -1;
+      if (!aIsBranch && bIsBranch) return 1;
+
+      // If both are branch or both aren't, sort floaters next
+      if (a.is_floater && !b.is_floater) return -1;
+      if (!a.is_floater && b.is_floater) return 1;
+
+      // Finally sort by name
+      return a.full_name.localeCompare(b.full_name);
+    });
+  }, [employees, searchQuery, branchId]);
 
   if (loading) {
     return (
@@ -119,9 +139,16 @@ export default function EmployeeSelector({
                   <span className="font-medium text-gray-900 truncate">
                     {employee.full_name}
                   </span>
+                  {employee.primary_branch_id === branchId && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700" title="This branch">
+                      <Building2 className="h-3 w-3 mr-0.5" />
+                      Branch
+                    </span>
+                  )}
                   {employee.is_floater && (
-                    <span title="Floater">
-                      <Star className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                    <span title="Floater" className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">
+                      <Star className="h-3 w-3 mr-0.5" />
+                      Floater
                     </span>
                   )}
                 </div>
