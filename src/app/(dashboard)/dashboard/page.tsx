@@ -155,11 +155,11 @@ async function getDashboardStats(branchId?: string) {
   const internshipCount = activeEmployees.filter((e: Employee) => e.employment_type === 'internship').length;
   const probationTypeCount = activeEmployees.filter((e: Employee) => e.employment_type === 'probation').length;
 
-  // Level counts
-  const juniorCount = activeEmployees.filter((e: Employee) => e.level === 'junior').length;
-  const middleCount = activeEmployees.filter((e: Employee) => e.level === 'middle').length;
-  const seniorCount = activeEmployees.filter((e: Employee) => e.level === 'senior').length;
-  const executiveCount = activeEmployees.filter((e: Employee) => e.level === 'executive').length;
+  // Level counts (case-insensitive comparison)
+  const juniorCount = activeEmployees.filter((e: Employee) => e.level?.toLowerCase() === 'junior').length;
+  const middleCount = activeEmployees.filter((e: Employee) => e.level?.toLowerCase() === 'middle').length;
+  const seniorCount = activeEmployees.filter((e: Employee) => e.level?.toLowerCase() === 'senior').length;
+  const executiveCount = activeEmployees.filter((e: Employee) => e.level?.toLowerCase() === 'executive').length;
 
   // Status counts
   const probationStatusCount = activeEmployees.filter((e: Employee) => e.status === 'probation').length;
