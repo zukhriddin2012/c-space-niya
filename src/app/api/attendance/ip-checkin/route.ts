@@ -8,6 +8,22 @@ function getTashkentTime() {
   return tashkent;
 }
 
+// Detect shift type from employee position or check-in time
+function detectShift(position: string | null): 'day' | 'night' {
+  // Check if position indicates night shift
+  if (position && /night/i.test(position)) {
+    return 'night';
+  }
+  // Otherwise, infer from check-in time:
+  // If checking in between 15:00-23:59, likely night shift
+  const tashkent = getTashkentTime();
+  const hour = tashkent.getUTCHours();
+  if (hour >= 15 && hour <= 23) {
+    return 'night';
+  }
+  return 'day';
+}
+
 // Check if employee is late
 function isLate(shiftId: string): boolean {
   const tashkent = getTashkentTime();
@@ -26,7 +42,7 @@ export async function POST(request: NextRequest) {
     const clientIp = forwardedFor?.split(',')[0]?.trim() || realIp || 'unknown';
 
     const body = await request.json();
-    const { telegramId, shiftId = 'day', remoteCheckin = false } = body;
+    const { telegramId, shiftId: providedShiftId, remoteCheckin = false } = body;
 
     if (!telegramId) {
       return NextResponse.json({ success: false, error: 'Missing telegramId' }, { status: 400 });
@@ -46,6 +62,9 @@ export async function POST(request: NextRequest) {
     if (empError || !employee) {
       return NextResponse.json({ success: false, error: 'Employee not found' }, { status: 404 });
     }
+
+    // Auto-detect shift from position or time if not provided
+    const shiftId = providedShiftId || detectShift(employee.position);
 
     // Check if employee has active check-in (use maybeSingle to handle 0 rows)
     const { data: activeCheckin } = await supabaseAdmin
