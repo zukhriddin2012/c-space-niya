@@ -82,6 +82,7 @@ export interface Translations {
     devBoard: string;
     peopleManagement: string;
     orgChart: string;
+    shiftPlanning: string;
   };
 
   // Dashboard

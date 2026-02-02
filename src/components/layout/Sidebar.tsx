@@ -33,6 +33,7 @@ import {
   DollarSign,
   TrendingUp,
   Receipt,
+  Calendar,
 } from 'lucide-react';
 import type { User, UserRole } from '@/types';
 import { getRoleLabel } from '@/lib/auth';
@@ -108,6 +109,13 @@ const navItems: NavItem[] = [
         roles: ['general_manager', 'hr'],
       },
     ],
+  },
+  // Shift Planning
+  {
+    nameKey: 'shiftPlanning',
+    href: '/shifts',
+    icon: Calendar,
+    roles: ['general_manager', 'hr', 'ceo', 'branch_manager'],
   },
   // Recruitment group
   {
@@ -267,6 +275,7 @@ export default function Sidebar({ user }: SidebarProps) {
       settings: t.nav.settings,
       devBoard: 'Dev Board',
       telegramBot: 'Telegram Bot',
+      shiftPlanning: t.nav.shiftPlanning || 'Shift Planning',
     };
     return labels[key] || key;
   };

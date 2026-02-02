@@ -82,6 +82,7 @@ export const en: Translations = {
     tableView: 'Table View',
     boardView: 'Board View',
     devBoard: 'Dev Board',
+    shiftPlanning: 'Shift Planning',
   },
 
   // Dashboard

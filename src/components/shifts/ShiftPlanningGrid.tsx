@@ -41,6 +41,7 @@ interface ShiftPlanningGridProps {
   onAssignmentAdd?: (branchId: string, date: string, shiftType: 'day' | 'night') => void;
   onAssignmentRemove?: (assignmentId: string) => void;
   onPublish?: (scheduleId: string) => void;
+  onScheduleChange?: (scheduleId: string | null) => void;
 }
 
 // Get day names for header
@@ -67,6 +68,7 @@ export default function ShiftPlanningGrid({
   onAssignmentAdd,
   onAssignmentRemove,
   onPublish,
+  onScheduleChange,
 }: ShiftPlanningGridProps) {
   const [weekStartDate, setWeekStartDate] = useState(() => getMonday(new Date()));
   const [loading, setLoading] = useState(true);
@@ -110,6 +112,7 @@ export default function ShiftPlanningGrid({
 
       if (scheduleData.schedule) {
         setSchedule(scheduleData.schedule);
+        onScheduleChange?.(scheduleData.schedule.id);
 
         // Fetch assignments
         const assignRes = await fetch(`/api/shifts/schedules/${scheduleData.schedule.id}`);
@@ -119,6 +122,7 @@ export default function ShiftPlanningGrid({
       } else {
         // No schedule for this week yet
         setSchedule(null);
+        onScheduleChange?.(null);
         setAssignments([]);
         setCoverage(null);
       }

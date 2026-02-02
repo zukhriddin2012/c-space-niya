@@ -82,6 +82,7 @@ export const uz: Translations = {
     tableView: "Jadval ko'rinishi",
     boardView: "Doska ko'rinishi",
     devBoard: "Dev Board",
+    shiftPlanning: "Smena rejalashtirish",
   },
 
   // Dashboard
