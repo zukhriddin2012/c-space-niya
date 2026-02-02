@@ -27,6 +27,8 @@ export interface ShiftAssignment {
   shift_type: ShiftType;
   employee_id: string;
   role: string;
+  start_time: string | null;  // Custom start time (e.g., "09:00") or null for default
+  end_time: string | null;    // Custom end time (e.g., "13:00") or null for default
   confirmed_at: string | null;
   notes: string | null;
   created_at: string;
@@ -90,6 +92,8 @@ export interface CreateAssignmentInput {
   shift_type: ShiftType;
   employee_id: string;
   role?: string;
+  start_time?: string;  // Optional custom start time (e.g., "09:00")
+  end_time?: string;    // Optional custom end time (e.g., "13:00")
   notes?: string;
 }
 

@@ -89,6 +89,21 @@ export const POST = withAuth(async (request: NextRequest, context: { user: User 
       );
     }
 
+    // Validate custom time format if provided (HH:MM)
+    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    if (body.start_time && !timeRegex.test(body.start_time)) {
+      return NextResponse.json(
+        { error: 'start_time must be in HH:MM format' },
+        { status: 400 }
+      );
+    }
+    if (body.end_time && !timeRegex.test(body.end_time)) {
+      return NextResponse.json(
+        { error: 'end_time must be in HH:MM format' },
+        { status: 400 }
+      );
+    }
+
     // Check permissions
     const canEditAll = hasPermission(context.user.role, PERMISSIONS.SHIFTS_EDIT);
     const canEditOwnBranch = hasPermission(context.user.role, PERMISSIONS.SHIFTS_EDIT_OWN_BRANCH);

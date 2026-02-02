@@ -1,10 +1,16 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { Calendar, Loader2, Sun, Moon } from 'lucide-react';
+import { Calendar, Loader2, Sun, Moon, Clock } from 'lucide-react';
 import { ShiftPlanningGrid, EmployeeSelector } from '@/components/shifts';
 import { Modal } from '@/components/ui';
 import Button from '@/components/ui/Button';
+
+// Default shift times
+const DEFAULT_TIMES = {
+  day: { start: '09:00', end: '18:00' },
+  night: { start: '18:00', end: '09:00' },
+};
 
 interface ShiftsPageClientProps {
   branchFilter?: string;
@@ -43,9 +49,17 @@ export default function ShiftsPageClient({
   const [error, setError] = useState<string | null>(null);
   const [currentScheduleId, setCurrentScheduleId] = useState<string | null>(null);
 
+  // Custom time state
+  const [useCustomTime, setUseCustomTime] = useState(false);
+  const [customStartTime, setCustomStartTime] = useState('09:00');
+  const [customEndTime, setCustomEndTime] = useState('13:00');
+
   const handleAssignmentAdd = useCallback((branchId: string, date: string, shiftType: 'day' | 'night') => {
     setSelectedEmployee(null);
     setError(null);
+    setUseCustomTime(false);
+    setCustomStartTime(shiftType === 'day' ? '09:00' : '18:00');
+    setCustomEndTime(shiftType === 'day' ? '13:00' : '09:00');
     setAssignmentModal({
       open: true,
       branchId,
@@ -87,6 +101,7 @@ export default function ShiftsPageClient({
     setAssignmentModal((s) => ({ ...s, open: false }));
     setSelectedEmployee(null);
     setError(null);
+    setUseCustomTime(false);
   };
 
   const handleSubmitAssignment = async () => {
@@ -96,16 +111,24 @@ export default function ShiftsPageClient({
     setError(null);
 
     try {
+      const payload: Record<string, string | undefined> = {
+        schedule_id: currentScheduleId,
+        branch_id: assignmentModal.branchId,
+        date: assignmentModal.date,
+        shift_type: assignmentModal.shiftType,
+        employee_id: selectedEmployee.id,
+      };
+
+      // Add custom times if enabled
+      if (useCustomTime) {
+        payload.start_time = customStartTime;
+        payload.end_time = customEndTime;
+      }
+
       const res = await fetch('/api/shifts/assignments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          schedule_id: currentScheduleId,
-          branch_id: assignmentModal.branchId,
-          date: assignmentModal.date,
-          shift_type: assignmentModal.shiftType,
-          employee_id: selectedEmployee.id,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
@@ -191,6 +214,52 @@ export default function ShiftsPageClient({
               </span>
             </div>
           </div>
+
+          {/* Custom Time Range (for part-time shifts) */}
+          {assignmentModal.shiftType === 'day' && (
+            <div className="border border-gray-200 rounded-lg p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-700">Custom Time Range</span>
+                  <span className="text-xs text-gray-400">(for part-time)</span>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={useCustomTime}
+                    onChange={(e) => setUseCustomTime(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
+                </label>
+              </div>
+
+              {useCustomTime && (
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <label className="block text-xs text-gray-500 mb-1">Start</label>
+                    <input
+                      type="time"
+                      value={customStartTime}
+                      onChange={(e) => setCustomStartTime(e.target.value)}
+                      className="w-full px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                    />
+                  </div>
+                  <span className="text-gray-400 pt-5">→</span>
+                  <div className="flex-1">
+                    <label className="block text-xs text-gray-500 mb-1">End</label>
+                    <input
+                      type="time"
+                      value={customEndTime}
+                      onChange={(e) => setCustomEndTime(e.target.value)}
+                      className="w-full px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Employee Selector */}
           {assignmentModal.open && assignmentModal.date && assignmentModal.branchId && (

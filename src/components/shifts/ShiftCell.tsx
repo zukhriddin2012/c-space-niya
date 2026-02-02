@@ -7,11 +7,19 @@ interface Assignment {
   id: string;
   employee_id: string;
   confirmed_at: string | null;
+  start_time?: string | null;  // Custom start time (e.g., "09:00")
+  end_time?: string | null;    // Custom end time (e.g., "13:00")
   employees?: {
     full_name: string;
     employee_id: string;
     position: string;
   };
+}
+
+// Format time for display (remove seconds if present)
+function formatTime(time: string | null | undefined): string {
+  if (!time) return '';
+  return time.substring(0, 5); // "09:00:00" -> "09:00"
 }
 
 interface ShiftCellProps {
@@ -89,31 +97,43 @@ export default function ShiftCell({
       {/* Assigned employees */}
       {assignments.length > 0 && (
         <div className="space-y-1">
-          {assignments.map((assignment) => (
-            <div
-              key={assignment.id}
-              className="flex items-center justify-between group bg-white rounded px-1.5 py-1 text-xs"
-            >
-              <div className="flex items-center gap-1.5 min-w-0">
-                {assignment.confirmed_at ? (
-                  <Check className="h-3 w-3 text-green-500 flex-shrink-0" />
-                ) : (
-                  <Clock className="h-3 w-3 text-gray-400 flex-shrink-0" />
+          {assignments.map((assignment) => {
+            const hasCustomTime = assignment.start_time || assignment.end_time;
+            const timeDisplay = hasCustomTime
+              ? `${formatTime(assignment.start_time)}-${formatTime(assignment.end_time)}`
+              : null;
+
+            return (
+              <div
+                key={assignment.id}
+                className="flex items-center justify-between group bg-white rounded px-1.5 py-1 text-xs"
+              >
+                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                  {assignment.confirmed_at ? (
+                    <Check className="h-3 w-3 text-green-500 flex-shrink-0" />
+                  ) : (
+                    <Clock className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                  )}
+                  <span className="truncate font-medium">
+                    {assignment.employees?.full_name || 'Unknown'}
+                  </span>
+                  {timeDisplay && (
+                    <span className="text-[10px] text-purple-600 font-medium flex-shrink-0">
+                      ({timeDisplay})
+                    </span>
+                  )}
+                </div>
+                {!readonly && onRemove && (
+                  <button
+                    onClick={() => onRemove(assignment.id)}
+                    className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-100 text-gray-400 hover:text-red-500 transition-all"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
                 )}
-                <span className="truncate font-medium">
-                  {assignment.employees?.full_name || 'Unknown'}
-                </span>
               </div>
-              {!readonly && onRemove && (
-                <button
-                  onClick={() => onRemove(assignment.id)}
-                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-100 text-gray-400 hover:text-red-500 transition-all"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
