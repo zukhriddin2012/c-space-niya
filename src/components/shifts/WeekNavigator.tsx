@@ -74,7 +74,7 @@ export default function WeekNavigator({
       </Button>
 
       <Button
-        variant={isCurrentWeek ? 'primary' : 'outline'}
+        variant={isCurrentWeek ? 'primary' : 'secondary'}
         size="sm"
         onClick={handleToday}
         disabled={disabled || isCurrentWeek}
