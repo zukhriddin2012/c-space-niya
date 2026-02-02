@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Employee not found' }, { status: 404 });
     }
 
-    // Check if employee has active check-in
+    // Check if employee has active check-in (use maybeSingle to handle 0 rows)
     const { data: activeCheckin } = await supabaseAdmin
       .from('attendance')
       .select('id, check_in')
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       .is('check_out', null)
       .order('date', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (activeCheckin) {
       return NextResponse.json({
