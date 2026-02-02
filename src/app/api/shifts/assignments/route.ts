@@ -31,7 +31,7 @@ export const GET = withAuth(async (request: NextRequest, context: { user: User }
         // Check if user can view this branch
         if (!hasPermission(context.user.role, PERMISSIONS.SHIFTS_VIEW_ALL)) {
           // Branch manager can only view their own branch
-          if (context.user.branch_id !== branchId) {
+          if (context.user.branchId !== branchId) {
             return NextResponse.json({ error: 'Cannot view other branches' }, { status: 403 });
           }
         }
@@ -96,7 +96,7 @@ export const POST = withAuth(async (request: NextRequest, context: { user: User 
     if (!canEditAll) {
       if (canEditOwnBranch) {
         // Branch manager can only edit their own branch
-        if (context.user.branch_id !== body.branch_id) {
+        if (context.user.branchId !== body.branch_id) {
           return NextResponse.json({ error: 'Cannot edit other branches' }, { status: 403 });
         }
       } else {
