@@ -64,7 +64,7 @@ export default function WeekNavigator({
   return (
     <div className="flex items-center gap-2">
       <Button
-        variant="outline"
+        variant="secondary"
         size="sm"
         onClick={handlePrevWeek}
         disabled={disabled}
@@ -85,7 +85,7 @@ export default function WeekNavigator({
       </Button>
 
       <Button
-        variant="outline"
+        variant="secondary"
         size="sm"
         onClick={handleNextWeek}
         disabled={disabled}
