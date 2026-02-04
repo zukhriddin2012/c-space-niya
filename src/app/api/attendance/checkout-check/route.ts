@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 
+// CORS headers for Telegram Mini App
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, X-Telegram-Init-Data',
+};
+
+// Handle OPTIONS request for CORS preflight
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
 type Lang = 'uz' | 'ru' | 'en';
@@ -154,7 +166,7 @@ export async function GET(request: NextRequest) {
     error: 'GET not allowed - use POST',
     method: request.method,
     url: request.url,
-  }, { status: 405 });
+  }, { status: 405, headers: corsHeaders });
 }
 
 export async function POST(request: NextRequest) {
@@ -168,11 +180,11 @@ export async function POST(request: NextRequest) {
     const { telegramId, attendanceId, messageId } = body;
 
     if (!telegramId) {
-      return NextResponse.json({ success: false, error: 'Missing telegramId' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Missing telegramId' }, { status: 400, headers: corsHeaders });
     }
 
     if (!supabaseAdmin) {
-      return NextResponse.json({ success: false, error: 'Database not configured' }, { status: 500 });
+      return NextResponse.json({ success: false, error: 'Database not configured' }, { status: 500, headers: corsHeaders });
     }
 
     // Get employee by telegram ID (including preferred_language)
@@ -183,7 +195,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (empError || !employee) {
-      return NextResponse.json({ success: false, error: 'Employee not found' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Employee not found' }, { status: 404, headers: corsHeaders });
     }
 
     const lang = (employee.preferred_language as Lang) || 'uz';
@@ -214,7 +226,7 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (error || !data) {
-        return NextResponse.json({ success: false, error: 'No active check-in found' }, { status: 404 });
+        return NextResponse.json({ success: false, error: 'No active check-in found' }, { status: 404, headers: corsHeaders });
       }
       attendance = data;
     }
@@ -287,7 +299,7 @@ export async function POST(request: NextRequest) {
 
       if (reminderError || !newReminder) {
         console.error('Failed to create reminder:', reminderError);
-        return NextResponse.json({ success: false, error: 'Failed to create reminder' }, { status: 500 });
+        return NextResponse.json({ success: false, error: 'Failed to create reminder' }, { status: 500, headers: corsHeaders });
       }
       reminderId = newReminder.id;
     }
@@ -325,9 +337,9 @@ export async function POST(request: NextRequest) {
       clientIp,
       messageUpdated: messageResult.success,
       messageError: messageResult.error,
-    });
+    }, { headers: corsHeaders });
   } catch (error) {
     console.error('Checkout check error:', error);
-    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500, headers: corsHeaders });
   }
 }

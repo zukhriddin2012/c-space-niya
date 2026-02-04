@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 
+// CORS headers for Telegram Mini App
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, X-Telegram-Init-Data',
+};
+
+// Handle OPTIONS request for CORS preflight
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 type ResponseType = 'im_at_work' | 'i_left' | '45min' | '2hours' | 'all_day';
 
 // Calculate next reminder time based on response
@@ -36,11 +48,11 @@ export async function POST(request: NextRequest) {
     } = body;
 
     if (!telegramId || !responseType) {
-      return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400, headers: corsHeaders });
     }
 
     if (!supabaseAdmin) {
-      return NextResponse.json({ success: false, error: 'Database not configured' }, { status: 500 });
+      return NextResponse.json({ success: false, error: 'Database not configured' }, { status: 500, headers: corsHeaders });
     }
 
     // Get employee by telegram ID
@@ -51,7 +63,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (empError || !employee) {
-      return NextResponse.json({ success: false, error: 'Employee not found' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Employee not found' }, { status: 404, headers: corsHeaders });
     }
 
     // Handle "I left" response - perform checkout
@@ -88,7 +100,7 @@ export async function POST(request: NextRequest) {
 
         if (checkoutError) {
           console.error('Checkout error:', checkoutError);
-          return NextResponse.json({ success: false, error: 'Failed to checkout' }, { status: 500 });
+          return NextResponse.json({ success: false, error: 'Failed to checkout' }, { status: 500, headers: corsHeaders });
         }
 
         // Update reminder status if exists
@@ -109,10 +121,10 @@ export async function POST(request: NextRequest) {
           success: true,
           action: 'checked_out',
           checkOutTime,
-        });
+        }, { headers: corsHeaders });
       }
 
-      return NextResponse.json({ success: false, error: 'No active attendance found' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'No active attendance found' }, { status: 404, headers: corsHeaders });
     }
 
     // For other responses (im_at_work, 45min, 2hours, all_day)
@@ -183,10 +195,10 @@ export async function POST(request: NextRequest) {
       action: 'reminder_scheduled',
       responseType,
       nextReminder,
-    });
+    }, { headers: corsHeaders });
 
   } catch (error) {
     console.error('Checkout action error:', error);
-    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500, headers: corsHeaders });
   }
 }

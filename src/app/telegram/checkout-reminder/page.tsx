@@ -30,7 +30,8 @@ function CheckoutReminderContent() {
     }
 
     try {
-      const apiUrl = 'https://c-space-niya.vercel.app/api/attendance/checkout-check';
+      // Use relative URL to avoid CORS issues and work across environments
+      const apiUrl = '/api/attendance/checkout-check';
 
       const xhr = new XMLHttpRequest();
       xhr.open('POST', apiUrl, true);
