@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // Direct API for AI assistant (Jarvis) to read/write to Dev Board
 // No auth required - this is for Jarvis to communicate quickly
@@ -12,10 +12,19 @@ const JARVIS = {
   color: '#8B5CF6', // Purple
 };
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Lazy-load Supabase client to avoid build-time errors
+let _supabase: SupabaseClient | null = null;
+function getSupabase(): SupabaseClient | null {
+  if (!_supabase) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!url || !key) {
+      return null;
+    }
+    _supabase = createClient(url, key);
+  }
+  return _supabase;
+}
 
 // CORS headers for external access
 const corsHeaders = {
@@ -32,6 +41,11 @@ export async function OPTIONS() {
 // GET - Read all tasks and recent comments
 export async function GET(request: NextRequest) {
   try {
+    const supabase = getSupabase();
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 503, headers: corsHeaders });
+    }
+
     const { searchParams } = new URL(request.url);
     const taskId = searchParams.get('task_id');
 
@@ -95,6 +109,11 @@ export async function GET(request: NextRequest) {
 // POST - Add comment or update task
 export async function POST(request: NextRequest) {
   try {
+    const supabase = getSupabase();
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 503, headers: corsHeaders });
+    }
+
     const body = await request.json();
     const { action, task_id, comment, status, title, description, task_type, priority } = body;
 

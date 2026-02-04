@@ -24,7 +24,6 @@ import {
   ClipboardCheck,
   UserPlus,
   Calculator,
-  Scale,
   Wallet,
   BarChart3,
 } from 'lucide-react';
@@ -365,6 +364,7 @@ export function GeneralManagerDashboard({
           value={pendingApprovals.total}
           icon={ClipboardCheck}
           color="amber"
+          href="/approvals"
         />
         <StatCard
           title={t.dashboard.activeCandidates}
@@ -542,6 +542,7 @@ export function CEODashboard({
           value={pendingApprovals.total}
           icon={ClipboardCheck}
           color="amber"
+          href="/approvals"
         />
       </div>
 

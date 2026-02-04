@@ -138,6 +138,13 @@ const navItems: NavItem[] = [
       },
     ],
   },
+  // Approvals Hub (for managers)
+  {
+    nameKey: 'approvals',
+    href: '/approvals',
+    icon: ClipboardCheck,
+    roles: ['general_manager', 'ceo', 'hr', 'chief_accountant'],
+  },
   // Accounting group
   {
     nameKey: 'accounting',
