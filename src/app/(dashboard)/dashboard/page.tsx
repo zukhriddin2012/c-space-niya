@@ -156,7 +156,11 @@ async function getDashboardStats(branchId?: string) {
   const probationTypeCount = activeEmployees.filter((e: Employee) => e.employment_type === 'probation').length;
 
   // Level counts (case-insensitive comparison)
-  const juniorCount = activeEmployees.filter((e: Employee) => e.level?.toLowerCase() === 'junior').length;
+  // Note: null/undefined/empty level is treated as 'junior' (the database default)
+  const juniorCount = activeEmployees.filter((e: Employee) => {
+    const level = e.level?.toLowerCase()?.trim();
+    return !level || level === 'junior';
+  }).length;
   const middleCount = activeEmployees.filter((e: Employee) => e.level?.toLowerCase() === 'middle').length;
   const seniorCount = activeEmployees.filter((e: Employee) => e.level?.toLowerCase() === 'senior').length;
   const executiveCount = activeEmployees.filter((e: Employee) => e.level?.toLowerCase() === 'executive').length;
