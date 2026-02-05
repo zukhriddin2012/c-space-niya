@@ -81,14 +81,46 @@ export const DELETE = withAuth(async (request: NextRequest, { user, params }) =>
     }
 
     // Get employee for voided_by
-    const { data: employee } = await supabaseAdmin!
-      .from('employees')
-      .select('id')
-      .eq('email', user.email)
-      .single();
+    // First try to find by auth_user_id, then fall back to email
+    let employee: { id: string } | null = null;
+
+    if (user.id) {
+      const { data: empByAuthId } = await supabaseAdmin!
+        .from('employees')
+        .select('id')
+        .eq('auth_user_id', user.id)
+        .single();
+
+      if (empByAuthId) {
+        employee = empByAuthId;
+      }
+    }
+
+    if (!employee && user.email) {
+      const { data: empByEmail } = await supabaseAdmin!
+        .from('employees')
+        .select('id')
+        .eq('email', user.email)
+        .single();
+
+      if (empByEmail) {
+        employee = empByEmail;
+
+        // Auto-link auth_user_id for future lookups
+        if (user.id) {
+          await supabaseAdmin!
+            .from('employees')
+            .update({ auth_user_id: user.id })
+            .eq('id', empByEmail.id);
+        }
+      }
+    }
 
     if (!employee) {
-      return NextResponse.json({ error: 'Employee not found' }, { status: 404 });
+      return NextResponse.json({
+        error: 'Employee not found',
+        details: 'No employee record found for this user.'
+      }, { status: 404 });
     }
 
     // Get reason from request body

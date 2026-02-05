@@ -141,14 +141,48 @@ export const POST = withAuth(async (request: NextRequest, { user }) => {
     }
 
     // Get employee
-    const { data: employee } = await supabaseAdmin!
-      .from('employees')
-      .select('id, branch_id')
-      .eq('email', user.email)
-      .single();
+    // First try to find by auth_user_id, then fall back to email
+    let employee: { id: string; branch_id: string } | null = null;
+
+    // Try by auth_user_id first (most reliable)
+    if (user.id) {
+      const { data: empByAuthId } = await supabaseAdmin!
+        .from('employees')
+        .select('id, branch_id')
+        .eq('auth_user_id', user.id)
+        .single();
+
+      if (empByAuthId) {
+        employee = empByAuthId;
+      }
+    }
+
+    // Fall back to email lookup if not found by auth_user_id
+    if (!employee && user.email) {
+      const { data: empByEmail } = await supabaseAdmin!
+        .from('employees')
+        .select('id, branch_id')
+        .eq('email', user.email)
+        .single();
+
+      if (empByEmail) {
+        employee = empByEmail;
+
+        // Auto-link auth_user_id for future lookups
+        if (user.id) {
+          await supabaseAdmin!
+            .from('employees')
+            .update({ auth_user_id: user.id })
+            .eq('id', empByEmail.id);
+        }
+      }
+    }
 
     if (!employee) {
-      return NextResponse.json({ error: 'Employee not found' }, { status: 404 });
+      return NextResponse.json({
+        error: 'Employee not found',
+        details: 'No employee record found for this user. Please contact admin to link your account.'
+      }, { status: 404 });
     }
 
     const body: CreateExpenseInput = await request.json();

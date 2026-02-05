@@ -23,8 +23,22 @@ export const GET = withAuth(async (request, { user }) => {
     // Get user's assigned branch - try multiple lookup strategies
     let employee: { id: string; branch_id: string | null } | null = null;
 
-    // Try by UUID ID first (if it looks like a UUID)
-    if (user.id && user.id.includes('-')) {
+    // Try by auth_user_id first (most reliable)
+    if (user.id) {
+      const { data: empByAuthId } = await supabaseAdmin
+        .from('employees')
+        .select('id, branch_id')
+        .eq('auth_user_id', user.id)
+        .maybeSingle();
+
+      if (empByAuthId) {
+        employee = empByAuthId;
+        console.log('[Branches API] Found employee by auth_user_id:', employee.id);
+      }
+    }
+
+    // Try by UUID ID (if it looks like a UUID)
+    if (!employee && user.id && user.id.includes('-')) {
       const { data: empById } = await supabaseAdmin
         .from('employees')
         .select('id, branch_id')
@@ -48,6 +62,15 @@ export const GET = withAuth(async (request, { user }) => {
       if (empByEmail) {
         employee = empByEmail;
         console.log('[Branches API] Found employee by email:', employee.id);
+
+        // Auto-link auth_user_id for future lookups
+        if (user.id) {
+          await supabaseAdmin
+            .from('employees')
+            .update({ auth_user_id: user.id })
+            .eq('id', empByEmail.id);
+          console.log('[Branches API] Linked auth_user_id:', user.id);
+        }
       }
     }
 
