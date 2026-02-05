@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api-auth';
-import { PERMISSIONS } from '@/lib/permissions';
+import { PERMISSIONS, hasPermission } from '@/lib/permissions';
 import {
   getPaymentRequestById,
   submitPaymentRequest,
   approvePaymentRequest,
   rejectPaymentRequest,
   markPaymentRequestPaid,
-  getPaymentRequestItemsWithTelegram
+  getPaymentRequestItemsWithTelegram,
+  deletePaymentRequest,
 } from '@/lib/db';
 import {
-  notifyPaymentApproved,
   notifyPaymentRejected,
-  notifyPaymentPaid
 } from '@/lib/telegram-notifications';
 
 // GET /api/payment-requests/[id] - Get a single payment request with items
@@ -61,16 +60,23 @@ export const PATCH = withAuth(async (request: NextRequest, { user, params }) => 
       }
 
       case 'approve': {
+        // Check PAYROLL_APPROVE permission for approve action
+        if (!hasPermission(user.role, PERMISSIONS.PAYROLL_APPROVE)) {
+          return NextResponse.json({ error: 'Approval permission required' }, { status: 403 });
+        }
         const result = await approvePaymentRequest(id, user.id);
         if (!result.success) {
           return NextResponse.json({ error: result.error }, { status: 400 });
         }
-        // Send Telegram notifications (async)
-        sendApproveNotifications(id).catch(err => console.error('Notification error:', err));
+        // NOTE: Auto-notifications removed - user triggers manually via /notify endpoint
         return NextResponse.json({ success: true, message: 'Payment request approved' });
       }
 
       case 'reject': {
+        // Check PAYROLL_APPROVE permission for reject action
+        if (!hasPermission(user.role, PERMISSIONS.PAYROLL_APPROVE)) {
+          return NextResponse.json({ error: 'Approval permission required' }, { status: 403 });
+        }
         if (!reason) {
           return NextResponse.json({ error: 'Rejection reason is required' }, { status: 400 });
         }
@@ -92,8 +98,7 @@ export const PATCH = withAuth(async (request: NextRequest, { user, params }) => 
         if (!result.success) {
           return NextResponse.json({ error: result.error }, { status: 400 });
         }
-        // Send Telegram notifications (async)
-        sendPayNotifications(id, payment_reference).catch(err => console.error('Notification error:', err));
+        // NOTE: Auto-notifications removed - user triggers manually via /notify endpoint
         return NextResponse.json({ success: true, message: 'Payment marked as paid' });
       }
 
@@ -106,28 +111,40 @@ export const PATCH = withAuth(async (request: NextRequest, { user, params }) => 
   }
 }, {
   permission: PERMISSIONS.PAYROLL_PROCESS,
-  // Note: approve/reject need PAYROLL_APPROVE but we'll validate in the db functions
+  // Note: approve/reject also check PAYROLL_APPROVE permission in the handler above
 });
 
-// Notification helpers
-async function sendApproveNotifications(requestId: string) {
-  const { request, items } = await getPaymentRequestItemsWithTelegram(requestId);
-  if (!request) return;
-
-  for (const item of items) {
-    if (item.telegram_id) {
-      await notifyPaymentApproved({
-        employeeName: item.employee_name,
-        telegramId: item.telegram_id,
-        amount: item.amount,
-        type: request.request_type,
-        month: request.month,
-        year: request.year,
-      });
+// DELETE /api/payment-requests/[id] - Delete a payment request (non-paid only)
+export const DELETE = withAuth(async (request: NextRequest, { user, params }) => {
+  try {
+    const id = params?.id;
+    if (!id) {
+      return NextResponse.json({ error: 'Request ID is required' }, { status: 400 });
     }
-  }
-}
 
+    const result = await deletePaymentRequest(id, user.id);
+
+    if (!result.success) {
+      const status = result.code === 'CANNOT_DELETE_PAID' ? 400 : result.code === 'NOT_FOUND' ? 404 : 500;
+      return NextResponse.json({
+        success: false,
+        error: result.error,
+        code: result.code,
+      }, { status });
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Payment request deleted successfully',
+      deletedRequest: result.deletedRequest,
+    });
+  } catch (error) {
+    console.error('Error deleting payment request:', error);
+    return NextResponse.json({ error: 'Failed to delete payment request' }, { status: 500 });
+  }
+}, { permission: PERMISSIONS.PAYROLL_PROCESS });
+
+// Notification helper for rejections (auto-notify kept for rejections)
 async function sendRejectNotifications(
   requestData: {
     request: { request_type: 'advance' | 'wage'; year: number; month: number } | null;
@@ -147,25 +164,6 @@ async function sendRejectNotifications(
         month: requestData.request.month,
         year: requestData.request.year,
         reason,
-      });
-    }
-  }
-}
-
-async function sendPayNotifications(requestId: string, paymentReference?: string) {
-  const { request, items } = await getPaymentRequestItemsWithTelegram(requestId);
-  if (!request) return;
-
-  for (const item of items) {
-    if (item.telegram_id) {
-      await notifyPaymentPaid({
-        employeeName: item.employee_name,
-        telegramId: item.telegram_id,
-        amount: item.amount,
-        type: request.request_type,
-        month: request.month,
-        year: request.year,
-        paymentReference,
       });
     }
   }

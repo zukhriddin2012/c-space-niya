@@ -472,6 +472,38 @@ export const en: Translations = {
     actions: 'Actions',
     noPayrollData: 'No payroll data available',
     selectMonth: 'Select Month',
+    // Delete feature
+    delete: 'Delete',
+    deleteTitle: 'Delete Payment Request?',
+    deleteMessage: 'This will permanently delete the {type} request for {count} employees totaling {amount} UZS. This action cannot be undone.',
+    deleteConfirm: 'Delete Request',
+    deleting: 'Deleting...',
+    cannotDeletePaid: 'Cannot delete paid payment request',
+    // Paid status
+    paid: 'Paid',
+    blocked: 'Blocked',
+    paidTooltipAdvance: 'Advance Payment',
+    paidTooltipWage: 'Wage Payment',
+    paidTooltipDate: 'Paid {amount} on {date}',
+    // Notifications
+    notify: 'Notify',
+    notifyButton: 'Notify {count} Employees',
+    notified: 'Notified',
+    notifyTitle: 'Send Telegram Notifications?',
+    notifyMessage: 'This will send payment notifications to {count} employees about their {type} payment of {amount} UZS for {period}.',
+    notifyConfirm: 'Send Notifications',
+    notifySending: 'Sending...',
+    notifySent: 'Telegram notifications sent on {date} at {time}',
+    // Bulk notifications
+    notifyAllPaid: 'Notify All Paid',
+    allNotified: 'All Notified',
+    notifyAllTitle: 'Notify All Paid Requests?',
+    notifyAllMessage: 'This will send Telegram notifications for all un-notified paid requests in {period}.',
+    notifyAllSummaryAdvance: 'Advance Requests',
+    notifyAllSummaryWage: 'Wage Requests',
+    notifyAllSummaryTotal: 'Total',
+    notifyAllSummaryEmployees: '{count} employees will be notified',
+    notifyAllConfirm: 'Notify All',
   },
 
   // Accounting

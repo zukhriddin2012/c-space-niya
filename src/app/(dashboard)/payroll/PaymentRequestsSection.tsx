@@ -19,6 +19,10 @@ import {
   FileSpreadsheet,
   Building2,
   MapPin,
+  Trash2,
+  Bell,
+  BellRing,
+  Send,
 } from 'lucide-react';
 import { ConfirmationDialog, InputDialog } from '@/components/ui';
 
@@ -49,6 +53,8 @@ interface PaymentRequest {
   status: string;
   created_at: string;
   notes: string | null;
+  notification_sent_at: string | null;
+  notification_sent_by: string | null;
 }
 
 interface Summary {
@@ -223,6 +229,20 @@ export default function PaymentRequestsSection({
     requestId: string;
     type: 'advance' | 'wage';
     amount: number;
+  } | null>(null);
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean;
+    requestId: string;
+    type: 'advance' | 'wage';
+    amount: number;
+    employeeCount: number;
+  } | null>(null);
+  const [notifyDialog, setNotifyDialog] = useState<{
+    isOpen: boolean;
+    requestId: string;
+    type: 'advance' | 'wage';
+    amount: number;
+    employeeCount: number;
   } | null>(null);
 
   // Calculate totals
@@ -503,6 +523,72 @@ export default function PaymentRequestsSection({
     }
   };
 
+  // Delete a payment request
+  const executeDelete = async (requestId: string) => {
+    setActionLoading(`${requestId}-delete`);
+    try {
+      const response = await fetch(`/api/payment-requests/${requestId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        window.location.reload();
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Failed to delete request');
+      }
+    } catch {
+      alert('An error occurred');
+    } finally {
+      setActionLoading(null);
+      setDeleteDialog(null);
+    }
+  };
+
+  // Send notification for a payment request
+  const executeNotify = async (requestId: string) => {
+    setActionLoading(`${requestId}-notify`);
+    try {
+      const response = await fetch(`/api/payment-requests/${requestId}/notify`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        window.location.reload();
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Failed to send notifications');
+      }
+    } catch {
+      alert('An error occurred');
+    } finally {
+      setActionLoading(null);
+      setNotifyDialog(null);
+    }
+  };
+
+  // Open delete dialog
+  const openDeleteDialog = (request: PaymentRequest) => {
+    setDeleteDialog({
+      isOpen: true,
+      requestId: request.id,
+      type: request.request_type,
+      amount: request.total_amount,
+      employeeCount: request.employee_count,
+    });
+  };
+
+  // Open notify dialog
+  const openNotifyDialog = (request: PaymentRequest) => {
+    setNotifyDialog({
+      isOpen: true,
+      requestId: request.id,
+      type: request.request_type,
+      amount: request.total_amount,
+      employeeCount: request.employee_count,
+    });
+  };
+
   // Get dialog configuration based on action
   const getDialogConfig = (action: 'submit' | 'approve' | 'pay', type: 'advance' | 'wage', amount: number, employeeCount: number) => {
     const typeLabel = type === 'advance' ? 'Advance' : 'Wage';
@@ -575,63 +661,118 @@ export default function PaymentRequestsSection({
           </div>
           <div className="divide-y divide-gray-100">
             {summary.requests.map(request => (
-              <div key={request.id} className="px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                    request.request_type === 'advance' ? 'bg-orange-100' : 'bg-green-100'
-                  }`}>
-                    {request.request_type === 'advance' ? (
-                      <Banknote size={16} className="text-orange-600" />
-                    ) : (
-                      <Wallet size={16} className="text-green-600" />
+              <div key={request.id} className="px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                      request.request_type === 'advance' ? 'bg-orange-100' : 'bg-green-100'
+                    }`}>
+                      {request.request_type === 'advance' ? (
+                        <Banknote size={16} className="text-orange-600" />
+                      ) : (
+                        <Wallet size={16} className="text-green-600" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900 text-sm">
+                        {request.request_type === 'advance' ? 'Advance' : 'Wage'} • {request.employee_count} employees
+                      </p>
+                      <p className="text-xs text-gray-500">{formatCurrency(request.total_amount)}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <RequestStatusBadge status={request.status} />
+
+                    {/* Delete button - hidden for paid status */}
+                    {request.status !== 'paid' && canProcess && (
+                      <button
+                        onClick={() => openDeleteDialog(request)}
+                        disabled={!!actionLoading}
+                        className="inline-flex items-center gap-1 px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 disabled:opacity-50"
+                        title="Delete request"
+                      >
+                        {actionLoading === `${request.id}-delete` ? (
+                          <Loader2 size={12} className="animate-spin" />
+                        ) : (
+                          <Trash2 size={12} />
+                        )}
+                        Delete
+                      </button>
+                    )}
+
+                    {/* Notify button - for approved/paid status */}
+                    {(request.status === 'approved' || request.status === 'paid') && canProcess && (
+                      request.notification_sent_at ? (
+                        <button
+                          disabled
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs rounded cursor-not-allowed"
+                          title={`Notified on ${new Date(request.notification_sent_at).toLocaleString()}`}
+                        >
+                          <CheckCircle size={12} />
+                          Notified
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => openNotifyDialog(request)}
+                          disabled={!!actionLoading}
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50"
+                          title="Send Telegram notifications"
+                        >
+                          {actionLoading === `${request.id}-notify` ? (
+                            <Loader2 size={12} className="animate-spin" />
+                          ) : (
+                            <Bell size={12} />
+                          )}
+                          Notify
+                        </button>
+                      )
+                    )}
+
+                    {request.status === 'draft' && canProcess && (
+                      <button
+                        onClick={() => openConfirmDialog(request.id, 'submit', request)}
+                        disabled={!!actionLoading}
+                        className="px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 disabled:opacity-50"
+                      >
+                        {actionLoading === `${request.id}-submit` ? <Loader2 size={12} className="animate-spin" /> : 'Submit'}
+                      </button>
+                    )}
+                    {request.status === 'pending_approval' && canApprove && (
+                      <>
+                        <button
+                          onClick={() => openConfirmDialog(request.id, 'approve', request)}
+                          disabled={!!actionLoading}
+                          className="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 disabled:opacity-50"
+                        >
+                          {actionLoading === `${request.id}-approve` ? <Loader2 size={12} className="animate-spin" /> : 'Approve'}
+                        </button>
+                        <button
+                          onClick={() => openRejectDialog(request.id, request)}
+                          disabled={!!actionLoading}
+                          className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 disabled:opacity-50"
+                        >
+                          {actionLoading === `${request.id}-reject` ? <Loader2 size={12} className="animate-spin" /> : 'Reject'}
+                        </button>
+                      </>
+                    )}
+                    {request.status === 'approved' && canProcess && (
+                      <button
+                        onClick={() => openConfirmDialog(request.id, 'pay', request)}
+                        disabled={!!actionLoading}
+                        className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        {actionLoading === `${request.id}-pay` ? <Loader2 size={12} className="animate-spin" /> : 'Mark Paid'}
+                      </button>
                     )}
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-900 text-sm">
-                      {request.request_type === 'advance' ? 'Advance' : 'Wage'} • {request.employee_count} employees
-                    </p>
-                    <p className="text-xs text-gray-500">{formatCurrency(request.total_amount)}</p>
+                </div>
+                {/* Notification sent timestamp */}
+                {request.notification_sent_at && (
+                  <div className="mt-1 ml-11 text-xs text-green-600 flex items-center gap-1">
+                    <BellRing size={12} />
+                    Telegram notifications sent on {new Date(request.notification_sent_at).toLocaleDateString()} at {new Date(request.notification_sent_at).toLocaleTimeString()}
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <RequestStatusBadge status={request.status} />
-                  {request.status === 'draft' && canProcess && (
-                    <button
-                      onClick={() => openConfirmDialog(request.id, 'submit', request)}
-                      disabled={!!actionLoading}
-                      className="px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 disabled:opacity-50"
-                    >
-                      {actionLoading === `${request.id}-submit` ? <Loader2 size={12} className="animate-spin" /> : 'Submit'}
-                    </button>
-                  )}
-                  {request.status === 'pending_approval' && canApprove && (
-                    <>
-                      <button
-                        onClick={() => openConfirmDialog(request.id, 'approve', request)}
-                        disabled={!!actionLoading}
-                        className="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 disabled:opacity-50"
-                      >
-                        {actionLoading === `${request.id}-approve` ? <Loader2 size={12} className="animate-spin" /> : 'Approve'}
-                      </button>
-                      <button
-                        onClick={() => openRejectDialog(request.id, request)}
-                        disabled={!!actionLoading}
-                        className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 disabled:opacity-50"
-                      >
-                        {actionLoading === `${request.id}-reject` ? <Loader2 size={12} className="animate-spin" /> : 'Reject'}
-                      </button>
-                    </>
-                  )}
-                  {request.status === 'approved' && canProcess && (
-                    <button
-                      onClick={() => openConfirmDialog(request.id, 'pay', request)}
-                      disabled={!!actionLoading}
-                      className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50"
-                    >
-                      {actionLoading === `${request.id}-pay` ? <Loader2 size={12} className="animate-spin" /> : 'Mark Paid'}
-                    </button>
-                  )}
-                </div>
+                )}
               </div>
             ))}
           </div>
@@ -1007,6 +1148,34 @@ export default function PaymentRequestsSection({
           placeholder="Enter rejection reason..."
           confirmText="Reject Request"
           isLoading={!!actionLoading}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {deleteDialog && (
+        <ConfirmationDialog
+          isOpen={deleteDialog.isOpen}
+          onClose={() => setDeleteDialog(null)}
+          onConfirm={() => executeDelete(deleteDialog.requestId)}
+          title="Delete Payment Request?"
+          message={`This will permanently delete the ${deleteDialog.type} request for ${deleteDialog.employeeCount} employee${deleteDialog.employeeCount > 1 ? 's' : ''} totaling ${formatCurrency(deleteDialog.amount)}. This action cannot be undone.`}
+          confirmText="Delete Request"
+          variant="danger"
+          isLoading={actionLoading === `${deleteDialog.requestId}-delete`}
+        />
+      )}
+
+      {/* Notify Confirmation Dialog */}
+      {notifyDialog && (
+        <ConfirmationDialog
+          isOpen={notifyDialog.isOpen}
+          onClose={() => setNotifyDialog(null)}
+          onConfirm={() => executeNotify(notifyDialog.requestId)}
+          title="Send Telegram Notifications?"
+          message={`This will send payment notifications to ${notifyDialog.employeeCount} employee${notifyDialog.employeeCount > 1 ? 's' : ''} about their ${notifyDialog.type} payment of ${formatCurrency(notifyDialog.amount)} for ${getMonthName(month, year)}.`}
+          confirmText="Send Notifications"
+          variant="info"
+          isLoading={actionLoading === `${notifyDialog.requestId}-notify`}
         />
       )}
     </div>

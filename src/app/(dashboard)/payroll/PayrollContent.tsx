@@ -36,6 +36,12 @@ interface PayrollData {
   month: number;
 }
 
+interface NotificationStats {
+  total: number;
+  advance: number;
+  wage: number;
+}
+
 function StatCardSkeleton() {
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-3 lg:p-5 animate-pulse">
@@ -80,6 +86,7 @@ interface PayrollContentProps {
 export default function PayrollContent({ canProcessPayroll, canApprovePayroll }: PayrollContentProps) {
   const searchParams = useSearchParams();
   const [data, setData] = useState<PayrollData | null>(null);
+  const [notificationStats, setNotificationStats] = useState<NotificationStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   const currentDate = new Date();
@@ -91,10 +98,20 @@ export default function PayrollContent({ canProcessPayroll, canApprovePayroll }:
     async function fetchData() {
       setLoading(true);
       try {
-        const res = await fetch(`/api/payroll/dashboard?year=${selectedYear}&month=${selectedMonth}`);
-        if (res.ok) {
-          const payrollData = await res.json();
+        // Fetch payroll data and notification stats in parallel
+        const [payrollRes, notifyStatsRes] = await Promise.all([
+          fetch(`/api/payroll/dashboard?year=${selectedYear}&month=${selectedMonth}`),
+          fetch(`/api/payment-requests/notify-all?year=${selectedYear}&month=${selectedMonth}`),
+        ]);
+
+        if (payrollRes.ok) {
+          const payrollData = await payrollRes.json();
           setData(payrollData);
+        }
+
+        if (notifyStatsRes.ok) {
+          const statsData = await notifyStatsRes.json();
+          setNotificationStats(statsData);
         }
       } catch (error) {
         console.error('Error fetching payroll:', error);
@@ -135,6 +152,7 @@ export default function PayrollContent({ canProcessPayroll, canApprovePayroll }:
             year={selectedYear}
             month={selectedMonth}
             canProcess={canProcessPayroll}
+            notificationStats={notificationStats || undefined}
           />
         )}
       </div>

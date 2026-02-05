@@ -472,6 +472,38 @@ export interface Translations {
     actions: string;
     noPayrollData: string;
     selectMonth: string;
+    // Delete feature
+    delete: string;
+    deleteTitle: string;
+    deleteMessage: string;
+    deleteConfirm: string;
+    deleting: string;
+    cannotDeletePaid: string;
+    // Paid status
+    paid: string;
+    blocked: string;
+    paidTooltipAdvance: string;
+    paidTooltipWage: string;
+    paidTooltipDate: string;
+    // Notifications
+    notify: string;
+    notifyButton: string;
+    notified: string;
+    notifyTitle: string;
+    notifyMessage: string;
+    notifyConfirm: string;
+    notifySending: string;
+    notifySent: string;
+    // Bulk notifications
+    notifyAllPaid: string;
+    allNotified: string;
+    notifyAllTitle: string;
+    notifyAllMessage: string;
+    notifyAllSummaryAdvance: string;
+    notifyAllSummaryWage: string;
+    notifyAllSummaryTotal: string;
+    notifyAllSummaryEmployees: string;
+    notifyAllConfirm: string;
   };
 
   // Accounting

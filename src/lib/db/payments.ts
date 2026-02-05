@@ -540,3 +540,269 @@ export async function getPaymentRequestItemsWithTelegram(requestId: string): Pro
 
   return { request, items: formattedItems };
 }
+
+// ============================================
+// PAID STATUS (Duplicate Prevention)
+// ============================================
+
+export interface EmployeePaidStatus {
+  advancePaid: number | null;
+  advancePaidAt: string | null;
+  wagePaid: number | null;
+  wagePaidAt: string | null;
+}
+
+export type PaidStatusMap = Record<string, EmployeePaidStatus>;
+
+// Get paid status for all employees in a period (for duplicate prevention)
+export async function getEmployeePaidStatus(year: number, month: number): Promise<PaidStatusMap> {
+  if (!isSupabaseAdminConfigured()) {
+    return {};
+  }
+
+  // Get all paid payment_request_items for the period
+  const { data, error } = await supabaseAdmin!
+    .from('payment_request_items')
+    .select(`
+      employee_id,
+      amount,
+      payment_requests!inner (
+        request_type,
+        paid_at,
+        status
+      )
+    `)
+    .eq('payment_requests.year', year)
+    .eq('payment_requests.month', month)
+    .eq('payment_requests.status', 'paid');
+
+  if (error) {
+    console.error('Error fetching paid status:', error);
+    return {};
+  }
+
+  // Transform to map
+  const result: PaidStatusMap = {};
+
+  for (const item of data || []) {
+    const empId = item.employee_id;
+    if (!result[empId]) {
+      result[empId] = {
+        advancePaid: null,
+        advancePaidAt: null,
+        wagePaid: null,
+        wagePaidAt: null,
+      };
+    }
+
+    const paymentRequest = item.payment_requests as unknown as {
+      request_type: string;
+      paid_at: string;
+      status: string;
+    };
+
+    if (paymentRequest.request_type === 'advance') {
+      result[empId].advancePaid = (result[empId].advancePaid || 0) + Number(item.amount);
+      result[empId].advancePaidAt = paymentRequest.paid_at;
+    } else {
+      result[empId].wagePaid = (result[empId].wagePaid || 0) + Number(item.amount);
+      result[empId].wagePaidAt = paymentRequest.paid_at;
+    }
+  }
+
+  return result;
+}
+
+// ============================================
+// AUDIT LOGGING
+// ============================================
+
+export type PaymentAuditAction = 'created' | 'submitted' | 'approved' | 'rejected' | 'paid' | 'notified' | 'deleted';
+
+export async function logPaymentAudit(params: {
+  payment_request_id: string;
+  actor_id: string;
+  action: PaymentAuditAction;
+  old_status?: string | null;
+  new_status?: string | null;
+  details?: Record<string, unknown>;
+}): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseAdminConfigured()) {
+    return { success: false, error: 'Database not configured' };
+  }
+
+  const { error } = await supabaseAdmin!
+    .from('payment_request_audit')
+    .insert({
+      payment_request_id: params.payment_request_id,
+      actor_id: params.actor_id,
+      action: params.action,
+      old_status: params.old_status || null,
+      new_status: params.new_status || null,
+      details: params.details || null,
+    });
+
+  if (error) {
+    console.error('Error logging payment audit:', error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
+}
+
+// ============================================
+// DELETE PAYMENT REQUEST
+// ============================================
+
+export async function deletePaymentRequest(id: string, actorId: string): Promise<{
+  success: boolean;
+  error?: string;
+  code?: string;
+  deletedRequest?: {
+    id: string;
+    request_type: string;
+    employee_count: number;
+    total_amount: number;
+  };
+}> {
+  if (!isSupabaseAdminConfigured()) {
+    return { success: false, error: 'Database not configured' };
+  }
+
+  // 1. Fetch request to validate and log
+  const { data: paymentRequest, error: fetchError } = await supabaseAdmin!
+    .from('payment_requests')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (fetchError || !paymentRequest) {
+    return { success: false, error: 'Payment request not found', code: 'NOT_FOUND' };
+  }
+
+  // 2. Check if paid (cannot delete paid requests)
+  if (paymentRequest.status === 'paid') {
+    return {
+      success: false,
+      error: 'Cannot delete paid payment request',
+      code: 'CANNOT_DELETE_PAID',
+    };
+  }
+
+  // 3. Log to audit BEFORE delete
+  await logPaymentAudit({
+    payment_request_id: id,
+    actor_id: actorId,
+    action: 'deleted',
+    old_status: paymentRequest.status,
+    new_status: null,
+    details: {
+      request_type: paymentRequest.request_type,
+      employee_count: paymentRequest.employee_count,
+      total_amount: paymentRequest.total_amount,
+      year: paymentRequest.year,
+      month: paymentRequest.month,
+    },
+  });
+
+  // 4. Hard delete (items cascade automatically via FK constraint)
+  const { error: deleteError } = await supabaseAdmin!
+    .from('payment_requests')
+    .delete()
+    .eq('id', id);
+
+  if (deleteError) {
+    console.error('Error deleting payment request:', deleteError);
+    return { success: false, error: deleteError.message };
+  }
+
+  return {
+    success: true,
+    deletedRequest: {
+      id,
+      request_type: paymentRequest.request_type,
+      employee_count: paymentRequest.employee_count,
+      total_amount: paymentRequest.total_amount,
+    },
+  };
+}
+
+// ============================================
+// NOTIFICATION TRACKING
+// ============================================
+
+// Update notification sent timestamp
+export async function markNotificationSent(id: string, userId: string): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseAdminConfigured()) {
+    return { success: false, error: 'Database not configured' };
+  }
+
+  const { error } = await supabaseAdmin!
+    .from('payment_requests')
+    .update({
+      notification_sent_at: new Date().toISOString(),
+      notification_sent_by: userId,
+    })
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error updating notification timestamp:', error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
+}
+
+// Get un-notified paid requests for a period
+export async function getUnnotifiedPaidRequests(year: number, month: number): Promise<PaymentRequest[]> {
+  if (!isSupabaseAdminConfigured()) {
+    return [];
+  }
+
+  const { data, error } = await supabaseAdmin!
+    .from('payment_requests')
+    .select('*, legal_entities(id, name, short_name)')
+    .eq('year', year)
+    .eq('month', month)
+    .eq('status', 'paid')
+    .is('notification_sent_at', null)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching unnotified requests:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+// Get count of un-notified paid requests for a period
+export async function getUnnotifiedPaidCount(year: number, month: number): Promise<{
+  total: number;
+  advance: number;
+  wage: number;
+}> {
+  if (!isSupabaseAdminConfigured()) {
+    return { total: 0, advance: 0, wage: 0 };
+  }
+
+  const { data, error } = await supabaseAdmin!
+    .from('payment_requests')
+    .select('id, request_type')
+    .eq('year', year)
+    .eq('month', month)
+    .eq('status', 'paid')
+    .is('notification_sent_at', null);
+
+  if (error) {
+    console.error('Error fetching unnotified count:', error);
+    return { total: 0, advance: 0, wage: 0 };
+  }
+
+  const requests = data || [];
+  return {
+    total: requests.length,
+    advance: requests.filter(r => r.request_type === 'advance').length,
+    wage: requests.filter(r => r.request_type === 'wage').length,
+  };
+}

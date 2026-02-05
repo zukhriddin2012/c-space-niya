@@ -472,6 +472,38 @@ export const ru: Translations = {
     actions: 'Действия',
     noPayrollData: 'Нет данных о зарплате',
     selectMonth: 'Выберите месяц',
+    // Delete feature
+    delete: 'Удалить',
+    deleteTitle: 'Удалить заявку на выплату?',
+    deleteMessage: 'Это навсегда удалит заявку на {type} для {count} сотрудников на сумму {amount} UZS. Это действие нельзя отменить.',
+    deleteConfirm: 'Удалить заявку',
+    deleting: 'Удаление...',
+    cannotDeletePaid: 'Нельзя удалить оплаченную заявку',
+    // Paid status
+    paid: 'Оплачено',
+    blocked: 'Заблокировано',
+    paidTooltipAdvance: 'Авансовый платеж',
+    paidTooltipWage: 'Выплата зарплаты',
+    paidTooltipDate: 'Оплачено {amount} {date}',
+    // Notifications
+    notify: 'Уведомить',
+    notifyButton: 'Уведомить {count} сотрудников',
+    notified: 'Уведомлено',
+    notifyTitle: 'Отправить уведомления в Telegram?',
+    notifyMessage: 'Это отправит уведомления о платеже {count} сотрудникам о выплате {type} на сумму {amount} UZS за {period}.',
+    notifyConfirm: 'Отправить уведомления',
+    notifySending: 'Отправка...',
+    notifySent: 'Уведомления в Telegram отправлены {date} в {time}',
+    // Bulk notifications
+    notifyAllPaid: 'Уведомить всех об оплате',
+    allNotified: 'Все уведомлены',
+    notifyAllTitle: 'Уведомить о всех оплаченных заявках?',
+    notifyAllMessage: 'Это отправит уведомления в Telegram для всех неуведомленных оплаченных заявок за {period}.',
+    notifyAllSummaryAdvance: 'Авансовые заявки',
+    notifyAllSummaryWage: 'Заявки на зарплату',
+    notifyAllSummaryTotal: 'Всего',
+    notifyAllSummaryEmployees: 'Будет уведомлено {count} сотрудников',
+    notifyAllConfirm: 'Уведомить всех',
   },
 
   // Recruitment

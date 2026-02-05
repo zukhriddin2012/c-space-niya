@@ -472,6 +472,38 @@ export const uz: Translations = {
     actions: 'Amallar',
     noPayrollData: 'Ish haqi ma\'lumotlari yo\'q',
     selectMonth: 'Oyni tanlang',
+    // Delete feature
+    delete: 'O\'chirish',
+    deleteTitle: 'To\'lov so\'rovini o\'chirishni xohlaysizmi?',
+    deleteMessage: 'Bu {count} ta xodim uchun {type} so\'rovini {amount} UZS miqdorida butunlay o\'chiradi. Bu amalni qaytarib bo\'lmaydi.',
+    deleteConfirm: 'So\'rovni o\'chirish',
+    deleting: 'O\'chirilmoqda...',
+    cannotDeletePaid: 'To\'langan so\'rovni o\'chirib bo\'lmaydi',
+    // Paid status
+    paid: 'To\'langan',
+    blocked: 'Bloklangan',
+    paidTooltipAdvance: 'Avans to\'lovi',
+    paidTooltipWage: 'Ish haqi to\'lovi',
+    paidTooltipDate: '{date} da {amount} to\'langan',
+    // Notifications
+    notify: 'Xabardor qilish',
+    notifyButton: '{count} ta xodimni xabardor qilish',
+    notified: 'Xabardor qilindi',
+    notifyTitle: 'Telegram xabarnomalarini yuborishni xohlaysizmi?',
+    notifyMessage: 'Bu {count} ta xodimga {period} uchun {type} to\'lovi haqida {amount} UZS miqdorida xabarnoma yuboradi.',
+    notifyConfirm: 'Xabarnomalarni yuborish',
+    notifySending: 'Yuborilmoqda...',
+    notifySent: 'Telegram xabarnomalari {date} kuni soat {time} da yuborildi',
+    // Bulk notifications
+    notifyAllPaid: 'Barcha to\'langanlarni xabardor qilish',
+    allNotified: 'Barchasi xabardor qilindi',
+    notifyAllTitle: 'Barcha to\'langan so\'rovlar haqida xabardor qilishni xohlaysizmi?',
+    notifyAllMessage: 'Bu {period} uchun barcha xabardor qilinmagan to\'langan so\'rovlarga Telegram xabarnomalarini yuboradi.',
+    notifyAllSummaryAdvance: 'Avans so\'rovlari',
+    notifyAllSummaryWage: 'Ish haqi so\'rovlari',
+    notifyAllSummaryTotal: 'Jami',
+    notifyAllSummaryEmployees: '{count} ta xodim xabardor qilinadi',
+    notifyAllConfirm: 'Barchasini xabardor qilish',
   },
 
   // Recruitment
