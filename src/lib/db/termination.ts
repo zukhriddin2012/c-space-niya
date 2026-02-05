@@ -199,7 +199,6 @@ export async function approveTerminationRequest(
     .from('employees')
     .update({
       status: 'terminated',
-      notes: `Terminated on ${request.termination_date}. Approved termination request.`,
     })
     .eq('id', request.employee_id);
 
