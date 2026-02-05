@@ -63,6 +63,7 @@ export function CreateClientModal({
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!formData.name.trim()) newErrors.name = 'Name is required';
+    if (!branchId) newErrors.submit = 'No branch selected. Please select a branch first.';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -91,7 +92,11 @@ export function CreateClientModal({
         if (response.status === 409) {
           setErrors({ name: 'A client with this name already exists' });
         } else {
-          setErrors({ submit: data.error || 'Failed to create client' });
+          // Show detailed error if available
+          const errorMsg = data.details
+            ? (Array.isArray(data.details) ? data.details.join(', ') : data.details)
+            : (data.error || 'Failed to create client');
+          setErrors({ submit: errorMsg });
         }
         return;
       }
