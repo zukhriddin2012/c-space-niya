@@ -150,7 +150,7 @@ function OverviewSection() {
   );
 }
 
-function FeatureCard({ icon, title, description, color }) {
+function FeatureCard({ icon, title, description, color }: { icon: React.ReactNode; title: string; description: string; color: 'red' | 'orange' | 'blue' | 'purple' }) {
   const bgColors = {
     red: 'bg-red-50',
     orange: 'bg-orange-50',
