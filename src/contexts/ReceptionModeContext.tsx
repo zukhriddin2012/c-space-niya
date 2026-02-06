@@ -251,12 +251,15 @@ export function ReceptionModeProvider({ children }: { children: ReactNode }) {
   const selectedBranch = branchData.branches.find(b => b.id === selectedBranchId) || null;
 
   // Direct branch selection (no confirmation)
-  const setSelectedBranch = (branchId: string) => {
-    setSelectedBranchId(branchId);
-    sessionStorage.setItem(STORAGE_KEY, branchId);
-    // Clear operator on branch switch — different branch means different PIN pool
-    persistOperator(null);
-  };
+  const setSelectedBranch = useCallback((branchId: string) => {
+    setSelectedBranchId((prev) => {
+      if (prev === branchId) return prev; // No-op if same branch
+      // Clear operator on branch switch — different branch means different PIN pool
+      persistOperator(null);
+      sessionStorage.setItem(STORAGE_KEY, branchId);
+      return branchId;
+    });
+  }, [persistOperator]);
 
   // Request branch switch (with confirmation)
   const requestBranchSwitch = (branchId: string) => {

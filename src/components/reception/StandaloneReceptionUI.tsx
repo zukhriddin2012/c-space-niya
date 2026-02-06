@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, lazy, Suspense, useCallback } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense, useCallback } from 'react';
 import {
   Receipt,
   LayoutDashboard,
@@ -71,22 +71,34 @@ function KioskInner({ branchId, branchName, expiresAt, onLogout }: StandaloneRec
 
   const { currentOperator, isReceptionMode, setReceptionMode, setSelectedBranch } = useReceptionMode();
 
-  // Auto-activate reception mode and set branch
+  // Auto-activate reception mode and set branch (once on mount)
+  const initializedRef = useRef(false);
   useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
     if (!isReceptionMode) {
       setReceptionMode(true);
     }
     if (branchId) {
       setSelectedBranch(branchId);
     }
-  }, [isReceptionMode, branchId, setReceptionMode, setSelectedBranch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Show PIN overlay on first load if no operator is set
+  // Show PIN overlay when no operator is set (only after initial load)
+  const hasShownInitialPin = useRef(false);
   useEffect(() => {
-    if (!currentOperator) {
-      // Small delay to let the UI render first
-      const timer = setTimeout(() => setShowOperatorSwitch(true), 500);
-      return () => clearTimeout(timer);
+    if (!currentOperator && initializedRef.current) {
+      if (!hasShownInitialPin.current) {
+        // First load: small delay for UI to render
+        const timer = setTimeout(() => setShowOperatorSwitch(true), 500);
+        hasShownInitialPin.current = true;
+        return () => clearTimeout(timer);
+      } else {
+        // Subsequent clears (e.g. operator logout): show immediately
+        setShowOperatorSwitch(true);
+      }
     }
   }, [currentOperator]);
 
