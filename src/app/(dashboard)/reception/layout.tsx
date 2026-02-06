@@ -1,9 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Receipt, Wallet, Settings } from 'lucide-react';
+import { LayoutDashboard, Receipt, Wallet, FileText, Calendar, Settings, UserCog } from 'lucide-react';
+import { useReceptionMode } from '@/contexts/ReceptionModeContext';
+import { PinSwitchOverlay } from '@/components/reception/PinSwitchOverlay';
 
 interface ReceptionLayoutProps {
   children: React.ReactNode;
@@ -13,11 +15,15 @@ const navItems = [
   { href: '/reception', label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { href: '/reception/transactions', label: 'Transactions', icon: Receipt },
   { href: '/reception/expenses', label: 'Expenses', icon: Wallet },
+  { href: '/reception/requests', label: 'Requests', icon: FileText },
+  { href: '/reception/shifts', label: 'Shifts', icon: Calendar },
   { href: '/reception/admin', label: 'Settings', icon: Settings },
 ];
 
 export default function ReceptionLayout({ children }: ReceptionLayoutProps) {
   const pathname = usePathname();
+  const { currentOperator, isOperatorSwitched } = useReceptionMode();
+  const [showPinOverlay, setShowPinOverlay] = useState(false);
 
   const isActive = (href: string, exact?: boolean) => {
     if (exact) {
@@ -38,13 +44,30 @@ export default function ReceptionLayout({ children }: ReceptionLayoutProps) {
               </div>
               <div>
                 <h1 className="text-lg font-bold">Reception Mode</h1>
-                <p className="text-xs text-purple-200">Record transactions & expenses</p>
+                <p className="text-xs text-purple-200">Record transactions & manage requests</p>
               </div>
             </div>
+
+            {/* Operator Switch Button */}
+            <button
+              onClick={() => setShowPinOverlay(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-sm"
+            >
+              <UserCog size={18} />
+              <span className="hidden sm:inline">
+                {isOperatorSwitched && currentOperator
+                  ? currentOperator.name
+                  : 'Switch Operator'
+                }
+              </span>
+              {isOperatorSwitched && (
+                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              )}
+            </button>
           </div>
 
           {/* Navigation Tabs */}
-          <nav className="flex gap-1 -mb-px">
+          <nav className="flex gap-1 -mb-px overflow-x-auto">
             {navItems.map((item) => {
               const active = isActive(item.href, item.exact);
               return (
@@ -52,7 +75,7 @@ export default function ReceptionLayout({ children }: ReceptionLayoutProps) {
                   key={item.href}
                   href={item.href}
                   className={`
-                    flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-t-lg transition-colors
+                    flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-t-lg transition-colors whitespace-nowrap
                     ${active
                       ? 'bg-gray-50 text-purple-700'
                       : 'text-purple-100 hover:text-white hover:bg-white/10'
@@ -72,6 +95,9 @@ export default function ReceptionLayout({ children }: ReceptionLayoutProps) {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {children}
       </main>
+
+      {/* PIN Switch Overlay */}
+      <PinSwitchOverlay isOpen={showPinOverlay} onClose={() => setShowPinOverlay(false)} />
     </div>
   );
 }

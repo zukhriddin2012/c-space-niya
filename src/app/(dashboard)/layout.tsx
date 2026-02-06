@@ -8,6 +8,7 @@ import { SidebarProvider } from '@/contexts/SidebarContext';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { ReceptionModeProvider } from '@/contexts/ReceptionModeContext';
 import { DashboardContent } from '@/components/layout/DashboardContent';
+import SessionManager from '@/components/auth/SessionManager';
 
 export default async function DashboardLayout({
   children,
@@ -74,6 +75,9 @@ export default async function DashboardLayout({
 
           {/* Quick Switch Panel (dev/test mode only) */}
           <QuickSwitch />
+
+          {/* SEC-017: Session expiry management */}
+          <SessionManager />
         </div>
       </SidebarProvider>
       </ReceptionModeProvider>

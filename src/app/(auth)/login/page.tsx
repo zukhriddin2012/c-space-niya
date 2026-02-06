@@ -37,7 +37,12 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (data.success) {
-        router.push('/dashboard');
+        // SEC-008: Check if password reset is required
+        if (data.mustResetPassword) {
+          router.push('/reset-password');
+        } else {
+          router.push('/dashboard');
+        }
         router.refresh();
       } else {
         setError(data.message || 'Login failed');

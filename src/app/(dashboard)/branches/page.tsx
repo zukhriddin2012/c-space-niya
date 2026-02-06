@@ -1,5 +1,6 @@
 import { getSession } from '@/lib/auth-server';
 import { hasPermission } from '@/lib/auth';
+import { PERMISSIONS } from '@/lib/permissions';
 import { redirect } from 'next/navigation';
 import { getBranches, getEmployees, getTodayAttendance } from '@/lib/db';
 import BranchesClient from './BranchesClient';
@@ -99,11 +100,11 @@ export default async function BranchesPage() {
   }
 
   // Check permission
-  if (!hasPermission(user.role, 'manage_branches') && !hasPermission(user.role, 'view_presence')) {
+  if (!hasPermission(user.role, PERMISSIONS.BRANCHES_EDIT) && !hasPermission(user.role, PERMISSIONS.ATTENDANCE_VIEW)) {
     redirect('/dashboard');
   }
 
-  const canManageBranches = hasPermission(user.role, 'manage_branches');
+  const canManageBranches = hasPermission(user.role, PERMISSIONS.BRANCHES_EDIT);
   const canViewSalaries = user.role === 'general_manager' || user.role === 'ceo';
 
   // Fetch real branch data from Supabase

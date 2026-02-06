@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase';
-
-// CORS headers for Mini App
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-Telegram-Init-Data',
-};
+import { getCorsHeaders } from '@/lib/cors';
+import { getTashkentTime } from '@/lib/timezone';
 
 // Handle OPTIONS request for CORS
-export async function OPTIONS() {
-  return NextResponse.json({}, { headers: corsHeaders });
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin');
+  return NextResponse.json({}, { headers: getCorsHeaders(origin) });
 }
 
 export async function POST(request: NextRequest) {
+  const origin = request.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   try {
     if (!isSupabaseAdminConfigured()) {
       return NextResponse.json(
@@ -68,10 +67,9 @@ export async function POST(request: NextRequest) {
     const checkOut = new Date();
     const totalHours = ((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60)).toFixed(2);
 
-    // Format check-out time for Tashkent timezone
-    const tashkentOffset = 5 * 60; // UTC+5
-    const checkOutTashkent = new Date(checkOut.getTime() + tashkentOffset * 60 * 1000);
-    const checkOutFormatted = checkOutTashkent.toTimeString().slice(0, 5);
+    // Format check-out time for Tashkent timezone (using canonical timezone utility)
+    const checkOutTashkent = getTashkentTime();
+    const checkOutFormatted = `${String(checkOutTashkent.getHours()).padStart(2, '0')}:${String(checkOutTashkent.getMinutes()).padStart(2, '0')}`;
 
     // Determine if early leave (before 17:45 for day shift)
     const checkOutHour = checkOutTashkent.getHours();

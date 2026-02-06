@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
-import type { BranchOption } from '@/modules/reception/types';
+import type { BranchOption, OperatorIdentity, OperatorSwitchResult } from '@/modules/reception/types';
 
 interface BranchData {
   branches: BranchOption[];
@@ -32,6 +32,13 @@ interface ReceptionModeContextType {
   cancelBranchSwitch: () => void;
   requestBranchSwitch: (branchId: string) => void;
 
+  // Operator identity (R6a)
+  currentOperator: OperatorIdentity | null;
+  isOperatorSwitched: boolean;
+  switchOperator: (pin: string) => Promise<OperatorSwitchResult>;
+  switchOperatorCrossBranch: (employeeId: string, pin: string) => Promise<OperatorSwitchResult>;
+  clearOperator: () => void;
+
   // Refresh
   refreshBranches: () => Promise<void>;
 }
@@ -40,6 +47,7 @@ const ReceptionModeContext = createContext<ReceptionModeContextType | undefined>
 
 const STORAGE_KEY = 'reception_selected_branch';
 const MODE_STORAGE_KEY = 'reception_mode_active';
+const OPERATOR_STORAGE_KEY = 'reception_current_operator';
 
 export function ReceptionModeProvider({ children }: { children: ReactNode }) {
   // Mode state - starts false, then restores from storage after mount
@@ -49,7 +57,6 @@ export function ReceptionModeProvider({ children }: { children: ReactNode }) {
   // Restore mode from sessionStorage after mount (avoids hydration mismatch)
   useEffect(() => {
     const stored = sessionStorage.getItem(MODE_STORAGE_KEY);
-    console.log('[ReceptionMode] Restoring from storage:', stored);
     if (stored === 'true') {
       setIsReceptionModeState(true);
     }
@@ -63,7 +70,6 @@ export function ReceptionModeProvider({ children }: { children: ReactNode }) {
   const setIsReceptionMode = useCallback((value: boolean) => {
     setIsReceptionModeState(value);
     if (!isInitialMount.current) {
-      console.log('[ReceptionMode] Persisting to storage:', value);
       sessionStorage.setItem(MODE_STORAGE_KEY, value ? 'true' : 'false');
     }
   }, []);
@@ -82,16 +88,115 @@ export function ReceptionModeProvider({ children }: { children: ReactNode }) {
   const [showBranchSwitchConfirm, setShowBranchSwitchConfirm] = useState(false);
   const [pendingBranchId, setPendingBranchId] = useState<string | null>(null);
 
+  // Operator identity state (R6a)
+  const [currentOperator, setCurrentOperator] = useState<OperatorIdentity | null>(null);
+
+  // H-06: Restore operator from sessionStorage — with session expiry check
+  useEffect(() => {
+    const stored = sessionStorage.getItem(OPERATOR_STORAGE_KEY);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        const MAX_SESSION_AGE_MS = 8 * 60 * 60 * 1000; // 8 hours
+        // If stored as new format with timestamp, validate age
+        if (parsed.operator && parsed.timestamp) {
+          if (Date.now() - parsed.timestamp > MAX_SESSION_AGE_MS) {
+            sessionStorage.removeItem(OPERATOR_STORAGE_KEY);
+            return;
+          }
+          setCurrentOperator(parsed.operator as OperatorIdentity);
+        } else {
+          // Legacy format (OperatorIdentity directly) — clear for safety
+          sessionStorage.removeItem(OPERATOR_STORAGE_KEY);
+        }
+      } catch {
+        sessionStorage.removeItem(OPERATOR_STORAGE_KEY);
+      }
+    }
+  }, []);
+
+  // Persist operator changes to sessionStorage
+  const persistOperator = useCallback((operator: OperatorIdentity | null) => {
+    setCurrentOperator(operator);
+    if (operator) {
+      // H-06: Store with timestamp for session expiry validation
+      sessionStorage.setItem(OPERATOR_STORAGE_KEY, JSON.stringify({
+        operator,
+        timestamp: Date.now(),
+      }));
+    } else {
+      sessionStorage.removeItem(OPERATOR_STORAGE_KEY);
+    }
+  }, []);
+
+  // Switch operator via PIN (same branch)
+  const switchOperator = useCallback(async (pin: string): Promise<OperatorSwitchResult> => {
+    if (!selectedBranchId) {
+      return { success: false, error: 'invalid_pin' };
+    }
+
+    try {
+      const response = await fetch('/api/reception/operator-switch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin, branchId: selectedBranchId }),
+      });
+
+      const result: OperatorSwitchResult = await response.json();
+
+      if (result.success && result.operator) {
+        persistOperator(result.operator);
+      }
+
+      return result;
+    } catch (error) {
+      console.error('[ReceptionMode] Operator switch failed:', error);
+      return { success: false, error: 'invalid_pin' };
+    }
+  }, [selectedBranchId, persistOperator]);
+
+  // Switch operator via cross-branch search
+  const switchOperatorCrossBranch = useCallback(async (employeeId: string, pin: string): Promise<OperatorSwitchResult> => {
+    if (!selectedBranchId) {
+      return { success: false, error: 'invalid_pin' };
+    }
+
+    try {
+      const response = await fetch('/api/reception/operator-switch/cross-branch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ employeeId, pin, branchId: selectedBranchId }),
+      });
+
+      const result: OperatorSwitchResult = await response.json();
+
+      if (result.success && result.operator) {
+        persistOperator(result.operator);
+      }
+
+      return result;
+    } catch (error) {
+      console.error('[ReceptionMode] Cross-branch switch failed:', error);
+      return { success: false, error: 'employee_not_found' };
+    }
+  }, [selectedBranchId, persistOperator]);
+
+  // Clear operator (revert to logged-in user)
+  const clearOperator = useCallback(() => {
+    persistOperator(null);
+  }, [persistOperator]);
+
+  // Is the operator different from the logged-in user?
+  const isOperatorSwitched = currentOperator !== null;
+
   // Fetch accessible branches
   const fetchBranches = useCallback(async () => {
     setIsLoadingBranches(true);
     try {
       const response = await fetch('/api/reception/branches');
-      console.log('[ReceptionMode] Fetching branches, status:', response.status);
 
       if (response.ok) {
         const data: BranchData = await response.json();
-        console.log('[ReceptionMode] Branches received:', data);
         setBranchData(data);
 
         // Set initial branch from storage or default
@@ -100,17 +205,12 @@ export function ReceptionModeProvider({ children }: { children: ReactNode }) {
 
         if (validBranch) {
           setSelectedBranchId(storedBranchId);
-          console.log('[ReceptionMode] Using stored branch:', storedBranchId);
         } else if (data.defaultBranchId) {
           setSelectedBranchId(data.defaultBranchId);
-          console.log('[ReceptionMode] Using default branch:', data.defaultBranchId);
         } else if (data.branches.length > 0) {
           // Fall back to first non-"all" branch
           const firstBranch = data.branches.find(b => !b.isAllBranches) || data.branches[0];
           setSelectedBranchId(firstBranch.id);
-          console.log('[ReceptionMode] Using first branch:', firstBranch.id);
-        } else {
-          console.log('[ReceptionMode] No branches available');
         }
       } else {
         const errorData = await response.json().catch(() => ({}));
@@ -131,6 +231,13 @@ export function ReceptionModeProvider({ children }: { children: ReactNode }) {
     }
   }, [isReceptionMode, fetchBranches]);
 
+  // Clear operator when leaving reception mode or switching branches
+  useEffect(() => {
+    if (!isReceptionMode) {
+      persistOperator(null);
+    }
+  }, [isReceptionMode, persistOperator]);
+
   const toggleReceptionMode = useCallback(() => {
     const newValue = !isReceptionMode;
     setIsReceptionMode(newValue);
@@ -147,6 +254,8 @@ export function ReceptionModeProvider({ children }: { children: ReactNode }) {
   const setSelectedBranch = (branchId: string) => {
     setSelectedBranchId(branchId);
     sessionStorage.setItem(STORAGE_KEY, branchId);
+    // Clear operator on branch switch — different branch means different PIN pool
+    persistOperator(null);
   };
 
   // Request branch switch (with confirmation)
@@ -205,6 +314,13 @@ export function ReceptionModeProvider({ children }: { children: ReactNode }) {
         cancelBranchSwitch,
         requestBranchSwitch,
 
+        // Operator identity (R6a)
+        currentOperator,
+        isOperatorSwitched,
+        switchOperator,
+        switchOperatorCrossBranch,
+        clearOperator,
+
         // Refresh
         refreshBranches,
       }}
@@ -220,4 +336,13 @@ export function useReceptionMode() {
     throw new Error('useReceptionMode must be used within a ReceptionModeProvider');
   }
   return context;
+}
+
+// ═══ Helper: get operator headers for API calls ═══
+
+export function getOperatorHeaders(currentOperator: OperatorIdentity | null, userId: string): Record<string, string> {
+  return {
+    'X-Operator-Id': currentOperator?.id ?? userId,
+    'X-Operator-Cross-Branch': currentOperator?.isCrossBranch ? 'true' : 'false',
+  };
 }

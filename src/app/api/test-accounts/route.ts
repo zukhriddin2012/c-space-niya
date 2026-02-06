@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase';
 
-// GET /api/test-accounts - Get all accounts for testing (dev mode only)
+// GET /api/test-accounts - Get all accounts for testing (dev only)
 export async function GET() {
-  // Check if test mode is enabled
+  // SEC-006: Only available in development
+  if (process.env.NODE_ENV !== 'development') {
+    return NextResponse.json({ enabled: false, accounts: [], message: 'Not available' }, { status: 404 });
+  }
+
   const isTestEnv = process.env.ENABLE_DEMO_USERS === 'true';
 
   if (!isTestEnv) {
@@ -30,14 +34,12 @@ export async function GET() {
         id,
         full_name,
         email,
-        password,
         position,
         system_role,
         branches!employees_branch_id_fkey(name)
       `)
       .eq('status', 'active')
       .not('email', 'is', null)
-      .not('password', 'is', null)
       .order('system_role')
       .order('full_name');
 
@@ -50,13 +52,12 @@ export async function GET() {
       }, { status: 500 });
     }
 
-    // Map to the format expected by QuickSwitch
+    // SEC-006: Never expose passwords, even in dev
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const accounts = (employees || []).map((emp: any) => ({
       id: emp.id,
       name: emp.full_name,
       email: emp.email,
-      password: emp.password,
       role: emp.system_role || 'employee',
       position: emp.position || 'Unknown',
       branch: emp.branches?.name || 'No branch',

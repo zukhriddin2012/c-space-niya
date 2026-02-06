@@ -712,6 +712,36 @@ export interface Translations {
     signIn: string;
     signOut: string;
     invalidCredentials: string;
+    // SEC-008: Password reset
+    resetPassword: string;
+    resetPasswordTitle: string;
+    resetPasswordDescription: string;
+    newPassword: string;
+    confirmPassword: string;
+    passwordsDoNotMatch: string;
+    passwordResetSuccess: string;
+    passwordRequirements: string;
+    passwordStrength: string;
+    passwordWeak: string;
+    passwordFair: string;
+    passwordGood: string;
+    passwordStrong: string;
+    passwordVeryStrong: string;
+    // SEC-015: Rate limiting
+    tooManyAttempts: string;
+    tryAgainIn: string;
+    // SEC-017: Session management
+    sessionExpiringSoon: string;
+    sessionExpired: string;
+    sessionWillExpire: string;
+    staySignedIn: string;
+    signInAgain: string;
+    remaining: string;
+    // SEC-020: Toast messages
+    errorOccurred: string;
+    sessionExpiredMessage: string;
+    permissionDenied: string;
+    networkError: string;
   };
 
   // Settings

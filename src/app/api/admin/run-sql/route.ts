@@ -3,8 +3,13 @@ import { withAuth } from '@/lib/api-auth';
 import { PERMISSIONS } from '@/lib/permissions';
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase';
 
-// POST /api/admin/run-sql - Run SQL query (admin only)
+// POST /api/admin/run-sql - Run SQL query (development only)
 export const POST = withAuth(async (request: NextRequest) => {
+  // SEC-005: Block in production
+  if (process.env.NODE_ENV !== 'development') {
+    return NextResponse.json({ error: 'Not available in production' }, { status: 404 });
+  }
+
   try {
     if (!isSupabaseAdminConfigured()) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 });

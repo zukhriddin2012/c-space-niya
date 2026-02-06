@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api-auth';
-import { PERMISSIONS } from '@/lib/permissions';
+import { PERMISSIONS, hasPermission } from '@/lib/permissions';
 import { getEmployeeById, updateEmployee, deleteEmployee } from '@/lib/db';
 
 // GET /api/employees/[id] - Get a single employee
@@ -30,7 +30,7 @@ export const GET = withAuth(async (
 // PUT /api/employees/[id] - Update an employee
 export const PUT = withAuth(async (
   request: NextRequest,
-  { params }
+  { params, user }
 ) => {
   try {
     const id = params?.id;
@@ -45,6 +45,14 @@ export const PUT = withAuth(async (
       hire_date, birth_date, gender,
       is_growth_team, remote_work_enabled
     } = body;
+
+    // SEC: Prevent privilege escalation — system_role changes require USERS_ASSIGN_ROLES permission
+    if (system_role !== undefined && !hasPermission(user.role, PERMISSIONS.USERS_ASSIGN_ROLES)) {
+      return NextResponse.json(
+        { error: 'You do not have permission to change user roles' },
+        { status: 403 }
+      );
+    }
 
     const updates: {
       full_name?: string;

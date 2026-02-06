@@ -113,6 +113,31 @@ export const PERMISSIONS = {
   RECEPTION_EXPENSES_VOID: 'reception:expenses:void',
   RECEPTION_ADMIN: 'reception:admin',  // Admin configuration access
   RECEPTION_REPORTS: 'reception:reports',
+
+  // Reception — Accounting Requests (R1/R2)
+  RECEPTION_ACCOUNTING_SUBMIT: 'reception:accounting:submit',
+  RECEPTION_ACCOUNTING_VIEW: 'reception:accounting:view',
+
+  // Reception — Legal Requests (R3)
+  RECEPTION_LEGAL_SUBMIT: 'reception:legal:submit',
+  RECEPTION_LEGAL_VIEW: 'reception:legal:view',
+
+  // Legal Team (standalone dashboard, R3a)
+  LEGAL_REQUESTS_VIEW_ALL: 'legal_requests:view_all',
+  LEGAL_REQUESTS_MANAGE: 'legal_requests:manage',
+
+  // Reception — Maintenance (R4)
+  RECEPTION_MAINTENANCE_REPORT: 'reception:maintenance:report',
+  RECEPTION_MAINTENANCE_VIEW: 'reception:maintenance:view',
+  MAINTENANCE_VIEW_ALL: 'maintenance:view_all',
+  MAINTENANCE_MANAGE: 'maintenance:manage',
+
+  // Reception — Shifts (R5)
+  RECEPTION_SHIFTS_VIEW: 'reception:shifts:view',
+
+  // Operator Switch (R6a)
+  OPERATOR_PIN_MANAGE: 'operator:pin:manage',       // Admin: reset others' PINs
+  OPERATOR_SWITCH_AUDIT: 'operator:switch:audit',    // View switch logs
 } as const;
 
 export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];
@@ -215,6 +240,20 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     PERMISSIONS.SHIFTS_EDIT,
     PERMISSIONS.SHIFTS_PUBLISH,
     PERMISSIONS.SHIFTS_MANAGE_REQUIREMENTS,
+    // Reception v2 — Full access
+    PERMISSIONS.RECEPTION_ACCOUNTING_SUBMIT,
+    PERMISSIONS.RECEPTION_ACCOUNTING_VIEW,
+    PERMISSIONS.RECEPTION_LEGAL_SUBMIT,
+    PERMISSIONS.RECEPTION_LEGAL_VIEW,
+    PERMISSIONS.LEGAL_REQUESTS_VIEW_ALL,
+    PERMISSIONS.LEGAL_REQUESTS_MANAGE,
+    PERMISSIONS.RECEPTION_MAINTENANCE_REPORT,
+    PERMISSIONS.RECEPTION_MAINTENANCE_VIEW,
+    PERMISSIONS.MAINTENANCE_VIEW_ALL,
+    PERMISSIONS.MAINTENANCE_MANAGE,
+    PERMISSIONS.RECEPTION_SHIFTS_VIEW,
+    PERMISSIONS.OPERATOR_PIN_MANAGE,
+    PERMISSIONS.OPERATOR_SWITCH_AUDIT,
   ],
 
   ceo: [
@@ -263,6 +302,14 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     // Shift Planning - View all
     PERMISSIONS.SHIFTS_VIEW,
     PERMISSIONS.SHIFTS_VIEW_ALL,
+    // Reception v2 — View access
+    PERMISSIONS.RECEPTION_ACCOUNTING_VIEW,
+    PERMISSIONS.RECEPTION_LEGAL_VIEW,
+    PERMISSIONS.LEGAL_REQUESTS_VIEW_ALL,
+    PERMISSIONS.RECEPTION_MAINTENANCE_VIEW,
+    PERMISSIONS.MAINTENANCE_VIEW_ALL,
+    PERMISSIONS.RECEPTION_SHIFTS_VIEW,
+    PERMISSIONS.OPERATOR_SWITCH_AUDIT,
   ],
 
   hr: [
@@ -347,6 +394,14 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     // Shift Planning - Own branch only
     PERMISSIONS.SHIFTS_VIEW,
     PERMISSIONS.SHIFTS_EDIT_OWN_BRANCH,
+    // Reception v2 — Branch-level access
+    PERMISSIONS.RECEPTION_ACCOUNTING_SUBMIT,
+    PERMISSIONS.RECEPTION_ACCOUNTING_VIEW,
+    PERMISSIONS.RECEPTION_LEGAL_SUBMIT,
+    PERMISSIONS.RECEPTION_LEGAL_VIEW,
+    PERMISSIONS.RECEPTION_MAINTENANCE_REPORT,
+    PERMISSIONS.RECEPTION_MAINTENANCE_VIEW,
+    PERMISSIONS.RECEPTION_SHIFTS_VIEW,
   ],
 
   recruiter: [
@@ -384,6 +439,10 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     PERMISSIONS.ACCOUNTING_REQUESTS_CANCEL_OWN,
     // Shift Planning - View own schedule
     PERMISSIONS.SHIFTS_VIEW,
+    // Reception v2 — Report and view
+    PERMISSIONS.RECEPTION_MAINTENANCE_REPORT,
+    PERMISSIONS.RECEPTION_MAINTENANCE_VIEW,
+    PERMISSIONS.RECEPTION_SHIFTS_VIEW,
   ],
 
   chief_accountant: [
@@ -410,6 +469,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     PERMISSIONS.RECEPTION_TRANSACTIONS_VIEW,
     PERMISSIONS.RECEPTION_EXPENSES_VIEW,
     PERMISSIONS.RECEPTION_REPORTS,
+    // Reception v2 — Accounting view
+    PERMISSIONS.RECEPTION_ACCOUNTING_VIEW,
   ],
 
   accountant: [
@@ -448,6 +509,10 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     PERMISSIONS.ACCOUNTING_REQUESTS_CREATE,
     PERMISSIONS.ACCOUNTING_REQUESTS_EDIT_OWN,
     PERMISSIONS.ACCOUNTING_REQUESTS_CANCEL_OWN,
+    // Reception v2 — Legal management
+    PERMISSIONS.RECEPTION_LEGAL_VIEW,
+    PERMISSIONS.LEGAL_REQUESTS_VIEW_ALL,
+    PERMISSIONS.LEGAL_REQUESTS_MANAGE,
   ],
 
   reports_manager: [
@@ -623,5 +688,24 @@ export const PERMISSION_GROUPS = {
     { key: PERMISSIONS.RECEPTION_EXPENSES_VOID, label: 'Void Expenses' },
     { key: PERMISSIONS.RECEPTION_ADMIN, label: 'Admin Configuration' },
     { key: PERMISSIONS.RECEPTION_REPORTS, label: 'View Reports' },
+    { key: PERMISSIONS.RECEPTION_ACCOUNTING_SUBMIT, label: 'Submit Accounting Requests' },
+    { key: PERMISSIONS.RECEPTION_ACCOUNTING_VIEW, label: 'View Accounting Requests' },
+    { key: PERMISSIONS.RECEPTION_SHIFTS_VIEW, label: 'View Shift Schedule' },
+  ],
+  'Legal Requests': [
+    { key: PERMISSIONS.RECEPTION_LEGAL_SUBMIT, label: 'Submit Legal Requests' },
+    { key: PERMISSIONS.RECEPTION_LEGAL_VIEW, label: 'View Own Legal Requests' },
+    { key: PERMISSIONS.LEGAL_REQUESTS_VIEW_ALL, label: 'View All Legal Requests' },
+    { key: PERMISSIONS.LEGAL_REQUESTS_MANAGE, label: 'Manage Legal Requests' },
+  ],
+  'Maintenance': [
+    { key: PERMISSIONS.RECEPTION_MAINTENANCE_REPORT, label: 'Report Issues' },
+    { key: PERMISSIONS.RECEPTION_MAINTENANCE_VIEW, label: 'View Branch Issues' },
+    { key: PERMISSIONS.MAINTENANCE_VIEW_ALL, label: 'View All Branches' },
+    { key: PERMISSIONS.MAINTENANCE_MANAGE, label: 'Manage Issues' },
+  ],
+  'Operator Switch': [
+    { key: PERMISSIONS.OPERATOR_PIN_MANAGE, label: 'Manage Employee PINs' },
+    { key: PERMISSIONS.OPERATOR_SWITCH_AUDIT, label: 'View Switch Audit Logs' },
   ],
 };

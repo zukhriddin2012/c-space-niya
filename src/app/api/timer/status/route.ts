@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase';
-
-// CORS headers for Mini App
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-Telegram-Init-Data',
-};
+import { getCorsHeaders } from '@/lib/cors';
 
 // Shift configurations
 const SHIFTS = {
@@ -23,11 +17,15 @@ const SHIFTS = {
 };
 
 // Handle OPTIONS request for CORS
-export async function OPTIONS() {
-  return NextResponse.json({}, { headers: corsHeaders });
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin');
+  return NextResponse.json({}, { headers: getCorsHeaders(origin) });
 }
 
 export async function GET(request: NextRequest) {
+  const origin = request.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   try {
     if (!isSupabaseAdminConfigured()) {
       return NextResponse.json(
@@ -78,9 +76,6 @@ export async function GET(request: NextRequest) {
       .order('check_in', { ascending: false })
       .limit(1);
 
-    // Debug log
-    console.log('Attendance query result:', { attendanceData, attError });
-
     if (attError || !attendanceData || attendanceData.length === 0) {
       // No active check-in
       return NextResponse.json({
@@ -90,7 +85,6 @@ export async function GET(request: NextRequest) {
     }
 
     const attendance = attendanceData[0];
-    console.log('Attendance record:', attendance);
 
     // Get branch name separately
     let branchName = 'Unknown';
@@ -111,18 +105,10 @@ export async function GET(request: NextRequest) {
     // check_in is just TIME (HH:MM:SS), check_in_timestamp is TIMESTAMP
     let checkInTime = attendance.check_in_timestamp;
 
-    // Debug log
-    console.log('Building checkInTime:', {
-      check_in_timestamp: attendance.check_in_timestamp,
-      date: attendance.date,
-      check_in: attendance.check_in
-    });
-
     // Fallback: if check_in_timestamp is null, construct it from date + check_in
     if (!checkInTime && attendance.date && attendance.check_in) {
       // Combine date (YYYY-MM-DD) with check_in time (HH:MM:SS)
       checkInTime = `${attendance.date}T${attendance.check_in}`;
-      console.log('Constructed checkInTime:', checkInTime);
     }
 
     return NextResponse.json({

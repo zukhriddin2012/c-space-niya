@@ -7,7 +7,7 @@ const supabaseKey = process.env.SUPABASE_SERVICE_KEY || '';
 export async function POST(request: NextRequest) {
   // Check for admin secret
   const authHeader = request.headers.get('x-admin-secret');
-  if (authHeader !== 'cspace-import-2024') {
+  if (!process.env.ADMIN_IMPORT_SECRET || authHeader !== process.env.ADMIN_IMPORT_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

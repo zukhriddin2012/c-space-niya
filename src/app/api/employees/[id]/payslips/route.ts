@@ -103,9 +103,15 @@ export const POST = withAuth(async (
 
 // PUT /api/employees/[id]/payslips - Update a payslip
 export const PUT = withAuth(async (
-  request: NextRequest
+  request: NextRequest,
+  { params }
 ) => {
   try {
+    const employeeId = params?.id;
+    if (!employeeId) {
+      return NextResponse.json({ error: 'Employee ID required' }, { status: 400 });
+    }
+
     if (!isSupabaseAdminConfigured()) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
     }
@@ -120,6 +126,7 @@ export const PUT = withAuth(async (
     // Calculate new totals
     const gross = (advance_bank || 0) + (advance_naqd || 0) + (salary_bank || 0) + (salary_naqd || 0);
 
+    // SEC: Scope to employee_id from URL to prevent IDOR
     const { data: payslip, error } = await supabaseAdmin!
       .from('payslips')
       .update({
@@ -133,6 +140,7 @@ export const PUT = withAuth(async (
         updated_at: new Date().toISOString(),
       })
       .eq('id', payslip_id)
+      .eq('employee_id', employeeId)
       .select()
       .single();
 
@@ -150,9 +158,15 @@ export const PUT = withAuth(async (
 
 // DELETE /api/employees/[id]/payslips - Delete a payslip
 export const DELETE = withAuth(async (
-  request: NextRequest
+  request: NextRequest,
+  { params }
 ) => {
   try {
+    const employeeId = params?.id;
+    if (!employeeId) {
+      return NextResponse.json({ error: 'Employee ID required' }, { status: 400 });
+    }
+
     if (!isSupabaseAdminConfigured()) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
     }
@@ -164,10 +178,12 @@ export const DELETE = withAuth(async (
       return NextResponse.json({ error: 'Payslip ID required' }, { status: 400 });
     }
 
+    // SEC: Scope to employee_id from URL to prevent IDOR
     const { error } = await supabaseAdmin!
       .from('payslips')
       .delete()
-      .eq('id', payslipId);
+      .eq('id', payslipId)
+      .eq('employee_id', employeeId);
 
     if (error) {
       console.error('Error deleting payslip:', error);

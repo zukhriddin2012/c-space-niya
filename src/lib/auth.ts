@@ -1,9 +1,20 @@
 import { SignJWT, jwtVerify } from 'jose';
+import crypto from 'crypto';
 import type { User, UserRole } from '@/types';
+import { supabaseAdmin } from './supabase';
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'c-space-niya-secret-key-change-in-production'
-);
+// SEC-003: JWT_SECRET MUST come from environment. No fallback.
+const secret = process.env.JWT_SECRET;
+if (!secret && typeof window === 'undefined') {
+  // Only crash on server-side (not during client build)
+  if (process.env.NODE_ENV === 'production' || process.env.NEXT_RUNTIME === 'nodejs') {
+    throw new Error(
+      'FATAL: JWT_SECRET environment variable is not set. ' +
+      'Generate one with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"'
+    );
+  }
+}
+export const JWT_SECRET = new TextEncoder().encode(secret || 'dev-only-fallback-not-for-production');
 
 // Helper function to determine role based on position
 function getRoleFromPosition(position: string): UserRole {
@@ -20,740 +31,85 @@ function getRoleFromPosition(position: string): UserRole {
   return 'employee';
 }
 
-// All employees as system users
-export const DEMO_USERS: (User & { password: string })[] = [
-  // Admin/Management accounts
-  {
-    id: 'admin-1',
-    email: 'admin@cspace.uz',
-    password: 'CSpace2024!',
-    name: 'System Admin',
-    role: 'general_manager',
-    department: 'Administration',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-
-  // C-SPACE YUNUSABAD BRANCH
-  {
-    id: '1',
-    email: 'nodir.mahmudov@cspace.uz',
-    password: 'Nodir@2024',
-    name: 'Nodir Mahmudov',
-    role: 'employee',
-    employeeId: 'EMP001',
-    department: 'Operations',
-    branchId: 'yunusabad',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '2',
-    email: 'said.yunusabad@cspace.uz',
-    password: 'Said@2024Y',
-    name: 'Said Florist',
-    role: 'employee',
-    employeeId: 'EMP002',
-    department: 'Operations',
-    branchId: 'yunusabad',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '3',
-    email: 'nigina.umaraliyeva@cspace.uz',
-    password: 'Nigina@2024',
-    name: 'Nigina Umaraliyeva',
-    role: 'employee',
-    employeeId: 'EMP003',
-    department: 'Legal',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '4',
-    email: 'yusufjon.sayfullayev@cspace.uz',
-    password: 'Yusufjon@2024',
-    name: 'Yusufjon Sayfullayev',
-    role: 'employee',
-    employeeId: 'EMP004',
-    department: 'Operations',
-    branchId: 'labzak',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '5',
-    email: 'ruxshona.nabijonova@cspace.uz',
-    password: 'Ruxshona@2024',
-    name: 'Ruxshona Nabijonova',
-    role: 'employee',
-    employeeId: 'EMP005',
-    department: 'Quality Assurance',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '6',
-    email: 'shahzod.xabibjonov@cspace.uz',
-    password: 'Shahzod@2024',
-    name: 'Shahzod Xabibjonov',
-    role: 'employee',
-    employeeId: 'EMP006',
-    department: 'Operations',
-    branchId: 'yunusabad',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '7',
-    email: 'rahmatulloh.yusupov@cspace.uz',
-    password: 'Rahmatulloh@2024',
-    name: 'Rahmatulloh Yusupov',
-    role: 'employee',
-    employeeId: 'EMP007',
-    department: 'Facilities',
-    branchId: 'yandex',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '8',
-    email: 'jamshid.farhodov@cspace.uz',
-    password: 'Jamshid@2024F',
-    name: 'Jamshid Farhodov',
-    role: 'employee',
-    employeeId: 'EMP008',
-    department: 'Operations',
-    branchId: 'chust',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '9',
-    email: 'xushbaxt.abdusalomov@cspace.uz',
-    password: 'Xushbaxt@2024',
-    name: 'Xushbaxt Abdusalomov',
-    role: 'employee',
-    employeeId: 'EMP009',
-    department: 'Operations',
-    branchId: 'yunusabad',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '10',
-    email: 'paxlavon.begijonov@cspace.uz',
-    password: 'Paxlavon@2024',
-    name: 'Paxlavon Mahmud Begijonov',
-    role: 'employee',
-    employeeId: 'EMP010',
-    department: 'Operations',
-    branchId: 'yunusabad',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '11',
-    email: 'axror.umarov@cspace.uz',
-    password: 'Axror@2024U',
-    name: 'Axror Umarov',
-    role: 'employee',
-    employeeId: 'EMP011',
-    department: 'Operations',
-    branchId: 'yunusabad',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '12',
-    email: 'sayyora.sharipova@cspace.uz',
-    password: 'Sayyora@2024',
-    name: 'Sayyora Sharipova',
-    role: 'employee',
-    employeeId: 'EMP012',
-    department: 'Accounting',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '13',
-    email: 'maxmudjon.bustonov@cspace.uz',
-    password: 'Maxmudjon@2024',
-    name: 'Maxmudjon Bustonov',
-    role: 'employee',
-    employeeId: 'EMP013',
-    department: 'Operations',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '14',
-    email: 'mirvohid.raimbekov@cspace.uz',
-    password: 'Mirvohid@2024',
-    name: 'Mirvohid Raimbekov',
-    role: 'employee',
-    employeeId: 'EMP014',
-    department: 'Sales',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-
-  // C-SPACE LABZAK BRANCH
-  {
-    id: '15',
-    email: 'sulhiya.aminova@cspace.uz',
-    password: 'Sulhiya@2024',
-    name: 'Sulhiya Aminova',
-    role: 'employee',
-    employeeId: 'EMP015',
-    department: 'Quality Assurance',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '16',
-    email: 'abror.umarov@cspace.uz',
-    password: 'Abror@2024',
-    name: 'Abror Umarov',
-    role: 'employee',
-    employeeId: 'EMP016',
-    department: 'Operations',
-    branchId: 'labzak',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '17',
-    email: 'said.labzak@cspace.uz',
-    password: 'Said@2024L',
-    name: 'Said Florist Labzak',
-    role: 'employee',
-    employeeId: 'EMP017',
-    department: 'Operations',
-    branchId: 'labzak',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '18',
-    email: 'zuxriddin.abduraxmonov@cspace.uz',
-    password: 'Zuxriddin@2024',
-    name: 'Zuxriddin Abduraxmonov',
-    role: 'general_manager',
-    employeeId: 'EMP018',
-    department: 'Executive',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '19',
-    email: 'xusravbek.olimjonov@cspace.uz',
-    password: 'Xusravbek@2024',
-    name: 'Xusravbek Olimjonov',
-    role: 'employee',
-    employeeId: 'EMP019',
-    department: 'Operations',
-    branchId: 'labzak',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '20',
-    email: 'solih@cspace.uz',
-    password: 'Solih@2024',
-    name: 'Solih',
-    role: 'employee',
-    employeeId: 'EMP020',
-    department: 'Operations',
-    branchId: 'labzak',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '21',
-    email: 'bekzod.tursunaliyev@cspace.uz',
-    password: 'Bekzod@2024',
-    name: 'Bekzod Tursunaliyev',
-    role: 'employee',
-    employeeId: 'EMP021',
-    department: 'Operations',
-    branchId: 'labzak',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '22',
-    email: 'fozilbek.akmalov@cspace.uz',
-    password: 'Fozilbek@2024',
-    name: 'Fozilbek Akmalov',
-    role: 'employee',
-    employeeId: 'EMP022',
-    department: 'Operations',
-    branchId: 'beruniy',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '23',
-    email: 'lobarxon.abdurasulova@cspace.uz',
-    password: 'Lobarxon@2024',
-    name: 'Lobarxon Abdurasulova',
-    role: 'employee',
-    employeeId: 'EMP023',
-    department: 'Operations',
-    branchId: 'labzak',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '24',
-    email: 'guljamal.kenjabayeva@cspace.uz',
-    password: 'Guljamal@2024',
-    name: 'Guljamal Kenjabayeva',
-    role: 'employee',
-    employeeId: 'EMP024',
-    department: 'Operations',
-    branchId: 'labzak',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-
-  // C-SPACE ELBEK BRANCH
-  {
-    id: '25',
-    email: 'nodirbek.yusupov@cspace.uz',
-    password: 'Nodirbek@2024',
-    name: 'Nodirbek Yusupov',
-    role: 'employee',
-    employeeId: 'EMP025',
-    department: 'Maintenance',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '26',
-    email: 'ibrohim.abduqodirov@cspace.uz',
-    password: 'Ibrohim@2024A',
-    name: 'Ibrohim Abduqodirov',
-    role: 'employee',
-    employeeId: 'EMP026',
-    department: 'Operations',
-    branchId: 'elbek',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '27',
-    email: 'munira.bababekova@cspace.uz',
-    password: 'Munira@2024',
-    name: 'Munira Bababekova',
-    role: 'employee',
-    employeeId: 'EMP027',
-    department: 'Operations',
-    branchId: 'elbek',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '28',
-    email: 'gulbahor.primova@cspace.uz',
-    password: 'Gulbahor@2024',
-    name: 'Gulbahor Primova',
-    role: 'employee',
-    employeeId: 'EMP028',
-    department: 'Operations',
-    branchId: 'elbek',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '29',
-    email: 'saodat.ikromova@cspace.uz',
-    password: 'Saodat@2024I',
-    name: 'Saodat Ikromova',
-    role: 'employee',
-    employeeId: 'EMP029',
-    department: 'Operations',
-    branchId: 'elbek',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '30',
-    email: 'said.elbek@cspace.uz',
-    password: 'Said@2024E',
-    name: 'Said Florist Elbek',
-    role: 'employee',
-    employeeId: 'EMP030',
-    department: 'Operations',
-    branchId: 'elbek',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '31',
-    email: 'ibrohim.oripov@cspace.uz',
-    password: 'Ibrohim@2024O',
-    name: 'Ibrohim Oripov',
-    role: 'employee',
-    employeeId: 'EMP031',
-    department: 'Operations',
-    branchId: 'elbek',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '32',
-    email: 'fozilxon.raxmatov@cspace.uz',
-    password: 'Fozilxon@2024',
-    name: 'Fozilxon Raxmatov',
-    role: 'employee',
-    employeeId: 'EMP032',
-    department: 'Operations',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '33',
-    email: 'salim.avazov@cspace.uz',
-    password: 'Salim@2024',
-    name: 'Salim Avazov',
-    role: 'employee',
-    employeeId: 'EMP033',
-    department: 'Operations',
-    branchId: 'aero',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '34',
-    email: 'axror.nazirqulov@cspace.uz',
-    password: 'Axror@2024N',
-    name: 'Axror Nazirqulov',
-    role: 'employee',
-    employeeId: 'EMP034',
-    department: 'Operations',
-    branchId: 'elbek',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '35',
-    email: 'bexruz.xaydarov@cspace.uz',
-    password: 'Bexruz@2024',
-    name: 'Bexruz Xaydarov',
-    role: 'employee',
-    employeeId: 'EMP035',
-    department: 'Operations',
-    branchId: 'elbek',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '36',
-    email: 'mirjalol.omonqulov@cspace.uz',
-    password: 'Mirjalol@2024',
-    name: 'Mirjalol Omonqulov',
-    role: 'employee',
-    employeeId: 'EMP036',
-    department: 'Operations',
-    branchId: 'elbek',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-
-  // C-SPACE CHUST BRANCH
-  {
-    id: '37',
-    email: 'durbek.shaymardanov@cspace.uz',
-    password: 'Durbek@2024',
-    name: 'Durbek Shaymardanov',
-    role: 'employee',
-    employeeId: 'EMP037',
-    department: 'Construction',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '38',
-    email: 'samad.gaipov@cspace.uz',
-    password: 'Samad@2024',
-    name: 'Samad Gaipov',
-    role: 'employee',
-    employeeId: 'EMP038',
-    department: 'Sales',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '39',
-    email: 'said.chust@cspace.uz',
-    password: 'Said@2024C',
-    name: 'Said Florist Chust',
-    role: 'employee',
-    employeeId: 'EMP039',
-    department: 'Operations',
-    branchId: 'chust',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '40',
-    email: 'gavhar.abdigayeva@cspace.uz',
-    password: 'Gavhar@2024',
-    name: 'Gavhar Abdigayeva',
-    role: 'employee',
-    employeeId: 'EMP040',
-    department: 'Operations',
-    branchId: 'yandex',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '41',
-    email: 'saodat.rahimova@cspace.uz',
-    password: 'Saodat@2024R',
-    name: 'Saodat Rahimova',
-    role: 'employee',
-    employeeId: 'EMP041',
-    department: 'Operations',
-    branchId: 'yandex',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '42',
-    email: 'xurshida.muxamedjanova@cspace.uz',
-    password: 'Xurshida@2024',
-    name: 'Xurshida Muxamedjanova',
-    role: 'employee',
-    employeeId: 'EMP042',
-    department: 'Operations',
-    branchId: 'yandex',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '43',
-    email: 'nabijon.turgunov@cspace.uz',
-    password: 'Nabijon@2024',
-    name: 'Nabijon Turgunov',
-    role: 'ceo',
-    employeeId: 'EMP043',
-    department: 'Executive',
-    branchId: 'chust',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '44',
-    email: 'javlon.toshpulatov@cspace.uz',
-    password: 'Javlon@2024',
-    name: 'Javlon Toshpulatov',
-    role: 'employee',
-    employeeId: 'EMP044',
-    department: 'Operations',
-    branchId: 'chust',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '45',
-    email: 'mohigul.yuldoshova@cspace.uz',
-    password: 'Mohigul@2024',
-    name: 'Mohigul Yuldoshova',
-    role: 'employee',
-    employeeId: 'EMP045',
-    department: 'Operations',
-    branchId: 'chust',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '46',
-    email: 'jamshid.ibragimov@cspace.uz',
-    password: 'Jamshid@2024I',
-    name: 'Jamshid Ibragimov',
-    role: 'employee',
-    employeeId: 'EMP046',
-    department: 'Operations',
-    branchId: 'chust',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '47',
-    email: 'suxrob.usmonov@cspace.uz',
-    password: 'Suxrob@2024',
-    name: 'Suxrob Usmonov',
-    role: 'employee',
-    employeeId: 'EMP047',
-    department: 'Operations',
-    branchId: 'chust',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '48',
-    email: 'ulbosin.usarova@cspace.uz',
-    password: 'Ulbosin@2024',
-    name: 'Ulbosin Usarova',
-    role: 'employee',
-    employeeId: 'EMP048',
-    department: 'Operations',
-    branchId: 'chust',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '49',
-    email: 'ubaydullo.pulat@cspace.uz',
-    password: 'Ubaydullo@2024',
-    name: 'Ubaydullo Pulat',
-    role: 'ceo',
-    employeeId: 'EMP049',
-    department: 'Business Development',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-
-  // CS AERO BRANCH
-  {
-    id: '50',
-    email: 'said.aero@cspace.uz',
-    password: 'Said@2024A',
-    name: 'Said Florist Aero',
-    role: 'employee',
-    employeeId: 'EMP050',
-    department: 'Operations',
-    branchId: 'aero',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '51',
-    email: 'abubakr.sodiqov@cspace.uz',
-    password: 'Abubakr@2024',
-    name: 'Abubakr Sodiqov',
-    role: 'employee',
-    employeeId: 'EMP051',
-    department: 'Operations',
-    branchId: 'aero',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '52',
-    email: 'oyxol.egamberdiyeva@cspace.uz',
-    password: 'Oyxol@2024',
-    name: 'Oyxol Egamberdiyeva',
-    role: 'employee',
-    employeeId: 'EMP052',
-    department: 'Operations',
-    branchId: 'aero',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '53',
-    email: 'humoyun.odilov@cspace.uz',
-    password: 'Humoyun@2024',
-    name: 'Humoyun Odilov',
-    role: 'employee',
-    employeeId: 'EMP053',
-    department: 'Operations',
-    branchId: 'aero',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-
-  // C-SPACE ORIENT (BERUNIY) BRANCH
-  {
-    id: '54',
-    email: 'nargiza.rahimova@cspace.uz',
-    password: 'Nargiza@2024',
-    name: 'Nargiza Rahimova',
-    role: 'employee',
-    employeeId: 'EMP054',
-    department: 'Operations',
-    branchId: 'beruniy',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '55',
-    email: 'said.beruniy@cspace.uz',
-    password: 'Said@2024B',
-    name: 'Said Florist Beruniy',
-    role: 'employee',
-    employeeId: 'EMP055',
-    department: 'Operations',
-    branchId: 'beruniy',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-
-  // C-SPACE MUQIMIY BRANCH
-  {
-    id: '56',
-    email: 'humora.urokboyeva@cspace.uz',
-    password: 'Humora@2024',
-    name: 'Humora Urokboyeva',
-    role: 'employee',
-    employeeId: 'EMP056',
-    department: 'Operations',
-    branchId: 'muqimiy',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '57',
-    email: 'said.muqimiy@cspace.uz',
-    password: 'Said@2024M',
-    name: 'Said Florist Muqimiy',
-    role: 'employee',
-    employeeId: 'EMP057',
-    department: 'Operations',
-    branchId: 'muqimiy',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: '58',
-    email: 'azizbek.samiyev@cspace.uz',
-    password: 'Azizbek@2024',
-    name: 'Azizbek Samiyev',
-    role: 'employee',
-    employeeId: 'EMP058',
-    department: 'Operations',
-    branchId: 'muqimiy',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
-
-export async function createToken(user: User): Promise<string> {
-  return new SignJWT({
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    role: user.role,
-  })
+// SEC-018: Minimal JWT — only sub (userId) and jti
+export async function createAccessToken(userId: string): Promise<string> {
+  const jti = crypto.randomUUID();
+  return new SignJWT({ sub: userId, jti })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('7d')
+    .setExpirationTime('1h')
     .sign(JWT_SECRET);
 }
 
+// Legacy createToken — wraps createAccessToken for backward compat during migration
+export async function createToken(user: User): Promise<string> {
+  return createAccessToken(user.id);
+}
+
+// SEC-017: Create refresh token (stored hashed in DB)
+export async function createRefreshToken(userId: string): Promise<string> {
+  const token = crypto.randomBytes(32).toString('hex');
+  const hash = crypto.createHash('sha256').update(token).digest('hex');
+
+  if (supabaseAdmin) {
+    await supabaseAdmin.from('refresh_tokens').insert({
+      user_id: userId,
+      token_hash: hash,
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    });
+  }
+
+  return token;
+}
+
+// Revoke all tokens for a user (on logout, password change, termination)
+export async function revokeAllUserTokens(userId: string): Promise<void> {
+  if (!supabaseAdmin) return;
+
+  await supabaseAdmin
+    .from('refresh_tokens')
+    .update({ revoked_at: new Date().toISOString() })
+    .eq('user_id', userId)
+    .is('revoked_at', null);
+}
+
+// Verify access token — returns minimal info
 export async function verifyToken(token: string): Promise<User | null> {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
+    const userId = payload.sub as string;
+
+    if (!userId) return null;
+
+    // SEC-018: Fetch user data from DB since JWT only has sub
+    if (supabaseAdmin) {
+      const { data: employee } = await supabaseAdmin
+        .from('employees')
+        .select('id, email, full_name, system_role, position, employee_id, branch_id')
+        .eq('id', userId)
+        .single();
+
+      if (employee) {
+        return {
+          id: employee.id,
+          email: employee.email || '',
+          name: employee.full_name,
+          role: (employee.system_role || 'employee') as UserRole,
+          position: employee.position,
+          employeeId: employee.employee_id,
+          branchId: employee.branch_id || undefined,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+      }
+    }
+
+    // Fallback: return minimal user with just ID
     return {
-      id: payload.id as string,
-      email: payload.email as string,
-      name: payload.name as string,
-      role: payload.role as UserRole,
+      id: userId,
+      email: '',
+      name: '',
+      role: 'employee' as UserRole,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -762,130 +118,13 @@ export async function verifyToken(token: string): Promise<User | null> {
   }
 }
 
-export function validateCredentials(
-  email: string,
-  password: string
-): User | null {
-  const user = DEMO_USERS.find(
-    (u) => u.email === email && u.password === password
-  );
-  if (!user) return null;
-  // Return user without password
-  const { password: _, ...userWithoutPassword } = user;
-  return userWithoutPassword;
-}
-
-// Role-based permission helpers
-export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
-  general_manager: [
-    'view_all_employees',
-    'create_employee',
-    'edit_employee',
-    'delete_employee',
-    'view_wages',
-    'process_payroll',
-    'approve_payroll',
-    'view_budget',
-    'manage_branches',
-    'view_presence',
-    'manage_users',
-    'assign_tasks',
-    'view_reports',
-    'manage_settings',
-  ],
-  ceo: [
-    'view_all_employees',
-    'view_wages',
-    'approve_payroll',
-    'view_budget',
-    'view_presence',
-    'view_reports',
-    'view_analytics',
-  ],
-  hr: [
-    'view_all_employees',
-    'create_employee',
-    'edit_employee',
-    'view_wages',
-    'process_payroll',
-    'view_presence',
-    'assign_tasks',
-    'manage_onboarding',
-  ],
-  recruiter: [
-    'view_candidates',
-    'manage_candidates',
-    'view_presence',
-    'view_hiring_pipeline',
-  ],
-  branch_manager: [
-    'view_branch_employees',
-    'view_branch_attendance',
-    'view_branch_presence',
-    'approve_branch_leaves',
-    'view_own_profile',
-    'view_own_attendance',
-    'view_own_payslips',
-    'check_in_out',
-  ],
-  employee: [
-    'view_own_profile',
-    'view_own_attendance',
-    'view_own_payslips',
-    'check_in_out',
-  ],
-  accountant: [
-    'view_own_profile',
-    'view_own_attendance',
-    'view_own_payslips',
-    'check_in_out',
-    'view_accounting_requests',
-    'process_accounting_requests',
-  ],
-  chief_accountant: [
-    'view_own_profile',
-    'view_own_attendance',
-    'view_own_payslips',
-    'check_in_out',
-    'view_accounting_requests',
-    'process_accounting_requests',
-    'approve_standard_accounting',
-  ],
-  legal_manager: [
-    'view_own_profile',
-    'view_own_attendance',
-    'view_own_payslips',
-    'check_in_out',
-    'create_accounting_requests',
-    'view_own_accounting_requests',
-  ],
-  reports_manager: [
-    'view_own_profile',
-    'view_own_attendance',
-    'view_own_payslips',
-    'check_in_out',
-    'view_all_finances',
-    'view_reports',
-    'view_analytics',
-  ],
-};
-
-export function hasPermission(role: UserRole, permission: string): boolean {
-  return ROLE_PERMISSIONS[role]?.includes(permission) ?? false;
-}
-
-export function getRoleLabel(role: UserRole): string {
-  const labels: Record<UserRole, string> = {
-    general_manager: 'General Manager',
-    ceo: 'CEO',
-    hr: 'HR Staff',
-    recruiter: 'Recruiter',
-    branch_manager: 'Branch Manager',
-    employee: 'Employee',
-    accountant: 'Accountant',
-    chief_accountant: 'Chief Accountant',
-    legal_manager: 'Legal Manager',
-    reports_manager: 'Reports Manager',
-  };
-  return labels[role];
-}
+// SEC-022: Consolidated — re-export from permissions.ts (the single source of truth)
+export {
+  ROLE_PERMISSIONS,
+  hasPermission,
+  hasAnyPermission,
+  hasAllPermissions,
+  getRoleLabel,
+  canManageRole,
+  getPermissionsForRole,
+} from './permissions';

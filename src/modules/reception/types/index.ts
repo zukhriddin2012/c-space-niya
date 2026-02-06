@@ -532,3 +532,133 @@ export function transformBranchAccess(row: ReceptionBranchAccessRow): ReceptionB
     notes: row.notes ?? undefined,
   };
 }
+
+// ============================================
+// OPERATOR SWITCH TYPES (R6a)
+// ============================================
+
+export interface OperatorIdentity {
+  id: string;
+  name: string;
+  branchId: string;
+  isCrossBranch: boolean;
+  homeBranchId?: string;
+  homeBranchName?: string;
+}
+
+export interface OperatorSwitchInput {
+  pin: string;       // 4-digit PIN as string
+  branchId: string;  // current terminal branch
+}
+
+export interface CrossBranchSwitchInput {
+  employeeId: string;  // selected from search
+  pin: string;
+  branchId: string;    // current terminal branch
+}
+
+export interface OperatorSwitchResult {
+  success: boolean;
+  operator?: OperatorIdentity;
+  error?: 'invalid_pin' | 'locked' | 'no_pin_set' | 'employee_not_found';
+  lockoutRemainingSeconds?: number;
+  attemptsRemaining?: number;
+}
+
+export interface SetOperatorPinInput {
+  pin: string;  // 4-digit string
+  employeeId?: string;  // admin can set for others
+}
+
+// ═══ Operator Switch Log ═══
+
+export interface OperatorSwitchLog {
+  id: string;
+  branchId: string;
+  sessionUserId: string;
+  switchedToId: string;
+  switchedToName?: string;
+  isCrossBranch: boolean;
+  homeBranchId?: string;
+  ipAddress?: string;
+  createdAt: string;
+}
+
+export interface OperatorSwitchLogRow {
+  id: string;
+  branch_id: string;
+  session_user_id: string;
+  switched_to_id: string;
+  is_cross_branch: boolean;
+  home_branch_id: string | null;
+  ip_address: string | null;
+  created_at: string;
+}
+
+export function transformOperatorSwitchLog(row: OperatorSwitchLogRow): OperatorSwitchLog {
+  return {
+    id: row.id,
+    branchId: row.branch_id,
+    sessionUserId: row.session_user_id,
+    switchedToId: row.switched_to_id,
+    isCrossBranch: row.is_cross_branch,
+    homeBranchId: row.home_branch_id ?? undefined,
+    ipAddress: row.ip_address ?? undefined,
+    createdAt: row.created_at,
+  };
+}
+
+// ═══ Branch Employee Assignment (cross-branch coverage) ═══
+
+export interface BranchAssignment {
+  id: string;
+  employeeId: string;
+  employeeName?: string;
+  homeBranchId: string;
+  homeBranchName?: string;
+  assignedBranchId: string;
+  assignedBranchName?: string;
+  assignedBy: string;
+  assignedByName?: string;
+  startsAt: string;
+  endsAt?: string;
+  removedAt?: string;
+  createdAt: string;
+}
+
+export interface BranchAssignmentRow {
+  id: string;
+  employee_id: string;
+  home_branch_id: string;
+  assigned_branch_id: string;
+  assigned_by: string;
+  starts_at: string;
+  ends_at: string | null;
+  removed_at: string | null;
+  created_at: string;
+}
+
+export function transformBranchAssignment(row: BranchAssignmentRow): BranchAssignment {
+  return {
+    id: row.id,
+    employeeId: row.employee_id,
+    homeBranchId: row.home_branch_id,
+    assignedBranchId: row.assigned_branch_id,
+    assignedBy: row.assigned_by,
+    startsAt: row.starts_at,
+    endsAt: row.ends_at ?? undefined,
+    removedAt: row.removed_at ?? undefined,
+    createdAt: row.created_at,
+  };
+}
+
+// ═══ Employee search result (for cross-branch) ═══
+
+export interface EmployeeSearchResult {
+  id: string;
+  name: string;
+  branchId: string;
+  branchName: string;
+  role: string;
+  hasPinSet: boolean;
+}

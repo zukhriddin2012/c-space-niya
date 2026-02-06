@@ -328,6 +328,15 @@ async function handleCallbackQuery(callbackQuery: any): Promise<void> {
 
 // Webhook endpoint for Telegram
 export async function POST(request: NextRequest) {
+  // SEC-009: Verify Telegram webhook secret
+  const secretToken = request.headers.get('x-telegram-bot-api-secret-token');
+  const expectedToken = process.env.TELEGRAM_WEBHOOK_SECRET;
+
+  // SEC-009: Reject if secret is not configured OR doesn't match (fail-closed)
+  if (!expectedToken || secretToken !== expectedToken) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const update = await request.json();
     console.log('[Webhook] Received update:', JSON.stringify(update).substring(0, 500));

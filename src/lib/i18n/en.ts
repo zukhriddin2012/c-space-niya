@@ -712,6 +712,36 @@ export const en: Translations = {
     signIn: 'Sign In',
     signOut: 'Sign Out',
     invalidCredentials: 'Invalid email or password',
+    // SEC-008: Password reset
+    resetPassword: 'Reset Password',
+    resetPasswordTitle: 'Password Reset Required',
+    resetPasswordDescription: 'For security, you must set a new password before continuing.',
+    newPassword: 'New Password',
+    confirmPassword: 'Confirm Password',
+    passwordsDoNotMatch: 'Passwords do not match',
+    passwordResetSuccess: 'Password reset successfully!',
+    passwordRequirements: 'Password Requirements',
+    passwordStrength: 'Password Strength',
+    passwordWeak: 'Weak',
+    passwordFair: 'Fair',
+    passwordGood: 'Good',
+    passwordStrong: 'Strong',
+    passwordVeryStrong: 'Very Strong',
+    // SEC-015: Rate limiting
+    tooManyAttempts: 'Too many attempts. Please try again later.',
+    tryAgainIn: 'Try again in',
+    // SEC-017: Session management
+    sessionExpiringSoon: 'Session Expiring Soon',
+    sessionExpired: 'Session Expired',
+    sessionWillExpire: 'Your session will expire due to inactivity.',
+    staySignedIn: 'Stay Signed In',
+    signInAgain: 'Sign In Again',
+    remaining: 'remaining',
+    // SEC-020: Toast messages
+    errorOccurred: 'Something went wrong. Please try again.',
+    sessionExpiredMessage: 'Your session has expired. Please sign in again.',
+    permissionDenied: 'You don\'t have permission to perform this action.',
+    networkError: 'Unable to reach the server. Check your connection.',
   },
 
   // Settings

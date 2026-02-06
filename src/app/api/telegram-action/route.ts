@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase';
-
-// CORS headers for Telegram WebApp
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept',
-  'Access-Control-Max-Age': '86400',
-};
+import { validateTelegramInitData } from '@/lib/telegram-auth';
+import { getCorsHeaders } from '@/lib/cors';
 
 type ResponseType = 'im_at_work' | 'i_left' | '45min' | '2hours' | 'all_day';
 
@@ -31,27 +25,37 @@ function getNextReminderTime(responseType: ResponseType): Date | null {
 }
 
 // Handle OPTIONS for CORS preflight
-export async function OPTIONS() {
-  return new NextResponse(null, { status: 200, headers: corsHeaders });
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin');
+  return new NextResponse(null, { status: 200, headers: getCorsHeaders(origin) });
 }
 
 // Handle GET for testing
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const origin = request.headers.get('origin');
   return NextResponse.json({
     status: 'ok',
     message: 'Use POST with telegramId and responseType',
     timestamp: new Date().toISOString()
-  }, { headers: corsHeaders });
+  }, { headers: getCorsHeaders(origin) });
 }
 
 export async function POST(request: NextRequest) {
-  console.log('[TgAction] POST request received');
+  const origin = request.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
 
   try {
     const body = await request.json();
-    const { telegramId, reminderId, attendanceId, responseType } = body;
+    const { telegramId, reminderId, attendanceId, responseType, initData } = body;
 
-    console.log('[TgAction] Body:', { telegramId, responseType, attendanceId });
+    // SEC-010: Validate Telegram initData — mandatory for all requests
+    if (!initData) {
+      return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401, headers: corsHeaders });
+    }
+    const validation = validateTelegramInitData(initData);
+    if (!validation.valid) {
+      return NextResponse.json({ success: false, error: 'Invalid authentication' }, { status: 401, headers: corsHeaders });
+    }
 
     if (!telegramId || !responseType) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400, headers: corsHeaders });
@@ -74,7 +78,6 @@ export async function POST(request: NextRequest) {
 
     // Handle different response types
     if (responseType === 'i_left') {
-      // User confirmed they left - perform checkout
       let targetAttendanceId = attendanceId;
 
       if (!targetAttendanceId) {
@@ -104,11 +107,9 @@ export async function POST(request: NextRequest) {
           .eq('id', targetAttendanceId);
 
         if (checkoutError) {
-          console.error('Checkout error:', checkoutError);
           return NextResponse.json({ success: false, error: 'Failed to checkout' }, { status: 500, headers: corsHeaders });
         }
 
-        // Update reminder status
         if (reminderId) {
           await supabaseAdmin!
             .from('checkout_reminders')
@@ -130,7 +131,6 @@ export async function POST(request: NextRequest) {
     const now = new Date();
     const nextReminderTime = getNextReminderTime(responseType as ResponseType);
 
-    // Update current reminder
     if (reminderId) {
       await supabaseAdmin!
         .from('checkout_reminders')
@@ -142,7 +142,6 @@ export async function POST(request: NextRequest) {
         .eq('id', reminderId);
     }
 
-    // Get attendance for next reminder
     let targetAttendanceId = attendanceId;
     let shiftType = 'day';
 
@@ -164,7 +163,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create next reminder if not "all_day"
     let nextReminder = null;
     if (responseType !== 'all_day' && targetAttendanceId && nextReminderTime) {
       const { data: newReminder } = await supabaseAdmin!

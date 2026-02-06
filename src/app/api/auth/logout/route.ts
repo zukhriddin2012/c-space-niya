@@ -1,40 +1,35 @@
-import { NextResponse } from 'next/server';
+// SEC-017: Logout endpoint — revoke all tokens
+import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { verifyToken, revokeAllUserTokens } from '@/lib/auth';
+import { audit, getRequestMeta } from '@/lib/audit';
 
-const COOKIE_NAME = 'c-space-auth';
-
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
     const cookieStore = await cookies();
+    const token = cookieStore.get('c-space-auth')?.value;
 
-    // Delete the auth cookie by setting it with an expired date
-    cookieStore.set(COOKIE_NAME, '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 0, // Expire immediately
-      expires: new Date(0), // Set to past date
-    });
+    // Try to revoke tokens if user is authenticated
+    if (token) {
+      const user = await verifyToken(token);
+      if (user) {
+        await revokeAllUserTokens(user.id);
+        const meta = getRequestMeta(request);
+        audit({ action: 'auth.logout', user_id: user.id, ...meta });
+      }
+    }
 
-    const response = NextResponse.json({ success: true });
+    // Clear all auth cookies
+    cookieStore.delete('c-space-auth');
+    cookieStore.delete('c-space-refresh');
 
-    // Also set the cookie in the response headers as a backup
-    response.cookies.set(COOKIE_NAME, '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 0,
-      expires: new Date(0),
-    });
-
-    return response;
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Logout error:', error);
-    return NextResponse.json(
-      { success: false, message: 'An error occurred during logout' },
-      { status: 500 }
-    );
+    // Still clear cookies even on error
+    const cookieStore = await cookies();
+    cookieStore.delete('c-space-auth');
+    cookieStore.delete('c-space-refresh');
+    return NextResponse.json({ success: true });
   }
 }

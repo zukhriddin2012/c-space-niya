@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth-server';
 import { getBranches, getEmployees } from '@/lib/db';
-import { DEMO_USERS } from '@/lib/auth';
 import type { UserRole } from '@/types';
 
 // Extended employee type with optional system fields
@@ -53,16 +52,8 @@ export async function GET() {
     const users: UserWithRole[] = employees.map(emp => {
       const empWithFields = emp as EmployeeWithSystemFields;
 
-      // Use database system_role if available, otherwise fall back to DEMO_USERS or 'employee'
-      let role: UserRole = empWithFields.system_role || 'employee';
-
-      // Fall back to DEMO_USERS if no database role set
-      if (!empWithFields.system_role) {
-        const demoUser = DEMO_USERS.find(u => u.email.toLowerCase() === emp.email?.toLowerCase());
-        if (demoUser) {
-          role = demoUser.role;
-        }
-      }
+      // SEC-002: Use database system_role only (DEMO_USERS removed)
+      const role: UserRole = empWithFields.system_role || 'employee';
 
       return {
         id: emp.id,

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
 import { supabaseAdmin } from '@/lib/supabase';
 
 export async function POST(
@@ -21,7 +22,7 @@ export async function POST(
     // Get document by token
     const { data: doc, error } = await supabaseAdmin
       .from('candidate_documents')
-      .select('id, access_password, signed_at')
+      .select('id, access_password, access_password_hash, signed_at')
       .eq('signing_token', token)
       .single();
 
@@ -33,9 +34,17 @@ export async function POST(
       return NextResponse.json({ error: 'Document already signed' }, { status: 400 });
     }
 
-    // Verify password
-    if (doc.access_password !== password) {
-      return NextResponse.json({ error: 'Неверный пароль' }, { status: 401 });
+    // SEC-014: Try bcrypt hash first, fall back to plaintext during migration
+    let isValid = false;
+    if (doc.access_password_hash) {
+      isValid = await bcrypt.compare(password, doc.access_password_hash);
+    } else if (doc.access_password) {
+      // Temporary fallback — plaintext comparison during migration period
+      isValid = doc.access_password === password;
+    }
+
+    if (!isValid) {
+      return NextResponse.json({ error: 'Incorrect password' }, { status: 401 });
     }
 
     return NextResponse.json({ success: true });

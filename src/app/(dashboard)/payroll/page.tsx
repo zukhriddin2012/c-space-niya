@@ -1,5 +1,6 @@
 import { getSession } from '@/lib/auth-server';
 import { hasPermission } from '@/lib/auth';
+import { PERMISSIONS } from '@/lib/permissions';
 import { redirect } from 'next/navigation';
 import PayrollContent from './PayrollContent';
 
@@ -11,12 +12,12 @@ export default async function PayrollPage() {
   }
 
   // Check permission
-  if (!hasPermission(user.role, 'view_wages')) {
+  if (!hasPermission(user.role, PERMISSIONS.PAYROLL_VIEW)) {
     redirect('/dashboard');
   }
 
-  const canProcessPayroll = hasPermission(user.role, 'process_payroll');
-  const canApprovePayroll = hasPermission(user.role, 'approve_payroll');
+  const canProcessPayroll = hasPermission(user.role, PERMISSIONS.PAYROLL_PROCESS);
+  const canApprovePayroll = hasPermission(user.role, PERMISSIONS.PAYROLL_APPROVE);
 
   return (
     <PayrollContent

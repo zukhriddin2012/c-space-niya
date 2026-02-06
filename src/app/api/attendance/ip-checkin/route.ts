@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-
-// Get Tashkent time
-function getTashkentTime() {
-  const now = new Date();
-  const tashkent = new Date(now.getTime() + (5 * 60 * 60 * 1000));
-  return tashkent;
-}
+import { getTashkentTime, getTashkentHour, getTashkentTimeString, getTashkentDateString } from '@/lib/timezone';
 
 // Detect shift type from employee position or check-in time
 function detectShift(position: string | null): 'day' | 'night' {
@@ -16,8 +10,7 @@ function detectShift(position: string | null): 'day' | 'night' {
   }
   // Otherwise, infer from check-in time:
   // If checking in between 15:00-23:59, likely night shift
-  const tashkent = getTashkentTime();
-  const hour = tashkent.getUTCHours();
+  const hour = getTashkentHour();
   if (hour >= 15 && hour <= 23) {
     return 'night';
   }
@@ -28,8 +21,8 @@ function detectShift(position: string | null): 'day' | 'night' {
 // Day shift: late after 9:15, Night shift: late after 18:15
 function isLate(shiftId: string): boolean {
   const tashkent = getTashkentTime();
-  const hour = tashkent.getUTCHours();
-  const minute = tashkent.getUTCMinutes();
+  const hour = tashkent.getHours();
+  const minute = tashkent.getMinutes();
   const currentMinutes = hour * 60 + minute;
   const lateThreshold = shiftId === 'night' ? 18 * 60 + 15 : 9 * 60 + 15;
   return currentMinutes > lateThreshold;
@@ -100,9 +93,8 @@ export async function POST(request: NextRequest) {
       }
 
       console.log('📡 Processing remote check-in for employee:', employee.id, 'branch_id:', employee.branch_id);
-      const tashkent = getTashkentTime();
-      const checkInTime = tashkent.toISOString().substring(11, 19);
-      const today = tashkent.toISOString().split('T')[0];
+      const checkInTime = getTashkentTimeString();
+      const today = getTashkentDateString();
       const late = isLate(shiftId);
 
       // Build insert data - branch_id is optional for remote check-ins

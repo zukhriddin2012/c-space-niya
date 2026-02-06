@@ -231,9 +231,7 @@ export async function getEmployeeByEmail(email: string): Promise<Employee | null
 
   if (error) {
     // PGRST116 = no rows found (not really an error, just no match)
-    if (error.code === 'PGRST116') {
-      console.log('No employee found with email:', email);
-    } else {
+    if (error.code !== 'PGRST116') {
       console.error('Error fetching employee by email:', email, 'Error code:', error.code, 'Message:', error.message);
     }
     return null;
@@ -242,53 +240,37 @@ export async function getEmployeeByEmail(email: string): Promise<Employee | null
   return data;
 }
 
-// Authenticate employee with email and password from database
-export async function authenticateEmployee(email: string, password: string): Promise<Employee | null> {
-  console.log('[AUTH] Starting authentication for email:', email);
-  console.log('[AUTH] Supabase configured:', isSupabaseAdminConfigured());
-
+// SEC-001: Authenticate employee with bcrypt password hashing
+export async function authenticateEmployee(
+  email: string,
+  password: string
+): Promise<{ employee: Employee; mustReset: boolean } | null> {
   if (!isSupabaseAdminConfigured()) {
-    console.log('[AUTH] Supabase not configured, returning null');
     return null;
   }
 
-  // First, let's check if employee exists by email only (case-insensitive)
-  const { data: emailCheck, error: emailError } = await supabaseAdmin!
-    .from('employees')
-    .select('id, email, password, status, full_name')
-    .ilike('email', email)
-    .single();
-
-  console.log('[AUTH] Email lookup result:', emailCheck ? 'Found' : 'Not found');
-  if (emailError) {
-    console.log('[AUTH] Email lookup error:', emailError.message);
-  }
-  if (emailCheck) {
-    console.log('[AUTH] Found employee:', emailCheck.full_name, 'Status:', emailCheck.status);
-    console.log('[AUTH] Password match:', emailCheck.password === password);
-  }
-
-  // Find employee by email (case-insensitive) and password
-  // Use explicit relationship name to avoid ambiguity with community_manager_id FK
+  // Fetch employee by email (case-insensitive) — only fetch what we need
   const { data, error } = await supabaseAdmin!
     .from('employees')
-    .select('*, branches!employees_branch_id_fkey(name)')
+    .select('id, email, password_hash, password, must_reset_password, status, full_name, system_role, employee_id, position, position_id, level, branch_id, department_id, salary, phone, telegram_id, default_shift, can_rotate, employment_type, hire_date, preferred_language, is_growth_team, remote_work_enabled, branches!employees_branch_id_fkey(name)')
     .ilike('email', email)
-    .eq('password', password)
     .single();
 
-  if (error) {
-    console.error('[AUTH] Authentication error:', error.message, error.code);
-    return null;
+  if (error || !data) return null;
+  if (data.status === 'terminated') return null;
+
+  // Try bcrypt hash first (new system), then fall back to plaintext (migration period)
+  let isValid = false;
+  if (data.password_hash) {
+    const bcrypt = await import('bcryptjs');
+    isValid = await bcrypt.compare(password, data.password_hash);
+  } else if (data.password) {
+    // Temporary fallback during migration — plaintext comparison
+    isValid = data.password === password;
   }
 
-  console.log('[AUTH] Full auth result:', data ? 'Success' : 'No match');
+  if (!isValid) return null;
 
-  // Only block terminated employees
-  if (data?.status === 'terminated') {
-    console.log('[AUTH] Employee account is terminated');
-    return null;
-  }
-
-  return data;
+  const { password_hash, password: _pw, must_reset_password, ...employee } = data;
+  return { employee: employee as unknown as Employee, mustReset: must_reset_password || false };
 }
