@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Plus, Search, Filter, X, Eye, Ban, ChevronLeft, ChevronRight, Building2, Calendar, Clock, User, ArrowUpDown, ArrowDown, ArrowUp } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -12,19 +12,29 @@ import { useReceptionMode } from '@/contexts/ReceptionModeContext';
 import { useTranslation } from '@/contexts/LanguageContext';
 import type { Expense, ExpenseType, CreateExpenseInput } from '@/modules/reception/types';
 
-// Helper function to format date
+type QuickDateFilter = 'today' | 'yesterday' | 'week' | 'month' | 'custom' | 'all';
+
+// ============================================
+// DATE HELPERS - Using LOCAL dates to fix timezone bug!
+// ============================================
+
+function getLocalDateString(date: Date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
+  const date = new Date(dateString + 'T00:00:00');
   return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
-// Helper function to format time
 const formatTime = (dateString: string) => {
   const date = new Date(dateString);
   return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 };
 
-// Helper function for relative time
 const getRelativeTime = (dateString: string) => {
   const date = new Date(dateString);
   const now = new Date();
@@ -38,8 +48,34 @@ const getRelativeTime = (dateString: string) => {
   if (diffHours < 24) return `${diffHours}h ago`;
   if (diffDays === 1) return 'Yesterday';
   if (diffDays < 7) return `${diffDays}d ago`;
-  return null; // Use regular date for older items
+  return null;
 };
+
+function getDateRange(filter: QuickDateFilter): { from: string; to: string } | null {
+  const today = new Date();
+  switch (filter) {
+    case 'today':
+      return { from: getLocalDateString(today), to: getLocalDateString(today) };
+    case 'yesterday': {
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      return { from: getLocalDateString(yesterday), to: getLocalDateString(yesterday) };
+    }
+    case 'week': {
+      const weekStart = new Date(today);
+      weekStart.setDate(today.getDate() - today.getDay());
+      return { from: getLocalDateString(weekStart), to: getLocalDateString(today) };
+    }
+    case 'month': {
+      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+      return { from: getLocalDateString(monthStart), to: getLocalDateString(today) };
+    }
+    case 'all':
+    case 'custom':
+    default:
+      return null;
+  }
+}
 
 interface ExpenseFormData {
   subject: string;
@@ -78,8 +114,9 @@ export default function ReceptionExpenses() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterExpenseType, setFilterExpenseType] = useState('');
   const [filterPaymentMethod, setFilterPaymentMethod] = useState('');
-  const [filterDateFrom, setFilterDateFrom] = useState('');
-  const [filterDateTo, setFilterDateTo] = useState('');
+  const [quickDateFilter, setQuickDateFilter] = useState<QuickDateFilter>('today');
+  const [filterDateFrom, setFilterDateFrom] = useState(() => getLocalDateString());
+  const [filterDateTo, setFilterDateTo] = useState(() => getLocalDateString());
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -119,6 +156,14 @@ export default function ReceptionExpenses() {
     fetchConfig();
   }, []);
 
+  // Compute effective date range based on quick filter or custom dates
+  const effectiveDateRange = useMemo(() => {
+    if (quickDateFilter === 'custom') {
+      return { from: filterDateFrom, to: filterDateTo };
+    }
+    return getDateRange(quickDateFilter);
+  }, [quickDateFilter, filterDateFrom, filterDateTo]);
+
   const fetchExpenses = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -132,8 +177,10 @@ export default function ReceptionExpenses() {
       if (searchQuery) params.append('search', searchQuery);
       if (filterExpenseType) params.append('expenseTypeId', filterExpenseType);
       if (filterPaymentMethod) params.append('paymentMethod', filterPaymentMethod);
-      if (filterDateFrom) params.append('dateFrom', filterDateFrom);
-      if (filterDateTo) params.append('dateTo', filterDateTo);
+      if (effectiveDateRange) {
+        params.append('dateFrom', effectiveDateRange.from);
+        params.append('dateTo', effectiveDateRange.to);
+      }
 
       const response = await fetch(`/api/reception/expenses?${params}`);
       if (!response.ok) throw new Error('Failed to fetch expenses');
@@ -147,7 +194,7 @@ export default function ReceptionExpenses() {
     } finally {
       setIsLoading(false);
     }
-  }, [page, selectedBranchId, searchQuery, filterExpenseType, filterPaymentMethod, filterDateFrom, filterDateTo, sortBy, sortOrder]);
+  }, [page, selectedBranchId, searchQuery, filterExpenseType, filterPaymentMethod, effectiveDateRange, sortBy, sortOrder]);
 
   useEffect(() => {
     fetchExpenses();
@@ -221,16 +268,37 @@ export default function ReceptionExpenses() {
     }
   };
 
+  const handleQuickDateFilter = (filter: QuickDateFilter) => {
+    setQuickDateFilter(filter);
+    if (filter !== 'custom') {
+      const range = getDateRange(filter);
+      if (range) {
+        setFilterDateFrom(range.from);
+        setFilterDateTo(range.to);
+      }
+    }
+    setPage(1);
+  };
+
+  const handleCustomDateChange = (from: string, to: string) => {
+    setQuickDateFilter('custom');
+    setFilterDateFrom(from);
+    setFilterDateTo(to);
+    setPage(1);
+  };
+
   const clearFilters = () => {
     setSearchQuery('');
     setFilterExpenseType('');
     setFilterPaymentMethod('');
-    setFilterDateFrom('');
-    setFilterDateTo('');
+    setQuickDateFilter('today');
+    const today = getLocalDateString();
+    setFilterDateFrom(today);
+    setFilterDateTo(today);
     setPage(1);
   };
 
-  const hasActiveFilters = searchQuery || filterExpenseType || filterPaymentMethod || filterDateFrom || filterDateTo;
+  const hasActiveFilters = searchQuery || filterExpenseType || filterPaymentMethod || quickDateFilter !== 'today';
 
   return (
     <div className="space-y-4">
@@ -246,6 +314,34 @@ export default function ReceptionExpenses() {
       </div>
 
       <Card>
+        {/* Quick Date Filters */}
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <Calendar className="w-4 h-4 text-gray-400" />
+          {(['today', 'yesterday', 'week', 'month', 'all'] as QuickDateFilter[]).map((filter) => (
+            <button
+              key={filter}
+              onClick={() => handleQuickDateFilter(filter)}
+              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                quickDateFilter === filter
+                  ? 'bg-purple-100 text-purple-700'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              {filter === 'today' && t.reception.today}
+              {filter === 'yesterday' && t.reception.yesterday}
+              {filter === 'week' && t.reception.thisWeek}
+              {filter === 'month' && t.reception.thisMonth}
+              {filter === 'all' && t.reception.allTime}
+            </button>
+          ))}
+          {quickDateFilter === 'custom' && (
+            <span className="px-3 py-1.5 text-sm font-medium bg-purple-100 text-purple-700 rounded-lg">
+              {filterDateFrom} → {filterDateTo}
+            </span>
+          )}
+        </div>
+
+        {/* Search and Filter Toggle */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -259,11 +355,12 @@ export default function ReceptionExpenses() {
           </div>
           <Button variant={showFilters ? 'primary' : 'secondary'} onClick={() => setShowFilters(!showFilters)}>
             <Filter className="w-4 h-4 mr-2" />
-            Filters
-            {hasActiveFilters && <span className="ml-2 w-2 h-2 bg-purple-500 rounded-full" />}
+            {t.reception.moreFilters}
+            {(filterExpenseType || filterPaymentMethod) && <span className="ml-2 w-2 h-2 bg-purple-500 rounded-full" />}
           </Button>
         </div>
 
+        {/* Advanced Filters */}
         {showFilters && (
           <div className="mt-4 pt-4 border-t border-gray-100">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -277,14 +374,22 @@ export default function ReceptionExpenses() {
                 <option value="">All Payments</option>
                 {EXPENSE_PAYMENT_METHODS_LIST.map((pm) => (<option key={pm.value} value={pm.value}>{pm.icon} {pm.label}</option>))}
               </select>
-              <input type="date" value={filterDateFrom} onChange={(e) => { setFilterDateFrom(e.target.value); setPage(1); }}
-                className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
-              <input type="date" value={filterDateTo} onChange={(e) => { setFilterDateTo(e.target.value); setPage(1); }}
-                className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
+              <input
+                type="date"
+                value={filterDateFrom}
+                onChange={(e) => handleCustomDateChange(e.target.value, filterDateTo)}
+                className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+              <input
+                type="date"
+                value={filterDateTo}
+                onChange={(e) => handleCustomDateChange(filterDateFrom, e.target.value)}
+                className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
             </div>
             {hasActiveFilters && (
               <div className="mt-3 flex justify-end">
-                <Button variant="ghost" size="sm" onClick={clearFilters}><X className="w-4 h-4 mr-1" />Clear</Button>
+                <Button variant="ghost" size="sm" onClick={clearFilters}><X className="w-4 h-4 mr-1" />{t.reception.resetToToday}</Button>
               </div>
             )}
           </div>
