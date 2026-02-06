@@ -2,6 +2,7 @@
 
 import { CheckCircle, Circle } from 'lucide-react';
 import { validatePassword, PASSWORD_MIN_LENGTH } from '@/lib/password-validation';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface PasswordStrengthProps {
   password: string;
@@ -14,12 +15,12 @@ const strengthColors = {
   strong: { bar: 'bg-emerald-500', text: 'text-emerald-600' },
 };
 
-const strengthLabels = {
-  weak: 'Weak',
-  fair: 'Fair',
-  good: 'Good',
-  strong: 'Strong',
-};
+const getStrengthLabels = (t: ReturnType<typeof useLanguage>['t']) => ({
+  weak: t.auth.passwordWeak,
+  fair: t.auth.passwordFair,
+  good: t.auth.passwordGood,
+  strong: t.auth.passwordStrong,
+});
 
 const strengthSegments = {
   weak: 1,
@@ -29,18 +30,21 @@ const strengthSegments = {
 };
 
 export default function PasswordStrength({ password }: PasswordStrengthProps) {
+  const { t } = useLanguage();
+
   if (!password) return null;
 
   const { rules, strength } = validatePassword(password);
   const colors = strengthColors[strength];
   const segments = strengthSegments[strength];
+  const strengthLabels = getStrengthLabels(t);
 
   const ruleList = [
-    { key: 'minLength', label: `At least ${PASSWORD_MIN_LENGTH} characters`, met: rules.minLength },
-    { key: 'uppercase', label: 'Uppercase letter (A-Z)', met: rules.uppercase },
-    { key: 'lowercase', label: 'Lowercase letter (a-z)', met: rules.lowercase },
-    { key: 'number', label: 'Number (0-9)', met: rules.number },
-    { key: 'special', label: 'Special character (!@#$...)', met: rules.special },
+    { key: 'minLength', label: t.auth.passwordAtLeastChars.replace('{n}', String(PASSWORD_MIN_LENGTH)), met: rules.minLength },
+    { key: 'uppercase', label: t.auth.passwordUppercase, met: rules.uppercase },
+    { key: 'lowercase', label: t.auth.passwordLowercase, met: rules.lowercase },
+    { key: 'number', label: t.auth.passwordNumber, met: rules.number },
+    { key: 'special', label: t.auth.passwordSpecialChar, met: rules.special },
   ];
 
   return (
@@ -48,7 +52,7 @@ export default function PasswordStrength({ password }: PasswordStrengthProps) {
       {/* Strength bar */}
       <div>
         <div className="flex items-center justify-between mb-1">
-          <span className="text-xs text-gray-500">Password strength</span>
+          <span className="text-xs text-gray-500">{t.auth.passwordStrength}</span>
           <span className={`text-xs font-medium ${colors.text}`}>
             {strengthLabels[strength]}
           </span>

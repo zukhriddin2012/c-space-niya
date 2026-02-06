@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   BarChart3,
   Download,
@@ -14,6 +14,7 @@ import {
   ArrowUpRight,
   ArrowDownRight
 } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 type ReportType = 'attendance' | 'payroll' | 'headcount' | 'turnover';
 
@@ -31,64 +32,72 @@ interface ReportCard {
   };
 }
 
-const reportCards: ReportCard[] = [
-  {
-    id: 'attendance',
-    title: 'Attendance Report',
-    description: 'Daily, weekly, and monthly attendance statistics',
-    icon: Clock,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50',
-    stats: {
-      label: 'Avg. Attendance Rate',
-      value: '94.2%',
-      change: 2.1
-    }
-  },
-  {
-    id: 'payroll',
-    title: 'Payroll Report',
-    description: 'Salary disbursements and payment history',
-    icon: DollarSign,
-    color: 'text-green-600',
-    bgColor: 'bg-green-50',
-    stats: {
-      label: 'Total Disbursed (YTD)',
-      value: '2.1B UZS',
-      change: 5.3
-    }
-  },
-  {
-    id: 'headcount',
-    title: 'Headcount Report',
-    description: 'Employee distribution by branch and department',
-    icon: Users,
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-50',
-    stats: {
-      label: 'Total Employees',
-      value: '56',
-      change: 8.5
-    }
-  },
-  {
-    id: 'turnover',
-    title: 'Turnover Report',
-    description: 'Employee retention and turnover analysis',
-    icon: TrendingUp,
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-50',
-    stats: {
-      label: 'Turnover Rate',
-      value: '3.2%',
-      change: -1.5
-    }
-  }
-];
-
 export default function ReportsPage() {
+  const { t } = useLanguage();
   const [selectedReport, setSelectedReport] = useState<ReportType | null>(null);
   const [dateRange, setDateRange] = useState('this_month');
+
+  const reportCards = useMemo<ReportCard[]>(() => [
+    {
+      id: 'attendance',
+      title: t.reports.attendanceReport,
+      description: t.reports.dailyWeeklyMonthly,
+      icon: Clock,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
+      stats: {
+        label: t.reports.avgAttendanceRate,
+        value: '94.2%',
+        change: 2.1
+      }
+    },
+    {
+      id: 'payroll',
+      title: t.reports.payrollReport,
+      description: t.reports.salaryDisbursements,
+      icon: DollarSign,
+      color: 'text-green-600',
+      bgColor: 'bg-green-50',
+      stats: {
+        label: t.reports.totalDisbursed,
+        value: '2.1B UZS',
+        change: 5.3
+      }
+    },
+    {
+      id: 'headcount',
+      title: t.reports.headcountReport,
+      description: t.reports.employeeDistribution,
+      icon: Users,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
+      stats: {
+        label: t.reports.totalEmployees,
+        value: '56',
+        change: 8.5
+      }
+    },
+    {
+      id: 'turnover',
+      title: t.reports.turnoverReport,
+      description: t.reports.retentionAnalysis,
+      icon: TrendingUp,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50',
+      stats: {
+        label: t.reports.turnoverRate,
+        value: '3.2%',
+        change: -1.5
+      }
+    }
+  ], [t.reports]);
+
+  const quickExportItems = useMemo(() => [
+    { name: t.reports.employeeDirectory, icon: Users, description: t.reports.allEmployeesContact },
+    { name: t.reports.monthlyPayroll, icon: DollarSign, description: t.reports.currentMonthSalary },
+    { name: t.reports.attendanceSummary, icon: Clock, description: t.reports.thisMonthAttendance },
+    { name: t.reports.branchOverview, icon: PieChart, description: t.reports.staffDistribution },
+  ], [t.reports]);
 
   const handleExport = (reportId: ReportType) => {
     // TODO: Implement export functionality
@@ -100,10 +109,10 @@ export default function ReportsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 lg:mb-6">
         <div>
-          <h1 className="text-xl lg:text-2xl font-bold text-gray-900">Reports</h1>
+          <h1 className="text-xl lg:text-2xl font-bold text-gray-900">{t.reports.title}</h1>
           <p className="text-sm lg:text-base text-gray-600 mt-1">
-            <span className="hidden sm:inline">Generate and export HR analytics reports</span>
-            <span className="sm:hidden">HR analytics reports</span>
+            <span className="hidden sm:inline">{t.reports.subtitle}</span>
+            <span className="sm:hidden">{t.reports.subtitleShort}</span>
           </p>
         </div>
         <div className="flex items-center">
@@ -112,11 +121,11 @@ export default function ReportsPage() {
             onChange={(e) => setDateRange(e.target.value)}
             className="w-full sm:w-auto px-3 lg:px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           >
-            <option value="this_week">This Week</option>
-            <option value="this_month">This Month</option>
-            <option value="this_quarter">This Quarter</option>
-            <option value="this_year">This Year</option>
-            <option value="custom">Custom Range</option>
+            <option value="this_week">{t.reports.thisWeek}</option>
+            <option value="this_month">{t.reports.thisMonth}</option>
+            <option value="this_quarter">{t.reports.thisQuarter}</option>
+            <option value="this_year">{t.reports.thisYear}</option>
+            <option value="custom">{t.reports.customRange}</option>
           </select>
         </div>
       </div>
@@ -146,7 +155,7 @@ export default function ReportsPage() {
                     handleExport(report.id);
                   }}
                   className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="Export Report"
+                  title={t.reports.exportReport}
                 >
                   <Download size={16} className="lg:hidden" />
                   <Download size={18} className="hidden lg:block" />
@@ -186,18 +195,13 @@ export default function ReportsPage() {
             <FileSpreadsheet size={20} className="hidden lg:block text-purple-600" />
           </div>
           <div>
-            <h2 className="text-base lg:text-lg font-semibold text-gray-900">Quick Export</h2>
-            <p className="text-xs lg:text-sm text-gray-500">Download pre-configured reports</p>
+            <h2 className="text-base lg:text-lg font-semibold text-gray-900">{t.reports.quickExport}</h2>
+            <p className="text-xs lg:text-sm text-gray-500">{t.reports.downloadPreConfigured}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-          {[
-            { name: 'Employee Directory', icon: Users, description: 'All employees with contact info' },
-            { name: 'Monthly Payroll', icon: DollarSign, description: 'Current month salary data' },
-            { name: 'Attendance Summary', icon: Clock, description: 'This month attendance' },
-            { name: 'Branch Overview', icon: PieChart, description: 'Staff distribution by branch' },
-          ].map((item) => {
+          {quickExportItems.map((item) => {
             const Icon = item.icon;
             return (
               <button
@@ -224,10 +228,10 @@ export default function ReportsPage() {
             <BarChart3 size={24} className="hidden lg:block text-purple-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900 text-sm lg:text-base">Advanced Analytics Coming Soon</h3>
+            <h3 className="font-semibold text-gray-900 text-sm lg:text-base">{t.reports.advancedAnalytics}</h3>
             <p className="text-xs lg:text-sm text-gray-600 mt-1">
-              <span className="hidden sm:inline">Interactive charts, custom date ranges, and scheduled report delivery are being developed.</span>
-              <span className="sm:hidden">Interactive charts and scheduled reports coming soon.</span>
+              <span className="hidden sm:inline">{t.reports.advancedAnalyticsDesc}</span>
+              <span className="sm:hidden">{t.reports.advancedAnalyticsDescShort}</span>
             </p>
           </div>
         </div>

@@ -1,14 +1,16 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { JWT_SECRET } from './auth';
 
-const KIOSK_SESSION_HOURS = 12;
 export const KIOSK_COOKIE_NAME = 'reception-kiosk';
+
+// Kiosk sessions persist for 1 year (effectively permanent for a reception tablet)
+const KIOSK_SESSION_SECONDS = 365 * 24 * 60 * 60;
 
 export const KIOSK_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   sameSite: 'strict' as const,
-  maxAge: KIOSK_SESSION_HOURS * 60 * 60,
+  maxAge: KIOSK_SESSION_SECONDS,
   path: '/',
 };
 
@@ -25,7 +27,7 @@ export async function createKioskToken(branchId: string): Promise<{
   expiresAt: string;
 }> {
   const now = Math.floor(Date.now() / 1000);
-  const expiresAt = new Date((now + KIOSK_SESSION_HOURS * 60 * 60) * 1000);
+  const expiresAt = new Date((now + KIOSK_SESSION_SECONDS) * 1000);
 
   const token = await new SignJWT({
     sub: `kiosk:${branchId}`,
@@ -35,7 +37,7 @@ export async function createKioskToken(branchId: string): Promise<{
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime(`${KIOSK_SESSION_HOURS}h`)
+    .setExpirationTime('365d')
     .sign(JWT_SECRET);
 
   return { token, expiresAt: expiresAt.toISOString() };

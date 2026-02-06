@@ -40,10 +40,9 @@ const CUSTOM_AUTH_ROUTES = new Set([
 const PUBLIC_PAGES = ['/login', '/reset-password', '/telegram', '/sign', '/kiosk'];
 
 /**
- * Next.js 16 proxy handler — replaces middleware.ts
- * Handles: rate limiting, CSRF, JWT auth, page redirects
+ * Next.js middleware — handles auth, CSRF, and rate limiting
  */
-export default async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Static assets: always pass through

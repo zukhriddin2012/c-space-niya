@@ -42,7 +42,7 @@ export default function ReceptionLayout({ children }: ReceptionLayoutProps) {
                 <Receipt className="w-6 h-6" />
               </div>
               <div>
-                <h1 className="text-lg font-bold">Reception Mode</h1>
+                <h1 className="text-lg font-bold">Reception Mode <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold uppercase rounded-full bg-amber-400/30 text-amber-100 leading-none align-middle">Beta</span></h1>
                 <p className="text-xs text-purple-200">Record transactions & manage requests</p>
               </div>
             </div>

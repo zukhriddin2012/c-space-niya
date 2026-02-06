@@ -36,11 +36,11 @@ export default function SettingsPage() {
 
   const tabs = [
     { id: 'language' as const, name: t.settings.language, icon: Globe, permission: PERMISSIONS.SETTINGS_VIEW },
-    { id: 'roles' as const, name: 'Roles & Permissions', icon: Shield, permission: PERMISSIONS.USERS_ASSIGN_ROLES },
-    { id: 'branches' as const, name: 'Branch Settings', icon: Building2, permission: PERMISSIONS.BRANCHES_EDIT },
-    { id: 'notifications' as const, name: 'Notifications', icon: Bell, permission: PERMISSIONS.SETTINGS_VIEW },
-    { id: 'security' as const, name: 'Security', icon: Key, permission: PERMISSIONS.SETTINGS_EDIT },
-    { id: 'reception' as const, name: 'Reception', icon: Receipt, permission: PERMISSIONS.RECEPTION_ADMIN },
+    { id: 'roles' as const, name: t.settings.rolesPermissions, icon: Shield, permission: PERMISSIONS.USERS_ASSIGN_ROLES },
+    { id: 'branches' as const, name: t.settings.branchSettings, icon: Building2, permission: PERMISSIONS.BRANCHES_EDIT },
+    { id: 'notifications' as const, name: t.settings.notifications, icon: Bell, permission: PERMISSIONS.SETTINGS_VIEW },
+    { id: 'security' as const, name: t.settings.security, icon: Key, permission: PERMISSIONS.SETTINGS_EDIT },
+    { id: 'reception' as const, name: t.reception.title, icon: Receipt, permission: PERMISSIONS.RECEPTION_ADMIN },
   ];
 
   return (
@@ -51,14 +51,10 @@ export default function SettingsPage() {
           <h1 className="text-xl lg:text-2xl font-bold text-gray-900">{t.settings.title}</h1>
           <p className="text-sm lg:text-base text-gray-600 mt-1">
             <span className="hidden sm:inline">
-              {language === 'en' && 'Manage roles, permissions, and system configuration'}
-              {language === 'ru' && 'Управление ролями, разрешениями и конфигурацией системы'}
-              {language === 'uz' && 'Rollar, ruxsatlar va tizim sozlamalarini boshqarish'}
+              {t.settings.subtitle}
             </span>
             <span className="sm:hidden">
-              {language === 'en' && 'System configuration'}
-              {language === 'ru' && 'Конфигурация'}
-              {language === 'uz' && 'Sozlamalar'}
+              {t.settings.subtitleShort}
             </span>
           </p>
         </div>
@@ -160,9 +156,7 @@ export default function SettingsPage() {
                 <div className="mt-6 p-4 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-600">
                     <Globe size={16} className="inline mr-2" />
-                    {language === 'en' && 'Language preference will be saved and applied across all pages.'}
-                    {language === 'ru' && 'Настройка языка будет сохранена и применена на всех страницах.'}
-                    {language === 'uz' && 'Til sozlamalari saqlanadi va barcha sahifalarda qo\'llaniladi.'}
+                    {t.settings.languageSavedNotice}
                   </p>
                 </div>
               </div>
@@ -196,7 +190,7 @@ export default function SettingsPage() {
                         />
                       </div>
                       <p className="text-xs lg:text-sm text-gray-500">
-                        {ROLE_PERMISSIONS[role].length} permissions
+                        {ROLE_PERMISSIONS[role].length} {t.settings.permissions}
                       </p>
                     </button>
                   ))}
@@ -211,7 +205,7 @@ export default function SettingsPage() {
                           {getRoleLabel(selectedRole)} Permissions
                         </h3>
                         <p className="text-xs lg:text-sm text-gray-500">
-                          View permissions assigned to this role
+                          {t.settings.viewPermissions}
                         </p>
                       </div>
                       <span
@@ -219,7 +213,7 @@ export default function SettingsPage() {
                           selectedRole
                         )}`}
                       >
-                        {ROLE_PERMISSIONS[selectedRole].length} total
+                        {ROLE_PERMISSIONS[selectedRole].length} {t.settings.total}
                       </span>
                     </div>
 
@@ -266,15 +260,15 @@ export default function SettingsPage() {
 
             {activeTab === 'branches' && (
               <div className="bg-white rounded-xl border border-gray-200 p-4 lg:p-6">
-                <h2 className="text-base lg:text-lg font-semibold text-gray-900 mb-2">Branch Settings</h2>
+                <h2 className="text-base lg:text-lg font-semibold text-gray-900 mb-2">{t.settings.branchSettings}</h2>
                 <p className="text-sm text-gray-500 mb-4 lg:mb-6">
-                  Configure branch-specific settings and geofencing options.
+                  {t.settings.branchSettingsDesc}
                 </p>
                 <div className="text-center py-8 lg:py-12 text-gray-500">
                   <Building2 size={40} className="mx-auto mb-4 text-gray-300 lg:w-12 lg:h-12" />
-                  <p className="text-sm lg:text-base">Branch settings are managed in the Branches section.</p>
+                  <p className="text-sm lg:text-base">{t.settings.branchSettingsManagedElsewhere}</p>
                   <Link href="/branches" className="text-purple-600 hover:underline mt-2 inline-block text-sm lg:text-base">
-                    Go to Branches →
+                    {t.settings.goToBranches}
                   </Link>
                 </div>
               </div>
@@ -282,15 +276,15 @@ export default function SettingsPage() {
 
             {activeTab === 'notifications' && (
               <div className="bg-white rounded-xl border border-gray-200 p-4 lg:p-6">
-                <h2 className="text-base lg:text-lg font-semibold text-gray-900 mb-2">Notification Settings</h2>
-                <p className="text-sm text-gray-500 mb-4 lg:mb-6">Configure how and when you receive notifications.</p>
+                <h2 className="text-base lg:text-lg font-semibold text-gray-900 mb-2">{t.settings.notificationSettings}</h2>
+                <p className="text-sm text-gray-500 mb-4 lg:mb-6">{t.settings.notificationSettingsDesc}</p>
 
                 <div className="space-y-3 lg:space-y-4">
                   {[
-                    { label: 'Late arrival alerts', description: 'Get notified when employees arrive late' },
-                    { label: 'Leave requests', description: 'Notifications for new leave requests' },
-                    { label: 'Payroll reminders', description: 'Monthly payroll processing reminders' },
-                    { label: 'Weekly reports', description: 'Automated weekly attendance summary' },
+                    { label: t.settings.lateArrivalAlerts, description: t.settings.lateArrivalAlertsDesc },
+                    { label: t.settings.leaveRequests, description: t.settings.leaveRequestsDesc },
+                    { label: t.settings.payrollReminders, description: t.settings.payrollRemindersDesc },
+                    { label: t.settings.weeklyReports, description: t.settings.weeklyReportsDesc },
                   ].map((setting, i) => (
                     <div
                       key={i}
@@ -312,51 +306,51 @@ export default function SettingsPage() {
 
             {activeTab === 'security' && (
               <div className="bg-white rounded-xl border border-gray-200 p-4 lg:p-6">
-                <h2 className="text-base lg:text-lg font-semibold text-gray-900 mb-2">Security Settings</h2>
-                <p className="text-sm text-gray-500 mb-4 lg:mb-6">Configure security and authentication options.</p>
+                <h2 className="text-base lg:text-lg font-semibold text-gray-900 mb-2">{t.settings.securitySettings}</h2>
+                <p className="text-sm text-gray-500 mb-4 lg:mb-6">{t.settings.securitySettingsDesc}</p>
 
                 <div className="space-y-4 lg:space-y-6">
                   <div className="p-3 lg:p-4 border border-gray-200 rounded-lg">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                      <h3 className="font-medium text-gray-900 text-sm lg:text-base">Two-Factor Authentication</h3>
+                      <h3 className="font-medium text-gray-900 text-sm lg:text-base">{t.settings.twoFactorAuth}</h3>
                       <span className="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full self-start sm:self-auto">
-                        Coming Soon
+                        {t.settings.comingSoon}
                       </span>
                     </div>
                     <p className="text-xs lg:text-sm text-gray-500">
-                      Add an extra layer of security to your account
+                      {t.settings.twoFactorAuthDesc}
                     </p>
                   </div>
 
                   <div className="p-3 lg:p-4 border border-gray-200 rounded-lg">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                      <h3 className="font-medium text-gray-900 text-sm lg:text-base">Session Timeout</h3>
+                      <h3 className="font-medium text-gray-900 text-sm lg:text-base">{t.settings.sessionTimeout}</h3>
                       <select className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm w-full sm:w-auto">
-                        <option>30 minutes</option>
-                        <option>1 hour</option>
-                        <option>4 hours</option>
-                        <option>8 hours</option>
+                        <option>{t.settings.thirtyMinutes}</option>
+                        <option>{t.settings.oneHour}</option>
+                        <option>{t.settings.fourHours}</option>
+                        <option>{t.settings.eightHours}</option>
                       </select>
                     </div>
                     <p className="text-xs lg:text-sm text-gray-500">
-                      Automatically log out after period of inactivity
+                      {t.settings.sessionTimeoutDesc}
                     </p>
                   </div>
 
                   <div className="p-3 lg:p-4 border border-gray-200 rounded-lg">
-                    <h3 className="font-medium text-gray-900 text-sm lg:text-base mb-2">Password Requirements</h3>
+                    <h3 className="font-medium text-gray-900 text-sm lg:text-base mb-2">{t.settings.passwordRequirements}</h3>
                     <div className="space-y-2 text-xs lg:text-sm text-gray-600">
                       <div className="flex items-center gap-2">
                         <Check size={14} className="text-green-600 flex-shrink-0" />
-                        Minimum 8 characters
+                        {t.settings.minEightChars}
                       </div>
                       <div className="flex items-center gap-2">
                         <Check size={14} className="text-green-600 flex-shrink-0" />
-                        At least one uppercase letter
+                        {t.settings.atLeastOneUppercase}
                       </div>
                       <div className="flex items-center gap-2">
                         <Check size={14} className="text-green-600 flex-shrink-0" />
-                        At least one number
+                        {t.settings.atLeastOneNumber}
                       </div>
                     </div>
                   </div>
@@ -366,9 +360,9 @@ export default function SettingsPage() {
 
             {activeTab === 'reception' && (
               <div className="bg-white rounded-xl border border-gray-200 p-4 lg:p-6">
-                <h2 className="text-base lg:text-lg font-semibold text-gray-900 mb-2">Reception Configuration</h2>
+                <h2 className="text-base lg:text-lg font-semibold text-gray-900 mb-2">{t.settings.receptionConfig}</h2>
                 <p className="text-sm text-gray-500 mb-4 lg:mb-6">
-                  Manage service types, expenses, payment methods, operator PINs, and kiosk access.
+                  {t.settings.receptionConfigDesc}
                 </p>
                 <ReceptionAdminSettings />
               </div>

@@ -1,34 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { getTashkentTime, getTashkentHour, getTashkentTimeString, getTashkentDateString } from '@/lib/timezone';
+import { getTashkentTimeString, getTashkentDateString } from '@/lib/timezone';
+import { calculateIsLate, resolveShift } from '@/lib/attendance-utils';
 
 // Remote check-in endpoint for employees with remote work enabled
-
-// Detect shift type from employee position or check-in time
-function detectShift(position: string | null): 'day' | 'night' {
-  // Check if position indicates night shift
-  if (position && /night/i.test(position)) {
-    return 'night';
-  }
-  // Otherwise, infer from check-in time:
-  // If checking in between 15:00-23:59, likely night shift
-  const hour = getTashkentHour();
-  if (hour >= 15 && hour <= 23) {
-    return 'night';
-  }
-  return 'day';
-}
-
-// Check if employee is late based on shift type
-// Day shift: late after 9:15, Night shift: late after 18:15
-function isLate(shiftId: string): boolean {
-  const tashkent = getTashkentTime();
-  const hour = tashkent.getHours();
-  const minute = tashkent.getMinutes();
-  const currentMinutes = hour * 60 + minute;
-  const lateThreshold = shiftId === 'night' ? 18 * 60 + 15 : 9 * 60 + 15;
-  return currentMinutes > lateThreshold;
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -57,8 +32,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Employee not found' }, { status: 404 });
     }
 
-    // Use provided shift, or employee's default shift, or auto-detect from position/time
-    const shiftId = providedShiftId || employee.default_shift || detectShift(employee.position);
+    // Resolve shift: checks assignment for today, then default_shift, then position-based detection
+    const shiftId = await resolveShift(providedShiftId, employee.id, employee.default_shift, employee.position);
 
     // Check if employee has active check-in
     const { data: activeCheckin } = await supabaseAdmin
@@ -82,7 +57,7 @@ export async function POST(request: NextRequest) {
     // Record remote check-in (no GPS/IP verification needed)
     const checkInTime = getTashkentTimeString();
     const today = getTashkentDateString();
-    const late = isLate(shiftId);
+    const late = await calculateIsLate(employee.id, shiftId, today);
 
     const { data: attendance, error: attError } = await supabaseAdmin
       .from('attendance')

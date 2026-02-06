@@ -29,8 +29,8 @@ export async function GET() {
       branchName = branch?.name || '';
     }
 
-    // Calculate expiry from JWT (12h from authenticatedAt)
-    const expiresAt = new Date((payload.authenticatedAt + 12 * 60 * 60) * 1000);
+    // Calculate expiry from JWT (365 days from authenticatedAt)
+    const expiresAt = new Date((payload.authenticatedAt + 365 * 24 * 60 * 60) * 1000);
 
     return NextResponse.json({
       valid: true,

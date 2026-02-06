@@ -6,9 +6,11 @@ import Image from 'next/image';
 import { Lock, Eye, EyeOff, Shield, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
 import PasswordStrength from '@/components/auth/PasswordStrength';
 import { validatePassword } from '@/lib/password-validation';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function ResetPasswordPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -35,12 +37,12 @@ export default function ResetPasswordPage() {
     // Client-side validation
     const validation = validatePassword(newPassword);
     if (!validation.isValid) {
-      setError('Please meet all password requirements.');
+      setError(t.auth.meetPasswordRequirements);
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setError('Passwords do not match.');
+      setError(t.auth.passwordsDoNotMatch);
       return;
     }
 
@@ -58,10 +60,10 @@ export default function ResetPasswordPage() {
       if (data.success) {
         setIsSuccess(true);
       } else {
-        setError(data.message || 'Failed to update password.');
+        setError(data.message || t.auth.failedToUpdatePassword);
       }
     } catch {
-      setError('An error occurred. Please try again.');
+      setError(t.auth.errorOccurred);
     } finally {
       setIsLoading(false);
     }
@@ -74,13 +76,13 @@ export default function ResetPasswordPage() {
           <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle size={32} className="text-emerald-600" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Password Updated</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">{t.auth.passwordUpdated}</h2>
           <p className="text-gray-600 mb-6">
-            Your password has been changed successfully. You will now be redirected to the dashboard.
+            {t.auth.passwordUpdatedMessage}
           </p>
           <div className="flex items-center justify-center gap-2 text-gray-500">
             <Loader2 size={16} className="animate-spin" />
-            <span className="text-sm">Redirecting to dashboard...</span>
+            <span className="text-sm">{t.auth.redirectingToDashboard}</span>
           </div>
         </div>
       </div>
@@ -93,7 +95,7 @@ export default function ResetPasswordPage() {
         {/* Security banner */}
         <div className="bg-purple-600 text-white px-4 py-3 rounded-t-xl flex items-center gap-2">
           <Shield size={20} />
-          <span className="font-medium">Security Update Required</span>
+          <span className="font-medium">{t.auth.securityUpdateRequired}</span>
         </div>
 
         <div className="bg-white rounded-b-xl shadow-sm border border-gray-200 border-t-0 p-8">
@@ -107,21 +109,21 @@ export default function ResetPasswordPage() {
               className="mb-3"
             />
             <h1 className="text-lg font-semibold text-gray-900">C-Space Niya</h1>
-            <p className="text-gray-500 text-sm">HR & Operations Platform</p>
+            <p className="text-gray-500 text-sm">{t.auth.platformSubtitle}</p>
           </div>
 
           {/* Warning */}
           <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-6 flex items-start gap-3">
             <AlertTriangle size={20} className="text-amber-600 flex-shrink-0 mt-0.5" />
             <p className="text-sm text-amber-800">
-              As part of a security update, all employees must set a new password. Your temporary password has expired.
+              {t.auth.securityUpdateMessage}
             </p>
           </div>
 
           {/* Form */}
-          <h2 className="text-lg font-semibold text-gray-900 mb-1">Set New Password</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-1">{t.auth.setNewPassword}</h2>
           <p className="text-sm text-gray-500 mb-5">
-            Choose a strong, unique password you haven&apos;t used before.
+            {t.auth.setNewPasswordDesc}
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -134,7 +136,7 @@ export default function ResetPasswordPage() {
             {/* New Password */}
             <div>
               <label htmlFor="new-password" className="block text-sm font-medium text-gray-700 mb-1.5">
-                New Password
+                {t.auth.newPassword}
               </label>
               <div className="relative">
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -145,7 +147,7 @@ export default function ResetPasswordPage() {
                   type={showNewPassword ? 'text' : 'password'}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Enter new password"
+                  placeholder={t.auth.enterNewPasswordPlaceholder}
                   className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-colors"
                   required
                   autoComplete="new-password"
@@ -164,7 +166,7 @@ export default function ResetPasswordPage() {
             {/* Confirm Password */}
             <div>
               <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 mb-1.5">
-                Confirm Password
+                {t.auth.confirmPassword}
               </label>
               <div className="relative">
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -175,7 +177,7 @@ export default function ResetPasswordPage() {
                   type={showConfirmPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm new password"
+                  placeholder={t.auth.confirmNewPasswordPlaceholder}
                   className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-colors"
                   required
                   autoComplete="new-password"
@@ -189,7 +191,7 @@ export default function ResetPasswordPage() {
                 </button>
               </div>
               {confirmPassword && newPassword !== confirmPassword && (
-                <p className="mt-1.5 text-sm text-red-600">Passwords do not match</p>
+                <p className="mt-1.5 text-sm text-red-600">{t.auth.passwordsDoNotMatch}</p>
               )}
             </div>
 
@@ -201,16 +203,16 @@ export default function ResetPasswordPage() {
               {isLoading ? (
                 <>
                   <Loader2 size={20} className="animate-spin" />
-                  Updating...
+                  {t.auth.updatingPassword}
                 </>
               ) : (
-                'Update Password'
+                t.auth.updatePasswordButton
               )}
             </button>
           </form>
 
           <p className="text-center text-sm text-gray-500 mt-4">
-            Need help? Contact your branch manager or HR.
+            {t.auth.needHelp}
           </p>
         </div>
       </div>

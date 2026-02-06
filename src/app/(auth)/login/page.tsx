@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { TestBanner } from '@/components/ui';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -45,10 +47,10 @@ export default function LoginPage() {
         }
         router.refresh();
       } else {
-        setError(data.message || 'Login failed');
+        setError(data.message || t.auth.loginFailed);
       }
     } catch {
-      setError('An error occurred. Please try again.');
+      setError(t.auth.errorOccurred);
     } finally {
       setIsLoading(false);
     }
@@ -68,12 +70,12 @@ export default function LoginPage() {
           className="mb-4"
         />
         <h1 className="text-2xl font-semibold text-gray-900">C-Space Niya</h1>
-        <p className="text-gray-500 mt-1">HR & Operations Platform</p>
+        <p className="text-gray-500 mt-1">{t.auth.platformSubtitle}</p>
       </div>
 
       {/* Login Form */}
       <div className="w-full max-w-md bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">Sign in to your account</h2>
+        <h2 className="text-xl font-semibold text-gray-900 mb-6">{t.auth.signInTitle}</h2>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {error && (
@@ -84,7 +86,7 @@ export default function LoginPage() {
 
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
-              Email address
+              {t.auth.emailLabel}
             </label>
             <input
               id="email"
@@ -100,14 +102,14 @@ export default function LoginPage() {
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
+                {t.auth.password}
               </label>
               <button
                 type="button"
-                onClick={() => alert('Please contact HR at hr@cspace.uz to reset your password.')}
+                onClick={() => alert(t.auth.forgotPasswordAlert)}
                 className="text-sm text-purple-600 hover:text-purple-700 hover:underline"
               >
-                Forgot password?
+                {t.auth.forgotPassword}
               </button>
             </div>
             <div className="relative">
@@ -116,7 +118,7 @@ export default function LoginPage() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
+                placeholder={t.auth.passwordPlaceholder}
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-colors pr-10"
                 required
               />
@@ -138,10 +140,10 @@ export default function LoginPage() {
             {isLoading ? (
               <>
                 <Loader2 size={20} className="animate-spin" />
-                Signing in...
+                {t.auth.signingIn}
               </>
             ) : (
-              'Sign in'
+              t.auth.signIn
             )}
           </button>
         </form>
@@ -149,7 +151,7 @@ export default function LoginPage() {
 
       {/* Footer */}
       <p className="mt-8 text-sm text-gray-500">
-        © 2026 C-Space Coworking. All rights reserved.
+        {t.auth.copyright}
       </p>
       </div>
     </div>

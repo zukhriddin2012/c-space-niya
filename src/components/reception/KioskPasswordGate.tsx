@@ -181,7 +181,7 @@ export function KioskPasswordGate({ onAuthenticated }: KioskPasswordGateProps) {
 
         {/* Footer */}
         <p className="text-xs text-gray-400 text-center mt-6">
-          Session lasts 12 hours after login
+          Session stays active until password is changed
         </p>
       </div>
     </div>

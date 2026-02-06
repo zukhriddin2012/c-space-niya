@@ -130,7 +130,7 @@ function KioskInner({ branchId, branchName, expiresAt, onLogout }: StandaloneRec
                   <Receipt className="w-6 h-6" />
                 </div>
                 <div className="hidden sm:block">
-                  <h1 className="text-xl font-bold">Reception Kiosk</h1>
+                  <h1 className="text-xl font-bold">Reception Kiosk <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold uppercase rounded-full bg-amber-400/30 text-amber-100 leading-none align-middle">Beta</span></h1>
                   <p className="text-purple-200 text-xs">{branchName}</p>
                 </div>
               </div>

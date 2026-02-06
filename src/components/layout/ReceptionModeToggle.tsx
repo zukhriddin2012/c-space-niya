@@ -20,6 +20,7 @@ export function ReceptionModeToggle() {
       <span className="hidden xl:inline">
         {isReceptionMode ? 'Exit Reception' : 'Reception Mode'}
       </span>
+      <span className="hidden xl:inline px-1.5 py-0.5 text-[10px] font-bold uppercase rounded-full bg-amber-100 text-amber-700 leading-none">Beta</span>
     </button>
   );
 }

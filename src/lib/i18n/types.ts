@@ -669,6 +669,36 @@ export interface Translations {
     ready: string;
     download: string;
     noReports: string;
+    // Extended reports
+    subtitle: string;
+    subtitleShort: string;
+    thisWeek: string;
+    thisMonth: string;
+    thisQuarter: string;
+    thisYear: string;
+    customRange: string;
+    avgAttendanceRate: string;
+    totalDisbursed: string;
+    totalEmployees: string;
+    turnoverRate: string;
+    retentionAnalysis: string;
+    dailyWeeklyMonthly: string;
+    salaryDisbursements: string;
+    employeeDistribution: string;
+    quickExport: string;
+    downloadPreConfigured: string;
+    employeeDirectory: string;
+    allEmployeesContact: string;
+    monthlyPayroll: string;
+    currentMonthSalary: string;
+    attendanceSummary: string;
+    thisMonthAttendance: string;
+    branchOverview: string;
+    staffDistribution: string;
+    advancedAnalytics: string;
+    advancedAnalyticsDesc: string;
+    advancedAnalyticsDescShort: string;
+    exportReport: string;
   };
 
   // Profile
@@ -742,6 +772,37 @@ export interface Translations {
     sessionExpiredMessage: string;
     permissionDenied: string;
     networkError: string;
+    // Login page
+    platformSubtitle: string;
+    signInTitle: string;
+    emailLabel: string;
+    emailPlaceholder: string;
+    passwordPlaceholder: string;
+    signingIn: string;
+    forgotPasswordAlert: string;
+    loginFailed: string;
+    copyright: string;
+    // Reset password page
+    securityUpdateRequired: string;
+    securityUpdateMessage: string;
+    setNewPassword: string;
+    setNewPasswordDesc: string;
+    enterNewPasswordPlaceholder: string;
+    confirmNewPasswordPlaceholder: string;
+    updatingPassword: string;
+    updatePasswordButton: string;
+    needHelp: string;
+    passwordUpdated: string;
+    passwordUpdatedMessage: string;
+    redirectingToDashboard: string;
+    meetPasswordRequirements: string;
+    failedToUpdatePassword: string;
+    // Password strength
+    passwordAtLeastChars: string;
+    passwordUppercase: string;
+    passwordLowercase: string;
+    passwordNumber: string;
+    passwordSpecialChar: string;
   };
 
   // Settings
@@ -758,6 +819,45 @@ export interface Translations {
     english: string;
     russian: string;
     uzbek: string;
+    // Extended settings
+    subtitle: string;
+    subtitleShort: string;
+    rolesPermissions: string;
+    branchSettings: string;
+    receptionConfig: string;
+    languageSavedNotice: string;
+    permissions: string;
+    viewPermissions: string;
+    total: string;
+    branchSettingsDesc: string;
+    branchSettingsManagedElsewhere: string;
+    goToBranches: string;
+    notificationSettings: string;
+    notificationSettingsDesc: string;
+    lateArrivalAlerts: string;
+    lateArrivalAlertsDesc: string;
+    leaveRequests: string;
+    leaveRequestsDesc: string;
+    payrollReminders: string;
+    payrollRemindersDesc: string;
+    weeklyReports: string;
+    weeklyReportsDesc: string;
+    securitySettings: string;
+    securitySettingsDesc: string;
+    twoFactorAuth: string;
+    comingSoon: string;
+    twoFactorAuthDesc: string;
+    sessionTimeout: string;
+    sessionTimeoutDesc: string;
+    passwordRequirements: string;
+    minEightChars: string;
+    atLeastOneUppercase: string;
+    atLeastOneNumber: string;
+    receptionConfigDesc: string;
+    thirtyMinutes: string;
+    oneHour: string;
+    fourHours: string;
+    eightHours: string;
   };
 
   // Errors
