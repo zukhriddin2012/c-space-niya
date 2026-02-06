@@ -5,28 +5,27 @@ import { validateBranchAccess } from '@/lib/security';
 import type { User } from '@/types';
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/db/connection';
 
+interface ShiftEmployee {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  employeeStatus: string;
+}
+
 interface ShiftDay {
   date: string;
-  dayShift: Array<{
-    employeeId: string;
-    employeeName: string;
-    status: string;
-  }>;
-  nightShift: Array<{
-    employeeId: string;
-    employeeName: string;
-    status: string;
-  }>;
+  dayOfWeek: string;
+  dayShift: ShiftEmployee[];
+  nightShift: ShiftEmployee[];
 }
 
 interface ShiftScheduleResponse {
-  schedule: {
-    weekStart: string;
-    weekEnd: string;
-    status: 'published';
-    days: ShiftDay[];
-  } | null;
+  weekStart: string;
+  weekEnd: string;
+  schedule: ShiftDay[];
 }
+
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 // ============================================
 // GET /api/reception/shifts
@@ -78,7 +77,9 @@ export const GET = withAuth(async (request: NextRequest, { user }) => {
     // If no published schedule found, return empty response
     if (scheduleError || !scheduleData) {
       return NextResponse.json<ShiftScheduleResponse>({
-        schedule: null,
+        weekStart: weekStart,
+        weekEnd: '',
+        schedule: [],
       });
     }
 
@@ -94,12 +95,14 @@ export const GET = withAuth(async (request: NextRequest, { user }) => {
     if (assignmentsError) {
       console.error('Error fetching shift assignments:', assignmentsError);
       return NextResponse.json<ShiftScheduleResponse>({
-        schedule: null,
+        weekStart: weekStart,
+        weekEnd: '',
+        schedule: [],
       });
     }
 
     // Calculate week end date (7 days after week start)
-    const startDate = new Date(weekStart);
+    const startDate = new Date(weekStart + 'T00:00:00');
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + 6);
     const weekEndStr = endDate.toISOString().split('T')[0];
@@ -115,6 +118,7 @@ export const GET = withAuth(async (request: NextRequest, { user }) => {
 
       shiftsByDay[dateStr] = {
         date: dateStr,
+        dayOfWeek: DAY_NAMES[currentDate.getDay()],
         dayShift: [],
         nightShift: [],
       };
@@ -126,21 +130,25 @@ export const GET = withAuth(async (request: NextRequest, { user }) => {
         const assignmentDate = assignment.assignment_date as string;
         const shiftType = assignment.shift_type as string;
         const employeeId = assignment.employee_id as string;
-        const employeeName = (assignment.employee as { full_name: string } | null)?.full_name || 'Unknown';
-        const status = assignment.status as string;
+        const employee = assignment.employee as { id: string; full_name: string } | null;
+        const employeeName = employee?.full_name || 'Unknown';
+        const status = (assignment.status as string) || 'active';
 
         if (!shiftsByDay[assignmentDate]) {
+          const dynDate = new Date(assignmentDate + 'T00:00:00');
           shiftsByDay[assignmentDate] = {
             date: assignmentDate,
+            dayOfWeek: DAY_NAMES[dynDate.getDay()],
             dayShift: [],
             nightShift: [],
           };
         }
 
-        const employeeData = {
+        const employeeData: ShiftEmployee = {
+          id: employee?.id || employeeId,
           employeeId,
           employeeName,
-          status,
+          employeeStatus: status,
         };
 
         if (shiftType === 'day') {
@@ -152,17 +160,14 @@ export const GET = withAuth(async (request: NextRequest, { user }) => {
     }
 
     // Convert to sorted array
-    const days = Object.values(shiftsByDay).sort((a, b) =>
+    const schedule = Object.values(shiftsByDay).sort((a, b) =>
       new Date(a.date).getTime() - new Date(b.date).getTime()
     );
 
     return NextResponse.json<ShiftScheduleResponse>({
-      schedule: {
-        weekStart,
-        weekEnd: weekEndStr,
-        status: 'published',
-        days,
-      },
+      weekStart,
+      weekEnd: weekEndStr,
+      schedule,
     });
   } catch (error) {
     console.error('Server error:', error);
