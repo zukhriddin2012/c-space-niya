@@ -43,7 +43,7 @@ export const POST = withAuth(
       // Fetch employee with branch info
       const { data: employee, error: fetchError } = await supabaseAdmin!
         .from('employees')
-        .select('id, full_name, telegram_id, branch_id, branches(name)')
+        .select('id, full_name, telegram_id, branch_id, branches!employees_branch_id_fkey(name)')
         .eq('id', employeeId)
         .single();
 
