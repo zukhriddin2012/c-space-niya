@@ -39,6 +39,7 @@ function makeUser(overrides: Partial<User> = {}): User {
     role: 'employee',
     branchId: 'branch-1',
     createdAt: new Date(),
+    updatedAt: new Date(),
     ...overrides,
   };
 }
