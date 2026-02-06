@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Receipt, Wallet, FileText, Calendar, Settings, UserCog } from 'lucide-react';
+import { LayoutDashboard, Receipt, Wallet, FileText, Calendar, UserCog } from 'lucide-react';
 import { useReceptionMode } from '@/contexts/ReceptionModeContext';
 import { PinSwitchOverlay } from '@/components/reception/PinSwitchOverlay';
 
@@ -17,7 +17,6 @@ const navItems = [
   { href: '/reception/expenses', label: 'Expenses', icon: Wallet },
   { href: '/reception/requests', label: 'Requests', icon: FileText },
   { href: '/reception/shifts', label: 'Shifts', icon: Calendar },
-  { href: '/reception/admin', label: 'Settings', icon: Settings },
 ];
 
 export default function ReceptionLayout({ children }: ReceptionLayoutProps) {

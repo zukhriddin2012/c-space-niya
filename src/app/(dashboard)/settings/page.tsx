@@ -11,7 +11,9 @@ import {
   Check,
   X,
   Globe,
+  Receipt,
 } from 'lucide-react';
+import ReceptionAdminSettings from '@/components/settings/ReceptionAdminSettings';
 import { RoleGuard, PageGuard } from '@/components/auth';
 import { PERMISSIONS } from '@/lib/permissions';
 import type { UserRole } from '@/types';
@@ -25,7 +27,7 @@ import {
 import { useLanguage } from '@/contexts/LanguageContext';
 import { languages, type Language } from '@/lib/i18n';
 
-type SettingsTab = 'roles' | 'branches' | 'notifications' | 'security' | 'language';
+type SettingsTab = 'roles' | 'branches' | 'notifications' | 'security' | 'language' | 'reception';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('language');
@@ -38,6 +40,7 @@ export default function SettingsPage() {
     { id: 'branches' as const, name: 'Branch Settings', icon: Building2, permission: PERMISSIONS.BRANCHES_EDIT },
     { id: 'notifications' as const, name: 'Notifications', icon: Bell, permission: PERMISSIONS.SETTINGS_VIEW },
     { id: 'security' as const, name: 'Security', icon: Key, permission: PERMISSIONS.SETTINGS_EDIT },
+    { id: 'reception' as const, name: 'Reception', icon: Receipt, permission: PERMISSIONS.RECEPTION_ADMIN },
   ];
 
   return (
@@ -358,6 +361,16 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {activeTab === 'reception' && (
+              <div className="bg-white rounded-xl border border-gray-200 p-4 lg:p-6">
+                <h2 className="text-base lg:text-lg font-semibold text-gray-900 mb-2">Reception Configuration</h2>
+                <p className="text-sm text-gray-500 mb-4 lg:mb-6">
+                  Manage service types, expenses, payment methods, operator PINs, and kiosk access.
+                </p>
+                <ReceptionAdminSettings />
               </div>
             )}
           </div>
