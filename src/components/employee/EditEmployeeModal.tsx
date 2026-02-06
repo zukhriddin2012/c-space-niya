@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Building2, Plus, Trash2, Shield, MessageCircle, Unlink, Calendar, User, FileText, MapPin, Banknote, Wallet } from 'lucide-react';
+import { X, Building2, Plus, Trash2, Shield, MessageCircle, Unlink, Calendar, User, FileText, MapPin, Banknote, Wallet, Send, Loader2, KeyRound, Check } from 'lucide-react';
 import type { UserRole } from '@/types';
 
 const SYSTEM_ROLES: { value: UserRole; label: string; description: string }[] = [
@@ -109,6 +109,13 @@ export default function EditEmployeeModal({
   const [error, setError] = useState<string | null>(null);
   const [telegramId, setTelegramId] = useState<string | null>(employee.telegram_id || null);
   const [disconnectingTelegram, setDisconnectingTelegram] = useState(false);
+
+  // Send PIN to Telegram state
+  const [showSendPin, setShowSendPin] = useState(false);
+  const [sendingPin, setSendingPin] = useState(false);
+  const [sendPinBranchPassword, setSendPinBranchPassword] = useState('');
+  const [sendPinSuccess, setSendPinSuccess] = useState(false);
+  const [sendPinError, setSendPinError] = useState<string | null>(null);
 
   // Primary wages (bank/legal entities) state
   const [wages, setWages] = useState<EmployeeWage[]>([]);
@@ -228,6 +235,42 @@ export default function EditEmployeeModal({
       setError('Failed to disconnect Telegram');
     } finally {
       setDisconnectingTelegram(false);
+    }
+  };
+
+  const handleSendPinToTelegram = async () => {
+    if (!telegramId) return;
+
+    setSendingPin(true);
+    setSendPinError(null);
+    setSendPinSuccess(false);
+
+    try {
+      const response = await fetch(`/api/employees/${employee.id}/send-pin-telegram`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          branchPassword: sendPinBranchPassword || undefined,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSendPinSuccess(true);
+        setSendPinBranchPassword('');
+        // Auto-hide success after 3 seconds
+        setTimeout(() => {
+          setSendPinSuccess(false);
+          setShowSendPin(false);
+        }, 3000);
+      } else {
+        setSendPinError(data.error || 'Failed to send PIN');
+      }
+    } catch (err) {
+      setSendPinError('Failed to send PIN to Telegram');
+    } finally {
+      setSendingPin(false);
     }
   };
 
@@ -552,25 +595,123 @@ export default function EditEmployeeModal({
             </div>
 
             {telegramId ? (
-              <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <MessageCircle size={20} className="text-blue-600" />
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <MessageCircle size={20} className="text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-blue-900">Connected to C-Space Time Bot</p>
+                      <p className="text-xs text-blue-600">Telegram ID: {telegramId}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-blue-900">Connected to C-Space Time Bot</p>
-                    <p className="text-xs text-blue-600">Telegram ID: {telegramId}</p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowSendPin(!showSendPin);
+                        setSendPinError(null);
+                        setSendPinSuccess(false);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
+                    >
+                      <Send size={14} />
+                      Send PIN
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDisconnectTelegram}
+                      disabled={disconnectingTelegram}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
+                    >
+                      <Unlink size={14} />
+                      {disconnectingTelegram ? 'Disconnecting...' : 'Disconnect'}
+                    </button>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleDisconnectTelegram}
-                  disabled={disconnectingTelegram}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
-                >
-                  <Unlink size={14} />
-                  {disconnectingTelegram ? 'Disconnecting...' : 'Disconnect'}
-                </button>
+
+                {/* Send PIN to Telegram Panel */}
+                {showSendPin && (
+                  <div className="p-4 bg-purple-50 rounded-lg border border-purple-200 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <KeyRound size={16} className="text-purple-600" />
+                      <h4 className="text-sm font-semibold text-purple-900">Send PIN to Telegram</h4>
+                    </div>
+
+                    <p className="text-xs text-purple-700">
+                      A new 6-digit PIN will be generated and sent to this employee&apos;s Telegram along with their branch info.
+                    </p>
+
+                    <div className="flex items-center gap-2 text-xs text-gray-600 bg-white/60 rounded-lg p-2">
+                      <Building2 size={14} className="text-gray-400 flex-shrink-0" />
+                      <span>Branch: <strong>{branches.find(b => b.id === formData.branch_id)?.name || 'No branch'}</strong></span>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-purple-700 mb-1">
+                        Branch Password (optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={sendPinBranchPassword}
+                        onChange={(e) => setSendPinBranchPassword(e.target.value)}
+                        placeholder="Enter branch kiosk password to include"
+                        className="w-full px-3 py-1.5 text-sm border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none bg-white"
+                      />
+                    </div>
+
+                    {sendPinError && (
+                      <div className="p-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">
+                        {sendPinError}
+                      </div>
+                    )}
+
+                    {sendPinSuccess && (
+                      <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-lg text-xs text-green-700">
+                        <Check size={14} />
+                        PIN generated and sent to Telegram successfully!
+                      </div>
+                    )}
+
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowSendPin(false);
+                          setSendPinError(null);
+                          setSendPinSuccess(false);
+                        }}
+                        className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSendPinToTelegram}
+                        disabled={sendingPin || sendPinSuccess}
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
+                      >
+                        {sendingPin ? (
+                          <>
+                            <Loader2 size={14} className="animate-spin" />
+                            Sending...
+                          </>
+                        ) : sendPinSuccess ? (
+                          <>
+                            <Check size={14} />
+                            Sent!
+                          </>
+                        ) : (
+                          <>
+                            <Send size={14} />
+                            Generate &amp; Send PIN
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="p-4 bg-gray-50 rounded-lg text-center">

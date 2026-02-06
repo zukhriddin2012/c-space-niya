@@ -336,6 +336,16 @@ export interface Translations {
     connected: string;
     notConnected: string;
     disconnect: string;
+    sendPin: string;
+    sendPinTitle: string;
+    sendPinDescription: string;
+    sendPinBranchPassword: string;
+    sendPinBranchPasswordPlaceholder: string;
+    sendPinGenerateAndSend: string;
+    sendPinSending: string;
+    sendPinSent: string;
+    sendPinSuccess: string;
+    sendPinCancel: string;
     growthTeam: string;
     growthTeamHint: string;
     remoteWork: string;
