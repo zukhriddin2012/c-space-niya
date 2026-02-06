@@ -693,3 +693,168 @@ export async function voidMaintenanceIssue(
     return { success: false, error: String(error) };
   }
 }
+
+// ============================================
+// SLA BREACH DETECTION
+// ============================================
+
+export interface SlaBreachedIssue {
+  id: string;
+  issueNumber: string;
+  category: string;
+  urgency: string;
+  branchId: string;
+  locationDescription: string;
+  slaDeadline: string;
+  createdAt: string;
+  hoursElapsed: number;
+  slaHours: number;
+}
+
+/**
+ * Find maintenance issues that have breached their SLA deadline
+ * and mark them as breached in the database.
+ * Returns the list of newly breached issues (for notifications).
+ */
+export async function detectAndMarkSlaBreaches(): Promise<{
+  success: boolean;
+  newlyBreached: SlaBreachedIssue[];
+  error?: string;
+}> {
+  if (!isSupabaseAdminConfigured()) {
+    return { success: false, newlyBreached: [], error: 'Database not configured' };
+  }
+
+  try {
+    const now = new Date().toISOString();
+
+    // Find open/in_progress issues past SLA deadline that haven't been marked breached yet
+    const { data: breachedRows, error: fetchError } = await supabaseAdmin!
+      .from('maintenance_issues')
+      .select('id, issue_number, category, urgency, branch_id, location_description, sla_deadline, created_at')
+      .is('voided_at', null)
+      .in('status', ['open', 'in_progress'])
+      .eq('sla_breached', false)
+      .not('sla_deadline', 'is', null)
+      .lt('sla_deadline', now);
+
+    if (fetchError) {
+      console.error('Error fetching SLA breached issues:', fetchError);
+      return { success: false, newlyBreached: [], error: fetchError.message };
+    }
+
+    if (!breachedRows || breachedRows.length === 0) {
+      return { success: true, newlyBreached: [] };
+    }
+
+    // Mark them as breached
+    const breachedIds = breachedRows.map((row: { id: string }) => row.id);
+    const { error: updateError } = await supabaseAdmin!
+      .from('maintenance_issues')
+      .update({ sla_breached: true })
+      .in('id', breachedIds);
+
+    if (updateError) {
+      console.error('Error marking SLA breaches:', updateError);
+      return { success: false, newlyBreached: [], error: updateError.message };
+    }
+
+    // Map urgency to SLA hours
+    const slaHoursMap: Record<string, number> = {
+      critical: 4,
+      high: 24,
+      medium: 72,
+      low: 168,
+    };
+
+    const newlyBreached: SlaBreachedIssue[] = breachedRows.map((row: {
+      id: string;
+      issue_number: string;
+      category: string;
+      urgency: string;
+      branch_id: string;
+      location_description: string;
+      sla_deadline: string;
+      created_at: string;
+    }) => {
+      const createdAt = new Date(row.created_at);
+      const hoursElapsed = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
+      return {
+        id: row.id,
+        issueNumber: row.issue_number,
+        category: row.category,
+        urgency: row.urgency,
+        branchId: row.branch_id,
+        locationDescription: row.location_description,
+        slaDeadline: row.sla_deadline,
+        createdAt: row.created_at,
+        hoursElapsed,
+        slaHours: slaHoursMap[row.urgency] || 24,
+      };
+    });
+
+    return { success: true, newlyBreached };
+  } catch (error) {
+    console.error('Error in detectAndMarkSlaBreaches:', error);
+    return { success: false, newlyBreached: [], error: String(error) };
+  }
+}
+
+/**
+ * Get summary stats for SLA breaches across all branches.
+ */
+export async function getSlaBreachStats(): Promise<{
+  success: boolean;
+  data?: {
+    totalBreached: number;
+    openBreached: number;
+    inProgressBreached: number;
+    byUrgency: Record<string, number>;
+    byBranch: Record<string, number>;
+  };
+  error?: string;
+}> {
+  if (!isSupabaseAdminConfigured()) {
+    return { success: false, error: 'Database not configured' };
+  }
+
+  try {
+    const { data: breachedIssues, error: fetchError } = await supabaseAdmin!
+      .from('maintenance_issues')
+      .select('status, urgency, branch_id')
+      .is('voided_at', null)
+      .eq('sla_breached', true)
+      .in('status', ['open', 'in_progress']);
+
+    if (fetchError) {
+      return { success: false, error: fetchError.message };
+    }
+
+    const issues = breachedIssues || [];
+    const byUrgency: Record<string, number> = {};
+    const byBranch: Record<string, number> = {};
+    let openBreached = 0;
+    let inProgressBreached = 0;
+
+    for (const issue of issues) {
+      byUrgency[issue.urgency] = (byUrgency[issue.urgency] || 0) + 1;
+      byBranch[issue.branch_id] = (byBranch[issue.branch_id] || 0) + 1;
+      if (issue.status === 'open') openBreached++;
+      if (issue.status === 'in_progress') inProgressBreached++;
+    }
+
+    return {
+      success: true,
+      data: {
+        totalBreached: issues.length,
+        openBreached,
+        inProgressBreached,
+        byUrgency,
+        byBranch,
+      },
+    };
+  } catch (error) {
+    console.error('Error in getSlaBreachStats:', error);
+    return { success: false, error: String(error) };
+  }
+}

@@ -263,7 +263,10 @@ export default function NewAccountingRequestPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to create accounting request');
+        if (errorData.details && Array.isArray(errorData.details)) {
+          throw new Error(errorData.details.join('\n'));
+        }
+        throw new Error(errorData.error || errorData.message || 'Failed to create accounting request');
       }
 
       router.push('/reception/requests/accounting');

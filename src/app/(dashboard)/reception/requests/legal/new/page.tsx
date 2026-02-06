@@ -246,8 +246,11 @@ export default function NewLegalRequestPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        if (errorData.details && Array.isArray(errorData.details)) {
+          throw new Error(errorData.details.join('\n'));
+        }
         throw new Error(
-          errorData.message || `Failed to create legal request: ${response.status}`
+          errorData.error || errorData.message || `Failed to create legal request: ${response.status}`
         );
       }
 

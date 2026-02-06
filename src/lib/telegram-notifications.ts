@@ -340,3 +340,191 @@ HR tizimida to'liq ko'rish mumkin.
 
   return sendTelegramMessage(data.gmTelegramId, message);
 }
+
+// ============================================
+// LEGAL REQUEST NOTIFICATIONS
+// ============================================
+
+const LEGAL_TYPE_LABELS: Record<string, string> = {
+  contract_preparation: 'Shartnoma tayyorlash',
+  supplementary_agreement: 'Qo\'shimcha kelishuv',
+  contract_termination: 'Shartnomani bekor qilish',
+  website_registration: 'Veb-sayt ro\'yxatdan o\'tkazish',
+  guarantee_letter: 'Kafolat xati',
+};
+
+const LEGAL_STATUS_LABELS: Record<string, string> = {
+  submitted: 'Yuborildi',
+  under_review: 'Ko\'rib chiqilmoqda',
+  in_progress: 'Jarayonda',
+  ready: 'Tayyor',
+  completed: 'Bajarildi',
+  rejected: 'Rad etildi',
+};
+
+interface LegalNotificationData {
+  telegramId: string;
+  requestNumber: string;
+  requestType: string;
+  branchName?: string;
+  submittedBy?: string;
+}
+
+/**
+ * Notify legal team about a new legal request submission
+ */
+export async function notifyLegalRequestSubmitted(
+  data: LegalNotificationData
+): Promise<boolean> {
+  const typeLabel = LEGAL_TYPE_LABELS[data.requestType] || data.requestType;
+  const branchLine = data.branchName ? `\n🏢 Filial: ${data.branchName}` : '';
+  const submitterLine = data.submittedBy ? `\n👤 Kimdan: ${data.submittedBy}` : '';
+
+  const message = `
+📋 <b>Yangi yuridik so'rov!</b>
+
+📌 So'rov: #${data.requestNumber}
+📂 Turi: ${typeLabel}${branchLine}${submitterLine}
+
+Tizimda ko'rib chiqing.
+`.trim();
+
+  return sendTelegramMessage(data.telegramId, message);
+}
+
+/**
+ * Notify submitter about legal request status change
+ */
+export async function notifyLegalRequestStatusChanged(
+  data: LegalNotificationData & { newStatus: string; comment?: string }
+): Promise<boolean> {
+  const typeLabel = LEGAL_TYPE_LABELS[data.requestType] || data.requestType;
+  const statusLabel = LEGAL_STATUS_LABELS[data.newStatus] || data.newStatus;
+  const isPositive = ['ready', 'completed'].includes(data.newStatus);
+  const isNegative = data.newStatus === 'rejected';
+  const emoji = isPositive ? '✅' : isNegative ? '❌' : '🔄';
+  const commentLine = data.comment ? `\n📝 Izoh: ${data.comment}` : '';
+
+  const message = `
+${emoji} <b>Yuridik so'rov holati o'zgardi</b>
+
+📌 So'rov: #${data.requestNumber}
+📂 Turi: ${typeLabel}
+📊 Yangi holat: <b>${statusLabel}</b>${commentLine}
+
+Tizimda to'liq ko'rish mumkin.
+`.trim();
+
+  return sendTelegramMessage(data.telegramId, message);
+}
+
+// ============================================
+// MAINTENANCE ISSUE NOTIFICATIONS
+// ============================================
+
+const MAINTENANCE_CATEGORY_LABELS_UZ: Record<string, string> = {
+  hvac: 'HVAC / Iqlim',
+  plumbing: 'Santexnika',
+  electrical: 'Elektr',
+  furniture: 'Mebel',
+  cleaning: 'Tozalash',
+  building: 'Bino / Tuzilma',
+  it_network: 'IT / Tarmoq',
+  safety: 'Xavfsizlik',
+  other: 'Boshqa',
+};
+
+const MAINTENANCE_URGENCY_LABELS_UZ: Record<string, string> = {
+  critical: '🔴 Juda shoshilinch (4 soat)',
+  high: '🟠 Yuqori (24 soat)',
+  medium: '🟡 O\'rtacha (3 kun)',
+  low: '🟢 Past (7 kun)',
+};
+
+interface MaintenanceNotificationData {
+  telegramId: string;
+  issueNumber: string;
+  category: string;
+  urgency: string;
+  locationDescription?: string;
+  branchName?: string;
+  reportedBy?: string;
+}
+
+/**
+ * Notify maintenance team about a new issue
+ */
+export async function notifyMaintenanceIssueReported(
+  data: MaintenanceNotificationData
+): Promise<boolean> {
+  const categoryLabel = MAINTENANCE_CATEGORY_LABELS_UZ[data.category] || data.category;
+  const urgencyLabel = MAINTENANCE_URGENCY_LABELS_UZ[data.urgency] || data.urgency;
+  const locationLine = data.locationDescription ? `\n📍 Joylashuv: ${data.locationDescription}` : '';
+  const branchLine = data.branchName ? `\n🏢 Filial: ${data.branchName}` : '';
+  const reporterLine = data.reportedBy ? `\n👤 Xabar beruvchi: ${data.reportedBy}` : '';
+
+  const message = `
+🔧 <b>Yangi texnik muammo!</b>
+
+📌 Muammo: #${data.issueNumber}
+📂 Turkum: ${categoryLabel}
+⚡ Shoshilinchlik: ${urgencyLabel}${locationLine}${branchLine}${reporterLine}
+
+Tezkor hal qilish uchun tizimga kiring.
+`.trim();
+
+  return sendTelegramMessage(data.telegramId, message);
+}
+
+/**
+ * Notify reporter about maintenance issue status change
+ */
+export async function notifyMaintenanceStatusChanged(
+  data: MaintenanceNotificationData & { newStatus: string; assignedTo?: string }
+): Promise<boolean> {
+  const categoryLabel = MAINTENANCE_CATEGORY_LABELS_UZ[data.category] || data.category;
+  const statusMap: Record<string, string> = {
+    open: 'Ochiq',
+    in_progress: 'Jarayonda',
+    resolved: 'Hal qilindi',
+  };
+  const statusLabel = statusMap[data.newStatus] || data.newStatus;
+  const emoji = data.newStatus === 'resolved' ? '✅' : data.newStatus === 'in_progress' ? '🔨' : '📋';
+  const assigneeLine = data.assignedTo ? `\n👷 Mas\'ul: ${data.assignedTo}` : '';
+
+  const message = `
+${emoji} <b>Texnik muammo holati o'zgardi</b>
+
+📌 Muammo: #${data.issueNumber}
+📂 Turkum: ${categoryLabel}
+📊 Yangi holat: <b>${statusLabel}</b>${assigneeLine}
+
+Tizimda to'liq ko'rish mumkin.
+`.trim();
+
+  return sendTelegramMessage(data.telegramId, message);
+}
+
+/**
+ * Notify admin about SLA breach for maintenance issue
+ */
+export async function notifyMaintenanceSlaBreached(
+  data: MaintenanceNotificationData & { slaHours: number; hoursElapsed: number }
+): Promise<boolean> {
+  const categoryLabel = MAINTENANCE_CATEGORY_LABELS_UZ[data.category] || data.category;
+  const urgencyLabel = MAINTENANCE_URGENCY_LABELS_UZ[data.urgency] || data.urgency;
+  const locationLine = data.locationDescription ? `\n📍 Joylashuv: ${data.locationDescription}` : '';
+
+  const message = `
+⏰ <b>SLA muddati buzildi!</b>
+
+📌 Muammo: #${data.issueNumber}
+📂 Turkum: ${categoryLabel}
+⚡ Shoshilinchlik: ${urgencyLabel}
+⏱ SLA: ${data.slaHours} soat → <b>${Math.round(data.hoursElapsed)} soat o'tdi</b>${locationLine}
+
+Zudlik bilan hal qilish kerak!
+`.trim();
+
+  return sendTelegramMessage(data.telegramId, message);
+}

@@ -908,4 +908,129 @@ export interface Translations {
     phone: string;
     email: string;
   };
+
+  // Legal Requests
+  legalRequests: {
+    title: string;
+    newRequest: string;
+    requestNumber: string;
+    requestType: string;
+    submittedBy: string;
+    assignedTo: string;
+    contractPreparation: string;
+    supplementaryAgreement: string;
+    contractTermination: string;
+    websiteRegistration: string;
+    guaranteeLetter: string;
+    submitted: string;
+    underReview: string;
+    inProgress: string;
+    ready: string;
+    completed: string;
+    rejected: string;
+    contractType: string;
+    paymentForm: string;
+    serviceCost: string;
+    paymentPeriod: string;
+    startDate: string;
+    endDate: string;
+    areaSqm: string;
+    officeNumber: string;
+    workstations: string;
+    registrationRequired: string;
+    additionalConditions: string;
+    changeType: string;
+    changeDescription: string;
+    effectiveDate: string;
+    terminationDate: string;
+    hasDebt: string;
+    debtAmount: string;
+    companyName: string;
+    inn: string;
+    branchName: string;
+    contactPerson: string;
+    guaranteeAmount: string;
+    beneficiary: string;
+    purpose: string;
+    addComment: string;
+    assignToMe: string;
+    updateStatus: string;
+    noRequests: string;
+    createFirst: string;
+    submitSuccess: string;
+    statusUpdated: string;
+  };
+
+  // Maintenance Issues
+  maintenanceIssues: {
+    title: string;
+    reportIssue: string;
+    issueNumber: string;
+    hvac: string;
+    plumbing: string;
+    electrical: string;
+    furniture: string;
+    cleaning: string;
+    building: string;
+    itNetwork: string;
+    safety: string;
+    other: string;
+    critical: string;
+    high: string;
+    medium: string;
+    low: string;
+    urgency: string;
+    category: string;
+    slaDeadline: string;
+    slaBreached: string;
+    slaOnTrack: string;
+    slaHoursRemaining: string;
+    open: string;
+    inProgress: string;
+    resolved: string;
+    location: string;
+    description: string;
+    photos: string;
+    addPhotos: string;
+    assignedTo: string;
+    noIssues: string;
+    reportSuccess: string;
+    statusUpdated: string;
+  };
+
+  // Operator Switch
+  operatorSwitch: {
+    title: string;
+    switchOperator: string;
+    enterPin: string;
+    pinPlaceholder: string;
+    crossBranch: string;
+    searchEmployee: string;
+    currentOperator: string;
+    clearOperator: string;
+    switchSuccess: string;
+    invalidPin: string;
+    accountLocked: string;
+    tryAgainIn: string;
+    pinSet: string;
+    pinUpdated: string;
+    setPin: string;
+    updatePin: string;
+    newPin: string;
+    confirmPin: string;
+    pinsDoNotMatch: string;
+  };
+
+  // Shifts
+  shifts: {
+    title: string;
+    weeklySchedule: string;
+    dayShift: string;
+    nightShift: string;
+    noShifts: string;
+    today: string;
+    thisWeek: string;
+    previousWeek: string;
+    nextWeek: string;
+  };
 }

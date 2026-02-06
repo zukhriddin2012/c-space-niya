@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useReceptionMode } from '@/contexts/ReceptionModeContext';
+import { useReceptionMode, getOperatorHeaders } from '@/contexts/ReceptionModeContext';
 import type { MaintenanceIssue, MaintenanceStatus, MaintenanceCategory, MaintenanceUrgency } from '@/modules/maintenance/types';
 import {
   MAINTENANCE_CATEGORY_LABELS,
@@ -52,7 +52,7 @@ const CATEGORY_ICONS: Record<MaintenanceCategory, React.ReactNode> = {
 };
 
 export default function MaintenanceIssuesPage() {
-  const { selectedBranchId } = useReceptionMode();
+  const { selectedBranchId, currentOperator } = useReceptionMode();
   const [activeTab, setActiveTab] = useState<MaintenanceStatus>('open');
   const [selectedCategory, setSelectedCategory] = useState<MaintenanceCategory | 'all'>('all');
   const [selectedUrgency, setSelectedUrgency] = useState<MaintenanceUrgency | 'all'>('all');
@@ -93,7 +93,10 @@ export default function MaintenanceIssuesPage() {
         params.append('urgency', selectedUrgency);
       }
 
-      const response = await fetch(`/api/reception/maintenance-issues?${params.toString()}`);
+      const headers = getOperatorHeaders(currentOperator, 'self');
+      const response = await fetch(`/api/reception/maintenance-issues?${params.toString()}`, {
+        headers,
+      });
 
       if (!response.ok) {
         throw new Error('Failed to fetch maintenance issues');

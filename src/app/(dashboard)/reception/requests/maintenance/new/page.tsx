@@ -162,7 +162,10 @@ export default function MaintenanceIssuePage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to create maintenance issue');
+        if (errorData.details && Array.isArray(errorData.details)) {
+          throw new Error(errorData.details.join('\n'));
+        }
+        throw new Error(errorData.error || errorData.message || 'Failed to create maintenance issue');
       }
 
       router.push('/reception/requests/maintenance');
