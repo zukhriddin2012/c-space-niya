@@ -33,6 +33,9 @@ export const GET = withAuth(async (request: NextRequest, context: { user: User; 
     // GM can directly edit wages without requesting changes
     const canDirectEditWages = user.role === 'general_manager';
 
+    // Check if the employee has an operator PIN set (don't expose the hash itself)
+    const hasOperatorPin = !!(employee as any).operator_pin_hash;
+
     return NextResponse.json({
       employee,
       branches,
@@ -42,6 +45,7 @@ export const GET = withAuth(async (request: NextRequest, context: { user: User; 
       canEditSalary,
       canAssignRoles,
       canDirectEditWages,
+      hasOperatorPin,
       userRole: user.role,
     });
   } catch (error) {

@@ -34,6 +34,7 @@ export function PinSwitchOverlay({ isOpen, onClose }: PinSwitchOverlayProps) {
   const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const lockoutTimerRef = useRef<NodeJS.Timeout | null>(null);
   const shakeDotsRef = useRef<HTMLDivElement>(null);
+  const pinInputRef = useRef<HTMLInputElement>(null);
 
   // Context
   const { switchOperator, switchOperatorCrossBranch, selectedBranchId } = useReceptionMode();
@@ -44,6 +45,16 @@ export function PinSwitchOverlay({ isOpen, onClose }: PinSwitchOverlayProps) {
       resetOverlayState();
     }
   }, [isOpen]);
+
+  // Auto-focus the hidden PIN input when entering PIN views
+  useEffect(() => {
+    if (isOpen && (view === 'pin' || view === 'cross-branch-pin')) {
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        pinInputRef.current?.focus();
+      }, 100);
+    }
+  }, [isOpen, view]);
 
   // Lockout countdown timer
   useEffect(() => {
@@ -77,7 +88,6 @@ export function PinSwitchOverlay({ isOpen, onClose }: PinSwitchOverlayProps) {
     setSelectedEmployee(null);
     setIsSearching(false);
     setLockoutCountdown(null);
-    // Clear pending debounced search to prevent state updates after unmount
     if (searchDebounceRef.current) {
       clearTimeout(searchDebounceRef.current);
       searchDebounceRef.current = null;
@@ -87,27 +97,28 @@ export function PinSwitchOverlay({ isOpen, onClose }: PinSwitchOverlayProps) {
   const playShakeAnimation = () => {
     if (!shakeDotsRef.current) return;
     shakeDotsRef.current.classList.remove('shake-animation');
-    // Trigger reflow to restart animation
     void shakeDotsRef.current.offsetWidth;
     shakeDotsRef.current.classList.add('shake-animation');
   };
 
-  const handlePinInput = (digit: string) => {
-    if (lockoutCountdown !== null || isLoading || pin.length >= 4) return;
+  // Handle keyboard input for PIN
+  const handlePinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (lockoutCountdown !== null || isLoading) return;
 
-    const newPin = pin + digit;
-    setPin(newPin);
+    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+    setPin(value);
     setError(null);
 
-    // Auto-submit when 4 digits entered
-    if (newPin.length === 4) {
-      submitPin(newPin);
+    if (value.length === 4) {
+      submitPin(value);
     }
   };
 
-  const handleBackspace = () => {
-    setPin(pin.slice(0, -1));
-    setError(null);
+  // Keep focus on PIN input when clicking the overlay area
+  const handleOverlayClick = () => {
+    if (view === 'pin' || view === 'cross-branch-pin') {
+      pinInputRef.current?.focus();
+    }
   };
 
   const submitPin = async (pinValue: string) => {
@@ -118,19 +129,18 @@ export function PinSwitchOverlay({ isOpen, onClose }: PinSwitchOverlayProps) {
 
     try {
       if (view === 'pin') {
-        // Standard PIN entry
         const result = await switchOperator(pinValue);
 
         if (result.success) {
-          // Show success toast and close
           setPin('');
           setTimeout(() => {
             onClose();
           }, 300);
         } else {
-          // Handle error
           setPin('');
           playShakeAnimation();
+          // Re-focus input after error
+          setTimeout(() => pinInputRef.current?.focus(), 100);
 
           if (result.error === 'invalid_pin') {
             setError({
@@ -150,7 +160,6 @@ export function PinSwitchOverlay({ isOpen, onClose }: PinSwitchOverlayProps) {
           }
         }
       } else if (view === 'cross-branch-pin' && selectedEmployee) {
-        // Cross-branch PIN entry
         const result = await switchOperatorCrossBranch(selectedEmployee.id, pinValue);
 
         if (result.success) {
@@ -161,6 +170,7 @@ export function PinSwitchOverlay({ isOpen, onClose }: PinSwitchOverlayProps) {
         } else {
           setPin('');
           playShakeAnimation();
+          setTimeout(() => pinInputRef.current?.focus(), 100);
 
           if (result.error === 'invalid_pin') {
             setError({
@@ -183,6 +193,7 @@ export function PinSwitchOverlay({ isOpen, onClose }: PinSwitchOverlayProps) {
     } catch (err) {
       setPin('');
       playShakeAnimation();
+      setTimeout(() => pinInputRef.current?.focus(), 100);
       setError({
         message: 'An unexpected error occurred. Please try again.',
       });
@@ -260,9 +271,88 @@ export function PinSwitchOverlay({ isOpen, onClose }: PinSwitchOverlayProps) {
 
   if (!isOpen) return null;
 
+  // Shared PIN entry UI (used in both standard and cross-branch views)
+  const renderPinEntry = () => (
+    <>
+      {/* Hidden keyboard input — captures physical keyboard presses */}
+      <input
+        ref={pinInputRef}
+        type="text"
+        inputMode="numeric"
+        pattern="\d*"
+        value={pin}
+        onChange={handlePinChange}
+        maxLength={4}
+        autoFocus
+        className="sr-only"
+        aria-label="Enter 4-digit PIN"
+        disabled={lockoutCountdown !== null || isLoading}
+      />
+
+      {/* PIN Dots — visual feedback */}
+      <div
+        ref={shakeDotsRef}
+        className="flex justify-center gap-4 cursor-text"
+        onClick={handleOverlayClick}
+      >
+        {[0, 1, 2, 3].map((index) => (
+          <div
+            key={index}
+            className={`h-5 w-5 rounded-full border-2 transition-all duration-200 ${
+              index < pin.length
+                ? 'border-indigo-600 bg-indigo-600 scale-110'
+                : 'border-gray-300 bg-white'
+            }`}
+          />
+        ))}
+      </div>
+
+      {/* Loading indicator */}
+      {isLoading && (
+        <div className="flex justify-center">
+          <Loader2 size={24} className="animate-spin text-indigo-600" />
+        </div>
+      )}
+
+      {/* Error message */}
+      {error && (
+        <div className="rounded-lg bg-red-50 p-3 text-center">
+          <p className="text-sm font-medium text-red-700">{error.message}</p>
+          {error.attemptsRemaining !== undefined && error.attemptsRemaining > 0 && (
+            <p className="text-xs text-red-600 mt-1">
+              {error.attemptsRemaining} attempt{error.attemptsRemaining > 1 ? 's' : ''} remaining
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Lockout message */}
+      {lockoutCountdown !== null && (
+        <div className="rounded-lg bg-gray-100 p-4 text-center">
+          <p className="text-sm font-medium text-gray-700">
+            Account locked for {lockoutCountdown}s
+          </p>
+        </div>
+      )}
+
+      {/* Keyboard hint */}
+      {!isLoading && lockoutCountdown === null && (
+        <p className="text-center text-xs text-gray-400">
+          Type your PIN using the keyboard
+        </p>
+      )}
+    </>
+  );
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      onClick={handleOverlayClick}
+    >
+      <div
+        className="relative w-full max-w-sm rounded-2xl bg-white p-8 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Close button */}
         <button
           onClick={onClose}
@@ -280,92 +370,10 @@ export function PinSwitchOverlay({ isOpen, onClose }: PinSwitchOverlayProps) {
               <p className="mt-1 text-sm text-gray-600">Enter your 4-digit PIN</p>
             </div>
 
-            {/* PIN Dots */}
-            <div
-              ref={shakeDotsRef}
-              className="flex justify-center gap-4"
-              style={{
-                animation: 'shake 0.3s cubic-bezier(0.36, 0.07, 0.19, 0.97)',
-              }}
-            >
-              {[0, 1, 2, 3].map((index) => (
-                <div
-                  key={index}
-                  className={`h-4 w-4 rounded-full border-2 transition-all duration-200 ${
-                    index < pin.length
-                      ? 'border-indigo-600 bg-indigo-600'
-                      : 'border-gray-300 bg-white'
-                  }`}
-                />
-              ))}
-            </div>
-
-            {/* Error message */}
-            {error && (
-              <div className="rounded-lg bg-red-50 p-3 text-center">
-                <p className="text-sm font-medium text-red-700">{error.message}</p>
-                {error.attemptsRemaining !== undefined && error.attemptsRemaining > 0 && (
-                  <p className="text-xs text-red-600 mt-1">
-                    {error.attemptsRemaining} attempt{error.attemptsRemaining > 1 ? 's' : ''} remaining
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Numeric Keypad */}
-            {lockoutCountdown === null ? (
-              <div className="grid grid-cols-3 gap-2">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((digit) => (
-                  <button
-                    key={digit}
-                    onClick={() => handlePinInput(String(digit))}
-                    disabled={pin.length >= 4}
-                    className="aspect-square rounded-lg bg-gray-100 text-lg font-semibold text-gray-900 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {digit}
-                  </button>
-                ))}
-
-                {/* 0 button spanning 2 columns */}
-                <button
-                  onClick={() => handlePinInput('0')}
-                  disabled={pin.length >= 4}
-                  className="col-span-2 aspect-square rounded-lg bg-gray-100 text-lg font-semibold text-gray-900 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  0
-                </button>
-
-                {/* Backspace button */}
-                <button
-                  onClick={handleBackspace}
-                  disabled={pin.length === 0}
-                  className="rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
-                >
-                  <svg
-                    className="h-5 w-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12a9 9 0 1118 0 9 9 0 01-18 0z"
-                    />
-                  </svg>
-                </button>
-              </div>
-            ) : (
-              <div className="rounded-lg bg-gray-100 p-4 text-center">
-                <p className="text-sm font-medium text-gray-700">
-                  Account locked for {lockoutCountdown}s
-                </p>
-              </div>
-            )}
+            {renderPinEntry()}
 
             {/* Cross-branch link */}
-            <div className="text-center">
+            <div className="text-center pt-2">
               <button
                 onClick={handleCrossBranchLink}
                 className="text-sm text-indigo-600 hover:text-indigo-700 font-medium transition-colors"
@@ -464,86 +472,7 @@ export function PinSwitchOverlay({ isOpen, onClose }: PinSwitchOverlayProps) {
               </div>
             </div>
 
-            {/* PIN Dots */}
-            <div
-              ref={shakeDotsRef}
-              className="flex justify-center gap-4"
-            >
-              {[0, 1, 2, 3].map((index) => (
-                <div
-                  key={index}
-                  className={`h-4 w-4 rounded-full border-2 transition-all duration-200 ${
-                    index < pin.length
-                      ? 'border-indigo-600 bg-indigo-600'
-                      : 'border-gray-300 bg-white'
-                  }`}
-                />
-              ))}
-            </div>
-
-            {/* Error message */}
-            {error && (
-              <div className="rounded-lg bg-red-50 p-3 text-center">
-                <p className="text-sm font-medium text-red-700">{error.message}</p>
-                {error.attemptsRemaining !== undefined && error.attemptsRemaining > 0 && (
-                  <p className="text-xs text-red-600 mt-1">
-                    {error.attemptsRemaining} attempt{error.attemptsRemaining > 1 ? 's' : ''} remaining
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Numeric Keypad */}
-            {lockoutCountdown === null ? (
-              <div className="grid grid-cols-3 gap-2">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((digit) => (
-                  <button
-                    key={digit}
-                    onClick={() => handlePinInput(String(digit))}
-                    disabled={pin.length >= 4}
-                    className="aspect-square rounded-lg bg-gray-100 text-lg font-semibold text-gray-900 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {digit}
-                  </button>
-                ))}
-
-                {/* 0 button spanning 2 columns */}
-                <button
-                  onClick={() => handlePinInput('0')}
-                  disabled={pin.length >= 4}
-                  className="col-span-2 aspect-square rounded-lg bg-gray-100 text-lg font-semibold text-gray-900 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  0
-                </button>
-
-                {/* Backspace button */}
-                <button
-                  onClick={handleBackspace}
-                  disabled={pin.length === 0}
-                  className="rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
-                >
-                  <svg
-                    className="h-5 w-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12a9 9 0 1118 0 9 9 0 01-18 0z"
-                    />
-                  </svg>
-                </button>
-              </div>
-            ) : (
-              <div className="rounded-lg bg-gray-100 p-4 text-center">
-                <p className="text-sm font-medium text-gray-700">
-                  Account locked for {lockoutCountdown}s
-                </p>
-              </div>
-            )}
+            {renderPinEntry()}
           </div>
         )}
       </div>

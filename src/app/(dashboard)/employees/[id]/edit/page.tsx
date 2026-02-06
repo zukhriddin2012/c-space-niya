@@ -36,6 +36,7 @@ import {
   Phone,
   Mail,
   Calendar,
+  KeyRound,
 } from 'lucide-react';
 import type { UserRole } from '@/types';
 import { useTranslation } from '@/contexts/LanguageContext';
@@ -145,6 +146,7 @@ interface PageData {
   canEditSalary: boolean;
   canAssignRoles: boolean;
   canDirectEditWages: boolean;
+  hasOperatorPin: boolean;
   userRole: string;
 }
 
@@ -295,6 +297,14 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deletingEmployee, setDeletingEmployee] = useState(false);
 
+  // PIN management state
+  const [hasOperatorPin, setHasOperatorPin] = useState(false);
+  const [pinValue, setPinValue] = useState('');
+  const [pinConfirm, setPinConfirm] = useState('');
+  const [pinSaving, setPinSaving] = useState(false);
+  const [pinError, setPinError] = useState<string | null>(null);
+  const [pinSuccess, setPinSuccess] = useState<string | null>(null);
+
   // Wage change state
   const [pendingWageChanges, setPendingWageChanges] = useState<PendingWageChange[]>([]);
   const [showWageChangeModal, setShowWageChangeModal] = useState(false);
@@ -374,6 +384,7 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
           remote_work_enabled: data.employee.remote_work_enabled || false,
         });
         setTelegramId(data.employee.telegram_id || null);
+        setHasOperatorPin(data.hasOperatorPin || false);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load employee data');
       } finally {
@@ -817,6 +828,81 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
       setError('Failed to disconnect Telegram');
     } finally {
       setDisconnectingTelegram(false);
+    }
+  };
+
+  const handleSetOperatorPin = async () => {
+    if (!employeeId) return;
+
+    setPinError(null);
+    setPinSuccess(null);
+
+    // Validate
+    if (!pinValue || pinValue.length !== 4 || !/^\d{4}$/.test(pinValue)) {
+      setPinError('PIN must be exactly 4 digits');
+      return;
+    }
+    if (pinValue !== pinConfirm) {
+      setPinError('PINs do not match');
+      return;
+    }
+
+    setPinSaving(true);
+    try {
+      const response = await fetch('/api/reception/operator-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: pinValue, employeeId }),
+      });
+
+      if (response.ok) {
+        setHasOperatorPin(true);
+        setPinValue('');
+        setPinConfirm('');
+        setPinSuccess('Operator PIN has been set successfully');
+        setTimeout(() => setPinSuccess(null), 4000);
+      } else {
+        const data = await response.json();
+        if (data.error === 'pin_already_taken') {
+          setPinError('This PIN is already used by another employee in the same branch. Please choose a different PIN.');
+        } else if (data.error === 'insufficient_permissions') {
+          setPinError('You do not have permission to set PINs for other employees');
+        } else {
+          setPinError(data.error || 'Failed to set PIN');
+        }
+      }
+    } catch (err) {
+      setPinError('Failed to set PIN. Please try again.');
+    } finally {
+      setPinSaving(false);
+    }
+  };
+
+  const handleRemoveOperatorPin = async () => {
+    if (!employeeId) return;
+
+    setPinError(null);
+    setPinSuccess(null);
+    setPinSaving(true);
+    try {
+      const response = await fetch(`/api/employees/${employeeId}/operator-pin`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setHasOperatorPin(false);
+        setPinValue('');
+        setPinConfirm('');
+        setPinSuccess('Operator PIN has been removed');
+        setTimeout(() => setPinSuccess(null), 4000);
+      } else {
+        const data = await response.json();
+        setPinError(data.error || 'Failed to remove PIN');
+      }
+    } catch (err) {
+      setPinError('Failed to remove PIN. Please try again.');
+    } finally {
+      setPinSaving(false);
     }
   };
 
@@ -1844,6 +1930,110 @@ export default function EditEmployeePage({ params }: { params: Promise<{ id: str
                     <p className="text-xs text-gray-500 mt-1">{t.employeeEdit.remoteWorkHint}</p>
                   </div>
                 </label>
+              </Card>
+
+              {/* Operator PIN Management */}
+              <Card title="Operator PIN" description="Set a 4-digit PIN for reception mode operator switching">
+                <div className="space-y-4">
+                  {/* Current PIN Status */}
+                  <div className={`flex items-center gap-3 p-4 rounded-lg ${
+                    hasOperatorPin ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'
+                  }`}>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      hasOperatorPin ? 'bg-green-100' : 'bg-gray-200'
+                    }`}>
+                      <KeyRound size={20} className={hasOperatorPin ? 'text-green-600' : 'text-gray-400'} />
+                    </div>
+                    <div className="flex-1">
+                      <p className={`text-sm font-medium ${hasOperatorPin ? 'text-green-900' : 'text-gray-700'}`}>
+                        {hasOperatorPin ? 'PIN is set' : 'No PIN configured'}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {hasOperatorPin
+                          ? 'Employee can switch operators in reception mode'
+                          : 'Set a PIN to enable operator switching'}
+                      </p>
+                    </div>
+                    {hasOperatorPin && (
+                      <Button
+                        type="button"
+                        variant="danger"
+                        size="sm"
+                        onClick={handleRemoveOperatorPin}
+                        isLoading={pinSaving}
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Set / Change PIN Form */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {hasOperatorPin ? 'New PIN' : 'PIN'}
+                      </label>
+                      <input
+                        type="password"
+                        inputMode="numeric"
+                        pattern="\d{4}"
+                        maxLength={4}
+                        value={pinValue}
+                        onChange={(e) => {
+                          setPinValue(e.target.value.replace(/\D/g, '').slice(0, 4));
+                          setPinError(null);
+                        }}
+                        placeholder="4 digits"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-200"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Confirm PIN
+                      </label>
+                      <input
+                        type="password"
+                        inputMode="numeric"
+                        pattern="\d{4}"
+                        maxLength={4}
+                        value={pinConfirm}
+                        onChange={(e) => {
+                          setPinConfirm(e.target.value.replace(/\D/g, '').slice(0, 4));
+                          setPinError(null);
+                        }}
+                        placeholder="Repeat PIN"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-200"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Error / Success messages */}
+                  {pinError && (
+                    <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <AlertCircle size={16} className="text-red-500 flex-shrink-0" />
+                      <p className="text-sm text-red-700">{pinError}</p>
+                    </div>
+                  )}
+                  {pinSuccess && (
+                    <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <CheckCircle size={16} className="text-green-500 flex-shrink-0" />
+                      <p className="text-sm text-green-700">{pinSuccess}</p>
+                    </div>
+                  )}
+
+                  {/* Submit button */}
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
+                    onClick={handleSetOperatorPin}
+                    isLoading={pinSaving}
+                    disabled={!pinValue || !pinConfirm || pinValue.length !== 4 || pinConfirm.length !== 4}
+                    leftIcon={<KeyRound size={14} />}
+                  >
+                    {hasOperatorPin ? 'Change PIN' : 'Set PIN'}
+                  </Button>
+                </div>
               </Card>
             </div>
           ) : (
