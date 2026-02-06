@@ -14,9 +14,7 @@ const TELEGRAM_API_BASE = 'https://api.telegram.org/bot';
  *
  * Generates a new 6-digit operator PIN for the employee,
  * stores the hash, and sends the plaintext PIN along with
- * branch name and optional branch password to the employee's Telegram.
- *
- * Body: { branchPassword?: string }
+ * branch name and branch password (auto-fetched) to the employee's Telegram.
  */
 export const POST = withAuth(
   async (request: NextRequest, context: { user: User; params?: Record<string, string> }) => {
@@ -36,14 +34,10 @@ export const POST = withAuth(
         return NextResponse.json({ error: 'Telegram bot not configured' }, { status: 500 });
       }
 
-      // Parse optional branch password from body
-      const body = await request.json().catch(() => ({}));
-      const branchPassword = body.branchPassword || '';
-
-      // Fetch employee with branch info
+      // Fetch employee with branch info (including plaintext password)
       const { data: employee, error: fetchError } = await supabaseAdmin!
         .from('employees')
-        .select('id, full_name, telegram_id, branch_id, branches!employees_branch_id_fkey(name)')
+        .select('id, full_name, telegram_id, branch_id, branches!employees_branch_id_fkey(name, reception_password_plain)')
         .eq('id', employeeId)
         .single();
 
@@ -76,7 +70,9 @@ export const POST = withAuth(
       }
 
       // Build the Telegram message
-      const branchName = (employee.branches as unknown as { name: string } | null)?.name || 'N/A';
+      const branchData = employee.branches as unknown as { name: string; reception_password_plain: string | null } | null;
+      const branchName = branchData?.name || 'N/A';
+      const branchPassword = branchData?.reception_password_plain || null;
 
       let message = `🔐 <b>Your Reception Access Details</b>\n\n`;
       message += `👤 <b>Employee:</b> ${employee.full_name}\n`;

@@ -113,7 +113,6 @@ export default function EditEmployeeModal({
   // Send PIN to Telegram state
   const [showSendPin, setShowSendPin] = useState(false);
   const [sendingPin, setSendingPin] = useState(false);
-  const [sendPinBranchPassword, setSendPinBranchPassword] = useState('');
   const [sendPinSuccess, setSendPinSuccess] = useState(false);
   const [sendPinError, setSendPinError] = useState<string | null>(null);
 
@@ -249,16 +248,13 @@ export default function EditEmployeeModal({
       const response = await fetch(`/api/employees/${employee.id}/send-pin-telegram`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          branchPassword: sendPinBranchPassword || undefined,
-        }),
+        body: JSON.stringify({}),
       });
 
       const data = await response.json();
 
       if (response.ok) {
         setSendPinSuccess(true);
-        setSendPinBranchPassword('');
         // Auto-hide success after 3 seconds
         setTimeout(() => {
           setSendPinSuccess(false);
@@ -640,26 +636,8 @@ export default function EditEmployeeModal({
                     </div>
 
                     <p className="text-xs text-purple-700">
-                      A new 6-digit PIN will be generated and sent to this employee&apos;s Telegram along with their branch info.
+                      A new 6-digit PIN will be generated and sent to this employee&apos;s Telegram along with their branch name and branch password. The current PIN will be replaced.
                     </p>
-
-                    <div className="flex items-center gap-2 text-xs text-gray-600 bg-white/60 rounded-lg p-2">
-                      <Building2 size={14} className="text-gray-400 flex-shrink-0" />
-                      <span>Branch: <strong>{branches.find(b => b.id === formData.branch_id)?.name || 'No branch'}</strong></span>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-medium text-purple-700 mb-1">
-                        Branch Password (optional)
-                      </label>
-                      <input
-                        type="text"
-                        value={sendPinBranchPassword}
-                        onChange={(e) => setSendPinBranchPassword(e.target.value)}
-                        placeholder="Enter branch kiosk password to include"
-                        className="w-full px-3 py-1.5 text-sm border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none bg-white"
-                      />
-                    </div>
 
                     {sendPinError && (
                       <div className="p-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">

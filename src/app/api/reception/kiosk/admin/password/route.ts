@@ -49,6 +49,7 @@ async function handlePost(
       .from('branches')
       .update({
         reception_password_hash: passwordHash,
+        reception_password_plain: password,
         reception_password_set_at: new Date().toISOString(),
         reception_password_set_by: user.id,
       })
@@ -100,6 +101,7 @@ async function handleDelete(
       .from('branches')
       .update({
         reception_password_hash: null,
+        reception_password_plain: null,
         reception_password_set_at: null,
         reception_password_set_by: null,
       })
