@@ -4,12 +4,15 @@ import { useState, lazy, Suspense } from 'react';
 import { useReceptionMode } from '@/contexts/ReceptionModeContext';
 import { ReceptionHeader, ReceptionTab } from './ReceptionHeader';
 import { BranchSwitchModal } from '@/components/reception/BranchSwitchModal';
+import { PinSwitchOverlay } from '@/components/reception/PinSwitchOverlay';
 
 // Lazy load reception components to keep bundle small
 const ReceptionDashboard = lazy(() => import('@/components/reception/ReceptionDashboard'));
 const ReceptionTransactions = lazy(() => import('@/components/reception/ReceptionTransactions'));
 const ReceptionExpenses = lazy(() => import('@/components/reception/ReceptionExpenses'));
 const ReceptionSettings = lazy(() => import('@/components/reception/ReceptionSettings'));
+const ReceptionRequests = lazy(() => import('@/components/reception/ReceptionRequests'));
+const ReceptionShifts = lazy(() => import('@/components/reception/ReceptionShifts'));
 
 interface DashboardContentProps {
   children: React.ReactNode;
@@ -26,12 +29,17 @@ function LoadingSpinner() {
 export function DashboardContent({ children }: DashboardContentProps) {
   const { isReceptionMode } = useReceptionMode();
   const [activeTab, setActiveTab] = useState<ReceptionTab>('dashboard');
+  const [showOperatorSwitch, setShowOperatorSwitch] = useState(false);
 
   if (isReceptionMode) {
     return (
       <div className="fixed inset-0 z-50 bg-gray-100 flex flex-col overflow-hidden">
         {/* Reception Header with Tabs */}
-        <ReceptionHeader activeTab={activeTab} onTabChange={setActiveTab} />
+        <ReceptionHeader
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          onOperatorSwitch={() => setShowOperatorSwitch(true)}
+        />
 
         {/* Main Content Area */}
         <main className="flex-1 overflow-auto">
@@ -40,6 +48,8 @@ export function DashboardContent({ children }: DashboardContentProps) {
               {activeTab === 'dashboard' && <ReceptionDashboard />}
               {activeTab === 'transactions' && <ReceptionTransactions />}
               {activeTab === 'expenses' && <ReceptionExpenses />}
+              {activeTab === 'requests' && <ReceptionRequests />}
+              {activeTab === 'shifts' && <ReceptionShifts />}
               {activeTab === 'settings' && <ReceptionSettings />}
             </Suspense>
           </div>
@@ -52,6 +62,12 @@ export function DashboardContent({ children }: DashboardContentProps) {
 
         {/* Branch Switch Confirmation Modal */}
         <BranchSwitchModal />
+
+        {/* Operator PIN Switch Overlay */}
+        <PinSwitchOverlay
+          isOpen={showOperatorSwitch}
+          onClose={() => setShowOperatorSwitch(false)}
+        />
       </div>
     );
   }

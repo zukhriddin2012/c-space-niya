@@ -1,27 +1,32 @@
 'use client';
 
-import { Receipt, LayoutDashboard, ArrowLeftRight, Wallet, Settings, X, User } from 'lucide-react';
+import { Receipt, LayoutDashboard, ArrowLeftRight, Wallet, Settings, X, User, FileText, Calendar, UserCog } from 'lucide-react';
 import { useReceptionMode } from '@/contexts/ReceptionModeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { BranchSelector } from '@/components/reception/BranchSelector';
 
-export type ReceptionTab = 'dashboard' | 'transactions' | 'expenses' | 'settings';
+export type ReceptionTab = 'dashboard' | 'transactions' | 'expenses' | 'requests' | 'shifts' | 'settings';
 
 interface ReceptionHeaderProps {
   activeTab: ReceptionTab;
   onTabChange: (tab: ReceptionTab) => void;
+  onOperatorSwitch?: () => void;
 }
 
 const tabs = [
   { id: 'dashboard' as const, label: 'Dashboard', icon: LayoutDashboard },
   { id: 'transactions' as const, label: 'Transactions', icon: ArrowLeftRight },
   { id: 'expenses' as const, label: 'Expenses', icon: Wallet },
+  { id: 'requests' as const, label: 'Requests', icon: FileText },
+  { id: 'shifts' as const, label: 'Shifts', icon: Calendar },
   { id: 'settings' as const, label: 'Settings', icon: Settings },
 ];
 
-export function ReceptionHeader({ activeTab, onTabChange }: ReceptionHeaderProps) {
-  const { setReceptionMode, selectedBranch } = useReceptionMode();
+export function ReceptionHeader({ activeTab, onTabChange, onOperatorSwitch }: ReceptionHeaderProps) {
+  const { setReceptionMode, selectedBranch, currentOperator } = useReceptionMode();
   const { user } = useAuth();
+
+  const displayName = currentOperator?.name || user?.name || 'User';
 
   return (
     <header className={`shadow-lg ${
@@ -49,12 +54,32 @@ export function ReceptionHeader({ activeTab, onTabChange }: ReceptionHeaderProps
             <BranchSelector />
           </div>
 
-          {/* User & Exit */}
+          {/* User, Operator Switch & Exit */}
           <div className="flex items-center gap-3">
+            {/* Operator Switch Button */}
+            {onOperatorSwitch && (
+              <button
+                onClick={onOperatorSwitch}
+                className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-sm"
+                title="Switch Operator"
+              >
+                <UserCog className="w-4 h-4" />
+                <span className="hidden md:inline">Switch</span>
+              </button>
+            )}
+
+            {/* Current User/Operator */}
             <div className="hidden md:flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg">
               <User className="w-4 h-4" />
-              <span className="text-sm font-medium">{user?.name || 'User'}</span>
+              <span className="text-sm font-medium">{displayName}</span>
+              {currentOperator && (
+                <span className="text-xs bg-yellow-500/30 text-yellow-100 px-1.5 py-0.5 rounded">
+                  Operator
+                </span>
+              )}
             </div>
+
+            {/* Exit Button */}
             <button
               onClick={() => setReceptionMode(false)}
               className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-sm"
