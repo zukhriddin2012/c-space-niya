@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
+import { randomInt } from 'crypto';
 import { withAuth } from '@/lib/api-auth';
 import { PERMISSIONS } from '@/lib/permissions';
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/db/connection';
@@ -11,7 +12,7 @@ import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/db/connection';
  * By default, only assigns to employees without a PIN.
  * Pass { overwrite: true } to reassign PINs for ALL employees.
  *
- * PINs are unique within each branch.
+ * PINs are unique within each branch (enforced in-batch).
  * Returns the generated PINs (plaintext) so the admin can distribute them.
  */
 async function handler(
@@ -80,7 +81,6 @@ async function handler(
       employeesByBranch.get(bId)!.push(emp);
     }
 
-    // For each branch, get existing PINs to avoid duplicates
     const results: Array<{
       employeeId: string;
       employeeName: string;
@@ -89,57 +89,41 @@ async function handler(
     }> = [];
 
     for (const [bId, branchEmployees] of employeesByBranch) {
-      // Get all existing PIN hashes in this branch
-      const { data: existingEmployees } = await supabaseAdmin!
-        .from('employees')
-        .select('id, operator_pin_hash')
-        .eq('branch_id', bId)
-        .not('operator_pin_hash', 'is', null);
-
-      // Collect existing plaintext PINs is not possible (they're hashed),
-      // so we track the new PINs we generate to avoid duplicates among new ones.
-      // For existing PINs, we do a bcrypt compare check.
-      const newPinsInBranch = new Set<string>();
+      // Step 1: Generate unique PINs for this branch (in-memory Set, O(1) lookups)
+      const usedPins = new Set<string>();
+      const pinAssignments: Array<{
+        emp: (typeof branchEmployees)[0];
+        pin: string;
+      }> = [];
 
       for (const emp of branchEmployees) {
         let pin: string;
-        let isUnique = false;
         let attempts = 0;
 
-        // Generate a unique 6-digit PIN for this branch
         do {
-          pin = String(Math.floor(100000 + Math.random() * 900000));
+          pin = String(randomInt(100000, 1000000));
           attempts++;
+        } while (usedPins.has(pin) && attempts < 100);
 
-          // Check against other new PINs in this batch
-          if (newPinsInBranch.has(pin)) {
-            continue;
-          }
-
-          // Check against existing PINs in the branch (skip the employee's own)
-          isUnique = true;
-          if (existingEmployees) {
-            for (const existing of existingEmployees) {
-              // Skip the employee we're assigning to (if overwriting)
-              if (existing.id === emp.id) continue;
-              if (!existing.operator_pin_hash) continue;
-
-              const match = await bcrypt.compare(pin, existing.operator_pin_hash);
-              if (match) {
-                isUnique = false;
-                break;
-              }
-            }
-          }
-        } while (!isUnique && attempts < 50);
-
-        if (!isUnique) {
-          console.warn(`Could not generate unique PIN for employee ${emp.id} after 50 attempts`);
+        if (usedPins.has(pin)) {
+          console.warn(`Could not generate unique PIN for employee ${emp.id} after 100 attempts`);
           continue;
         }
 
-        // Hash and save
+        usedPins.add(pin);
+        pinAssignments.push({ emp, pin });
+      }
+
+      // Step 2: Hash all PINs in parallel (much faster than sequential)
+      const hashPromises = pinAssignments.map(async ({ emp, pin }) => {
         const pinHash = await bcrypt.hash(pin, 10);
+        return { emp, pin, pinHash };
+      });
+
+      const hashed = await Promise.all(hashPromises);
+
+      // Step 3: Save all to DB in parallel
+      const savePromises = hashed.map(async ({ emp, pin, pinHash }) => {
         const { error: updateError } = await supabaseAdmin!
           .from('employees')
           .update({ operator_pin_hash: pinHash })
@@ -147,17 +131,19 @@ async function handler(
 
         if (updateError) {
           console.error(`Error setting PIN for employee ${emp.id}:`, updateError);
-          continue;
+          return null;
         }
 
-        newPinsInBranch.add(pin);
-        results.push({
+        return {
           employeeId: emp.id,
           employeeName: emp.full_name,
           branchId: bId,
           pin,
-        });
-      }
+        };
+      });
+
+      const saved = await Promise.all(savePromises);
+      results.push(...saved.filter((r): r is NonNullable<typeof r> => r !== null));
     }
 
     return NextResponse.json({

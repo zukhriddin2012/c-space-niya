@@ -22,7 +22,7 @@ async function handlePost(
       return NextResponse.json({ error: 'branch_id_and_password_required' }, { status: 400 });
     }
 
-    if (password.length < 4) {
+    if (password.length < 8) {
       return NextResponse.json({ error: 'password_too_short' }, { status: 400 });
     }
 

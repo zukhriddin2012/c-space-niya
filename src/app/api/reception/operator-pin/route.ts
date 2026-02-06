@@ -121,4 +121,4 @@ async function handler(
   }
 }
 
-export const POST = withAuth(handler, { permission: PERMISSIONS.RECEPTION_VIEW });
+export const POST = withAuth(handler, { permission: PERMISSIONS.OPERATOR_PIN_MANAGE, allowKiosk: true });

@@ -61,8 +61,8 @@ export default function KioskPasswordPage() {
     setError(null);
     setSuccess(null);
 
-    if (!newPassword || newPassword.length < 4) {
-      setError('Password must be at least 4 characters');
+    if (!newPassword || newPassword.length < 8) {
+      setError('Password must be at least 8 characters');
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -245,7 +245,7 @@ export default function KioskPasswordPage() {
                     type="password"
                     value={newPassword}
                     onChange={(e) => { setNewPassword(e.target.value); setError(null); }}
-                    placeholder="Min. 4 characters"
+                    placeholder="Min. 8 characters"
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-200"
                     disabled={saving}
                   />
