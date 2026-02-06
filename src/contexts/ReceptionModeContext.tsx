@@ -50,17 +50,15 @@ const MODE_STORAGE_KEY = 'reception_mode_active';
 const OPERATOR_STORAGE_KEY = 'reception_current_operator';
 
 export function ReceptionModeProvider({ children }: { children: ReactNode }) {
-  // Mode state - starts false, then restores from storage after mount
-  const [isReceptionMode, setIsReceptionModeState] = useState(false);
+  // Mode state — restore synchronously to prevent operator being cleared on mount
+  const [isReceptionMode, setIsReceptionModeState] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return sessionStorage.getItem(MODE_STORAGE_KEY) === 'true';
+  });
   const isInitialMount = useRef(true);
 
-  // Restore mode from sessionStorage after mount (avoids hydration mismatch)
+  // Mark initial mount complete after first render
   useEffect(() => {
-    const stored = sessionStorage.getItem(MODE_STORAGE_KEY);
-    if (stored === 'true') {
-      setIsReceptionModeState(true);
-    }
-    // Mark initial mount complete after a tick to ensure state is set
     setTimeout(() => {
       isInitialMount.current = false;
     }, 0);
@@ -88,32 +86,29 @@ export function ReceptionModeProvider({ children }: { children: ReactNode }) {
   const [showBranchSwitchConfirm, setShowBranchSwitchConfirm] = useState(false);
   const [pendingBranchId, setPendingBranchId] = useState<string | null>(null);
 
-  // Operator identity state (R6a)
-  const [currentOperator, setCurrentOperator] = useState<OperatorIdentity | null>(null);
-
-  // H-06: Restore operator from sessionStorage — with session expiry check
-  useEffect(() => {
-    const stored = sessionStorage.getItem(OPERATOR_STORAGE_KEY);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        const MAX_SESSION_AGE_MS = 8 * 60 * 60 * 1000; // 8 hours
-        // If stored as new format with timestamp, validate age
-        if (parsed.operator && parsed.timestamp) {
-          if (Date.now() - parsed.timestamp > MAX_SESSION_AGE_MS) {
-            sessionStorage.removeItem(OPERATOR_STORAGE_KEY);
-            return;
-          }
-          setCurrentOperator(parsed.operator as OperatorIdentity);
-        } else {
-          // Legacy format (OperatorIdentity directly) — clear for safety
+  // Operator identity state (R6a) — restore synchronously to avoid race condition
+  const [currentOperator, setCurrentOperator] = useState<OperatorIdentity | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const stored = sessionStorage.getItem(OPERATOR_STORAGE_KEY);
+      if (!stored) return null;
+      const parsed = JSON.parse(stored);
+      const MAX_SESSION_AGE_MS = 8 * 60 * 60 * 1000; // 8 hours
+      if (parsed.operator && parsed.timestamp) {
+        if (Date.now() - parsed.timestamp > MAX_SESSION_AGE_MS) {
           sessionStorage.removeItem(OPERATOR_STORAGE_KEY);
+          return null;
         }
-      } catch {
-        sessionStorage.removeItem(OPERATOR_STORAGE_KEY);
+        return parsed.operator as OperatorIdentity;
       }
+      // Legacy format — clear
+      sessionStorage.removeItem(OPERATOR_STORAGE_KEY);
+      return null;
+    } catch {
+      sessionStorage.removeItem(OPERATOR_STORAGE_KEY);
+      return null;
     }
-  }, []);
+  });
 
   // Persist operator changes to sessionStorage
   const persistOperator = useCallback((operator: OperatorIdentity | null) => {
@@ -231,9 +226,14 @@ export function ReceptionModeProvider({ children }: { children: ReactNode }) {
     }
   }, [isReceptionMode, fetchBranches]);
 
-  // Clear operator when leaving reception mode or switching branches
+  // Clear operator when leaving reception mode — but skip on initial mount
+  // (isReceptionMode starts false and gets restored from sessionStorage async)
+  const hasReceptionModeBeenSet = useRef(false);
   useEffect(() => {
-    if (!isReceptionMode) {
+    if (isReceptionMode) {
+      hasReceptionModeBeenSet.current = true;
+    } else if (hasReceptionModeBeenSet.current) {
+      // Only clear when user actually leaves reception mode, not on initial mount
       persistOperator(null);
     }
   }, [isReceptionMode, persistOperator]);

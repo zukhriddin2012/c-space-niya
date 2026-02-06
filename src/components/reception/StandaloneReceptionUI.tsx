@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, lazy, Suspense, useCallback } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import {
   Receipt,
   LayoutDashboard,
@@ -86,19 +86,10 @@ function KioskInner({ branchId, branchName, expiresAt, onLogout }: StandaloneRec
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Show PIN overlay when no operator is set (only after initial load)
-  const hasShownInitialPin = useRef(false);
+  // Show PIN overlay when no operator is set (only after initialization)
   useEffect(() => {
     if (!currentOperator && initializedRef.current) {
-      if (!hasShownInitialPin.current) {
-        // First load: small delay for UI to render
-        const timer = setTimeout(() => setShowOperatorSwitch(true), 500);
-        hasShownInitialPin.current = true;
-        return () => clearTimeout(timer);
-      } else {
-        // Subsequent clears (e.g. operator logout): show immediately
-        setShowOperatorSwitch(true);
-      }
+      setShowOperatorSwitch(true);
     }
   }, [currentOperator]);
 
