@@ -148,7 +148,7 @@ export default function ReceptionTransactions() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [showBranchColumn, setShowBranchColumn] = useState(false);
-  const [sortBy, setSortBy] = useState<'date' | 'amount' | 'created'>('created');
+  const [sortBy, setSortBy] = useState<'date' | 'amount' | 'created'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const pageSize = 15;
 
@@ -445,12 +445,12 @@ export default function ReceptionTransactions() {
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   <button
-                    onClick={() => handleSort('created')}
+                    onClick={() => handleSort('date')}
                     className="inline-flex items-center hover:text-gray-700"
                   >
                     <Calendar className="w-3 h-3 mr-1" />
                     Date & Time
-                    <SortIcon column="created" />
+                    <SortIcon column="date" />
                   </button>
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Transaction</th>

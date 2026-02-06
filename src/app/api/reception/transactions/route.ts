@@ -25,7 +25,7 @@ export const GET = withAuth(async (request: NextRequest, { user }) => {
     const dateTo = searchParams.get('dateTo');
     const search = searchParams.get('search');
     const includeVoided = searchParams.get('includeVoided') === 'true';
-    const sortBy = searchParams.get('sortBy') || 'created'; // 'date', 'amount', 'created'
+    const sortBy = searchParams.get('sortBy') || 'date'; // 'date', 'amount', 'created'
     const sortOrder = searchParams.get('sortOrder') || 'desc'; // 'asc', 'desc'
 
     // Build query
