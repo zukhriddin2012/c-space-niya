@@ -5,6 +5,7 @@ import { useReceptionMode, getOperatorHeaders } from '@/contexts/ReceptionModeCo
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import { Scale, Wrench, Calculator, Plus, ArrowLeft, Loader2 } from 'lucide-react';
+import HowItWorksButton from './HowItWorksButton';
 
 type RequestSubView = 'hub' | 'accounting' | 'legal' | 'maintenance';
 
@@ -122,11 +123,14 @@ export default function ReceptionRequests() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Requests Hub</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Access all request management systems
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Requests Hub</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Access all request management systems
+          </p>
+        </div>
+        <HowItWorksButton moduleKey="requests-hub" />
       </div>
 
       {/* Cards Grid */}

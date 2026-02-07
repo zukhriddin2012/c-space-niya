@@ -1,0 +1,1527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C-Space Niya — Onboarding "How it works?" — Product + Design Mockup</title>
+<style>
+  :root {
+    --purple: #7C3AED;
+    --purple-light: #A78BFA;
+    --purple-dark: #5B21B6;
+    --purple-bg: #F5F3FF;
+    --teal: #2DCCD3;
+    --green: #10B981;
+    --orange: #F59E0B;
+    --red: #EF4444;
+    --gray-50: #F9FAFB;
+    --gray-100: #F3F4F6;
+    --gray-200: #E5E7EB;
+    --gray-300: #D1D5DB;
+    --gray-500: #6B7280;
+    --gray-700: #374151;
+    --gray-900: #111827;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F0EDFF; color: var(--gray-900); }
+
+  /* ========= SPEC SECTION ========= */
+  .spec-section {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 0 20px;
+  }
+  .spec-header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  .spec-header h1 {
+    font-size: 32px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--purple), var(--purple-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+  .spec-header .subtitle {
+    color: var(--gray-500);
+    font-size: 16px;
+  }
+  .spec-header .badges {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 16px;
+  }
+  .spec-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .spec-badge.product { background: #DBEAFE; color: #1D4ED8; }
+  .spec-badge.design { background: #FCE7F3; color: #BE185D; }
+  .spec-badge.status { background: #FEF3C7; color: #92400E; }
+
+  .spec-card {
+    background: white;
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    border: 1px solid var(--gray-100);
+  }
+  .spec-card h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .spec-card h2 .icon { font-size: 24px; }
+  .spec-card h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--gray-700);
+    margin: 16px 0 8px;
+  }
+  .spec-card p, .spec-card li {
+    color: var(--gray-500);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+  .spec-card ul {
+    padding-left: 20px;
+  }
+  .spec-card li { margin-bottom: 4px; }
+
+  .db-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 13px;
+  }
+  .db-table th {
+    background: var(--purple-bg);
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--purple-dark);
+    border-bottom: 2px solid var(--purple-light);
+  }
+  .db-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--gray-100);
+    color: var(--gray-700);
+  }
+  .db-table code {
+    background: var(--gray-100);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: 'Fira Code', monospace;
+  }
+
+  /* Decision table */
+  .decision-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .decision-item {
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid var(--gray-200);
+  }
+  .decision-item.chosen {
+    border-color: var(--green);
+    background: #F0FDF4;
+  }
+  .decision-item.alt {
+    border-color: var(--gray-200);
+    background: var(--gray-50);
+    opacity: .7;
+  }
+  .decision-item .label {
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+  .decision-item.chosen .label { color: #065F46; }
+  .decision-item.alt .label { color: var(--gray-500); }
+  .decision-item .desc {
+    font-size: 12px;
+    color: var(--gray-500);
+  }
+
+  /* ========= DIVIDER ========= */
+  .proto-divider {
+    text-align: center;
+    margin: 60px auto 40px;
+    max-width: 900px;
+    padding: 0 20px;
+  }
+  .proto-divider h2 {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--purple);
+    margin-bottom: 8px;
+  }
+  .proto-divider p { color: var(--gray-500); font-size: 14px; }
+
+  /* ========= PROTOTYPE SHELL ========= */
+  .proto-shell {
+    max-width: 1100px;
+    margin: 0 auto 60px;
+    padding: 0 20px;
+  }
+  .browser-frame {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(124,58,237,.15), 0 4px 12px rgba(0,0,0,.06);
+    border: 1px solid var(--gray-200);
+  }
+  .browser-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--gray-50);
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .browser-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+  }
+  .browser-dot.r { background: #EF4444; }
+  .browser-dot.y { background: #F59E0B; }
+  .browser-dot.g { background: #10B981; }
+  .browser-url {
+    flex: 1;
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--gray-500);
+    margin-left: 8px;
+  }
+
+  /* App inside browser */
+  .app-header {
+    background: linear-gradient(135deg, #7C3AED, #6D28D9);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .app-header .logo {
+    color: white;
+    font-weight: 800;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .app-header .nav {
+    display: flex;
+    gap: 4px;
+  }
+  .app-header .nav-item {
+    color: rgba(255,255,255,.6);
+    font-size: 13px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .app-header .nav-item.active, .app-header .nav-item:hover {
+    background: rgba(255,255,255,.15);
+    color: white;
+  }
+  .app-content {
+    padding: 32px;
+    background: var(--gray-50);
+    min-height: 500px;
+    position: relative;
+  }
+
+  /* Requests Hub mock */
+  .hub-title { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+  .hub-sub { color: var(--gray-500); font-size: 14px; margin-bottom: 8px; }
+  .hub-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  /* HOW IT WORKS BUTTON */
+  .how-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .3s;
+    box-shadow: 0 2px 8px rgba(124,58,237,.3);
+    animation: pulse-btn 2s infinite;
+  }
+  .how-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(124,58,237,.4);
+  }
+  @keyframes pulse-btn {
+    0%, 100% { box-shadow: 0 2px 8px rgba(124,58,237,.3); }
+    50% { box-shadow: 0 2px 20px rgba(124,58,237,.5); }
+  }
+  .how-btn svg { width: 16px; height: 16px; }
+
+  .hub-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .hub-card {
+    background: white;
+    border-radius: 14px;
+    padding: 24px;
+    border: 1px solid var(--gray-200);
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .hub-card:hover { border-color: var(--purple-light); box-shadow: 0 4px 12px rgba(124,58,237,.1); }
+  .hub-card .card-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+  .hub-card .card-icon.purple { background: var(--purple-bg); }
+  .hub-card .card-icon.blue { background: #DBEAFE; }
+  .hub-card .card-icon.orange { background: #FEF3C7; }
+  .hub-card .card-count {
+    float: right;
+    color: var(--red);
+    font-size: 22px;
+    font-weight: 800;
+  }
+  .hub-card .card-count small { font-size: 11px; font-weight: 500; display: block; }
+  .hub-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .hub-card p { font-size: 12px; color: var(--gray-500); }
+
+  /* ========= FLOATING ONBOARDING MODAL ========= */
+  .onboard-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,.4);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .4s ease;
+  }
+  .onboard-overlay.show {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .onboard-modal {
+    background: white;
+    border-radius: 20px;
+    width: 680px;
+    max-height: 90%;
+    overflow: hidden;
+    box-shadow: 0 25px 80px rgba(0,0,0,.2);
+    transform: scale(.9) translateY(20px);
+    transition: transform .4s cubic-bezier(.34,1.56,.64,1);
+    display: flex;
+    flex-direction: column;
+  }
+  .onboard-overlay.show .onboard-modal {
+    transform: scale(1) translateY(0);
+  }
+
+  /* Modal header */
+  .onboard-header {
+    padding: 20px 24px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .onboard-header .title-area h3 {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--purple);
+  }
+  .onboard-header .title-area p {
+    font-size: 12px;
+    color: var(--gray-500);
+  }
+  .onboard-header .controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Language toggle */
+  .lang-toggle {
+    display: flex;
+    background: var(--gray-100);
+    border-radius: 8px;
+    padding: 2px;
+  }
+  .lang-btn {
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    color: var(--gray-500);
+    background: transparent;
+    transition: all .2s;
+  }
+  .lang-btn.active {
+    background: white;
+    color: var(--purple);
+    box-shadow: 0 1px 3px rgba(0,0,0,.1);
+  }
+
+  .close-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: var(--gray-100);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .2s;
+    font-size: 16px;
+    color: var(--gray-500);
+  }
+  .close-btn:hover {
+    background: var(--red);
+    color: white;
+  }
+
+  /* Progress bar */
+  .onboard-progress {
+    padding: 16px 24px 0;
+  }
+  .progress-bar {
+    height: 4px;
+    background: var(--gray-100);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--purple), var(--teal));
+    border-radius: 4px;
+    transition: width .5s cubic-bezier(.4,0,.2,1);
+  }
+  .progress-steps {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+  }
+  .progress-step {
+    font-size: 10px;
+    color: var(--gray-300);
+    font-weight: 600;
+    cursor: pointer;
+    transition: color .2s;
+  }
+  .progress-step.active { color: var(--purple); }
+  .progress-step.done { color: var(--green); }
+
+  /* Slide content */
+  .onboard-body {
+    flex: 1;
+    padding: 24px;
+    overflow: hidden;
+    position: relative;
+    min-height: 320px;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    padding: 24px;
+    display: flex;
+    gap: 24px;
+    opacity: 0;
+    transform: translateX(60px);
+    transition: all .5s cubic-bezier(.4,0,.2,1);
+    pointer-events: none;
+  }
+  .slide.active {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: all;
+  }
+  .slide.exit-left {
+    opacity: 0;
+    transform: translateX(-60px);
+  }
+
+  .slide-visual {
+    width: 260px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .slide-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .slide-text .step-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--purple-light);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .slide-text h4 {
+    font-size: 20px;
+    font-weight: 800;
+    margin-bottom: 12px;
+    line-height: 1.3;
+  }
+  .slide-text p {
+    font-size: 14px;
+    color: var(--gray-500);
+    line-height: 1.7;
+    margin-bottom: 12px;
+  }
+  .slide-text .tip {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 14px;
+    background: #FFFBEB;
+    border-radius: 10px;
+    border: 1px solid #FDE68A;
+    font-size: 12px;
+    color: #92400E;
+  }
+  .slide-text .tip .tip-icon { flex-shrink: 0; font-size: 16px; }
+
+  /* SVG Animations */
+  .anim-container {
+    width: 220px;
+    height: 220px;
+    position: relative;
+  }
+  .anim-container svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Animated elements */
+  @keyframes float-y {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  @keyframes dash-draw {
+    to { stroke-dashoffset: 0; }
+  }
+  @keyframes pop-in {
+    0% { transform: scale(0); opacity: 0; }
+    60% { transform: scale(1.15); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes slide-up {
+    0% { transform: translateY(20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+  @keyframes typing {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+  @keyframes check-mark {
+    0% { stroke-dashoffset: 20; }
+    100% { stroke-dashoffset: 0; }
+  }
+  @keyframes coin-drop {
+    0% { transform: translateY(-30px); opacity: 0; }
+    60% { transform: translateY(3px); }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+  @keyframes ring-pulse {
+    0% { transform: scale(1); opacity: .6; }
+    100% { transform: scale(1.6); opacity: 0; }
+  }
+  .float-anim { animation: float-y 3s ease-in-out infinite; }
+  .pop-anim { animation: pop-in .6s ease-out forwards; }
+  .slide-up-anim { animation: slide-up .5s ease-out forwards; }
+
+  /* Footer nav */
+  .onboard-footer {
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid var(--gray-100);
+  }
+  .skip-btn {
+    font-size: 13px;
+    color: var(--gray-500);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .skip-btn:hover { color: var(--gray-700); }
+  .nav-btns {
+    display: flex;
+    gap: 8px;
+  }
+  .nav-btn {
+    padding: 8px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+    border: none;
+  }
+  .nav-btn.secondary {
+    background: var(--gray-100);
+    color: var(--gray-700);
+  }
+  .nav-btn.secondary:hover { background: var(--gray-200); }
+  .nav-btn.primary {
+    background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+    color: white;
+    box-shadow: 0 2px 8px rgba(124,58,237,.3);
+  }
+  .nav-btn.primary:hover {
+    box-shadow: 0 4px 16px rgba(124,58,237,.4);
+    transform: translateY(-1px);
+  }
+  .nav-btn.finish {
+    background: linear-gradient(135deg, var(--green), #059669);
+    color: white;
+  }
+
+  /* Dot indicators */
+  .dot-nav {
+    display: flex;
+    gap: 6px;
+  }
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--gray-200);
+    cursor: pointer;
+    transition: all .3s;
+  }
+  .dot.active {
+    width: 24px;
+    border-radius: 4px;
+    background: var(--purple);
+  }
+  .dot.done { background: var(--green); }
+
+  /* Interactive highlight boxes in slides */
+  .feature-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 8px 0;
+  }
+  .feature-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--gray-700);
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: var(--gray-50);
+    border: 1px solid var(--gray-100);
+  }
+  .feature-item .fi-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .feature-item .fi-icon.green { background: #D1FAE5; }
+  .feature-item .fi-icon.blue { background: #DBEAFE; }
+  .feature-item .fi-icon.purple { background: var(--purple-bg); }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .slide { flex-direction: column; }
+    .slide-visual { width: 100%; height: 160px; }
+    .onboard-modal { width: 95%; }
+    .hub-cards { grid-template-columns: 1fr; }
+    .decision-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== PRODUCT SPEC ==================== -->
+<div class="spec-section">
+  <div class="spec-header">
+    <h1>Onboarding System — "How it works?"</h1>
+    <p class="subtitle">Product Spec + Design Mockup — C-Space Niya Reception Platform</p>
+    <div class="badges">
+      <span class="spec-badge product">Product Spec</span>
+      <span class="spec-badge design">Design Mockup</span>
+      <span class="spec-badge status">Pre-Development Review</span>
+    </div>
+  </div>
+
+  <!-- PRODUCT VISION -->
+  <div class="spec-card">
+    <h2><span class="icon">🎯</span> Product Vision</h2>
+    <p>Every reception operator — from first-day hires to experienced staff — should be able to understand and use the system in under 5 minutes. The onboarding system provides contextual, animated walkthroughs in all 3 languages (UZ/EN/RU) that live directly inside the app.</p>
+
+    <h3>Problem</h3>
+    <p>New operators face a learning curve with 6+ modules (Dashboard, Transactions, Expenses, Requests, Shifts, Kiosk). Without guidance, they make mistakes: wrong payment methods, missed transaction codes, confusion about request types.</p>
+
+    <h3>Solution</h3>
+    <p>A floating "How it works?" guide that opens as an overlay modal — no page navigation, no disruption. Each module gets its own step-by-step walkthrough with animated illustrations showing the actual flow.</p>
+  </div>
+
+  <!-- DESIGN DECISIONS -->
+  <div class="spec-card">
+    <h2><span class="icon">🎨</span> Design Decisions</h2>
+    <div class="decision-grid">
+      <div class="decision-item chosen">
+        <div class="label">✅ Floating Modal Overlay</div>
+        <div class="desc">Opens on top of current page. No navigation away. Close anytime. Feels lightweight and non-intrusive.</div>
+      </div>
+      <div class="decision-item alt">
+        <div class="label">Full-page Onboarding</div>
+        <div class="desc">Takes over the entire screen. Feels heavy. User loses context of where they were.</div>
+      </div>
+      <div class="decision-item chosen">
+        <div class="label">✅ SVG Animations (CSS)</div>
+        <div class="desc">Lightweight, crisp at any size, fast loading. No video files to host. Works offline in kiosk.</div>
+      </div>
+      <div class="decision-item alt">
+        <div class="label">Embedded Video</div>
+        <div class="desc">Heavy files, needs hosting, doesn't work offline, harder to update and localize.</div>
+      </div>
+      <div class="decision-item chosen">
+        <div class="label">✅ Per-Page Context Guides</div>
+        <div class="desc">Each page has its own "How it works?" that shows steps relevant to THAT page only.</div>
+      </div>
+      <div class="decision-item alt">
+        <div class="label">Single Global Tour</div>
+        <div class="desc">One long walkthrough for everything. Overwhelming. User forgets by the end.</div>
+      </div>
+      <div class="decision-item chosen">
+        <div class="label">✅ DB-Driven Content</div>
+        <div class="desc">Onboarding steps stored in DB. Admin can edit text/order without code changes. Ready for future Onboarding page.</div>
+      </div>
+      <div class="decision-item alt">
+        <div class="label">Hardcoded in Components</div>
+        <div class="desc">Faster to build but impossible to update without deploys. No admin control.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- USER FLOW -->
+  <div class="spec-card">
+    <h2><span class="icon">🔄</span> User Flow</h2>
+    <p><strong>Trigger:</strong> "How it works?" button appears on every major page (top-right, next to filters). Also auto-opens on first visit per module (tracked per user).</p>
+
+    <h3>Flow</h3>
+    <p>
+      1. User lands on page → sees "How it works?" button (with pulse animation on first visit)<br>
+      2. Click → floating modal opens with backdrop blur<br>
+      3. Language toggle (UZ/EN/RU) at top — remembers preference<br>
+      4. Step-by-step slides with animated illustrations<br>
+      5. Progress bar + dot navigation + Next/Back buttons<br>
+      6. "Skip" link always visible for experienced users<br>
+      7. Final slide: "You're ready!" with action button to start using the module<br>
+      8. Close → mark as completed in DB (don't auto-show again)
+    </p>
+  </div>
+
+  <!-- ONBOARDING MODULES -->
+  <div class="spec-card">
+    <h2><span class="icon">📚</span> Onboarding Modules (7 Guides)</h2>
+    <table class="db-table">
+      <thead>
+        <tr>
+          <th>Module</th>
+          <th>Page</th>
+          <th>Steps</th>
+          <th>Key Topics</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Welcome</strong></td>
+          <td>/reception</td>
+          <td>4</td>
+          <td>Platform overview, Dashboard stats, Quick actions, Navigation</td>
+        </tr>
+        <tr>
+          <td><strong>Transactions</strong></td>
+          <td>/reception/transactions</td>
+          <td>5</td>
+          <td>Recording sales, Payment methods (Payme/Click/Uzum codes), Searching, Voiding</td>
+        </tr>
+        <tr>
+          <td><strong>Expenses</strong></td>
+          <td>/reception/expenses</td>
+          <td>4</td>
+          <td>Logging expenses, Cash vs Bank, Quick date filters, Voiding</td>
+        </tr>
+        <tr>
+          <td><strong>Requests Hub</strong></td>
+          <td>/reception/requests</td>
+          <td>5</td>
+          <td>Three request types, Creating requests, Status tracking, Priorities</td>
+        </tr>
+        <tr>
+          <td><strong>Shifts</strong></td>
+          <td>/reception/shifts</td>
+          <td>3</td>
+          <td>Weekly view, Status meanings, Navigation</td>
+        </tr>
+        <tr>
+          <td><strong>Kiosk Mode</strong></td>
+          <td>/kiosk</td>
+          <td>4</td>
+          <td>PIN entry, Operator switching, Auto-refresh, Branch selection</td>
+        </tr>
+        <tr>
+          <td><strong>Settings</strong></td>
+          <td>/settings</td>
+          <td>3</td>
+          <td>Service/expense/payment types, Branch access, Operator PIN setup</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- DB SCHEMA -->
+  <div class="spec-card">
+    <h2><span class="icon">🗄️</span> Proposed Database Schema</h2>
+    <p>Two tables — one for the guide content (admin-editable), one for tracking user progress.</p>
+
+    <h3>Table: <code>onboarding_guides</code></h3>
+    <table class="db-table">
+      <thead>
+        <tr><th>Column</th><th>Type</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>id</code></td><td>uuid PK</td><td>Unique guide ID</td></tr>
+        <tr><td><code>module_key</code></td><td>text UNIQUE</td><td>"welcome", "transactions", "expenses", "requests", "shifts", "kiosk", "settings"</td></tr>
+        <tr><td><code>page_path</code></td><td>text</td><td>Route path where this guide triggers: "/reception", "/reception/transactions"</td></tr>
+        <tr><td><code>is_active</code></td><td>boolean</td><td>Enable/disable this guide without deleting</td></tr>
+        <tr><td><code>auto_show</code></td><td>boolean</td><td>Auto-open on first visit?</td></tr>
+        <tr><td><code>sort_order</code></td><td>int</td><td>Display order if listing all guides</td></tr>
+        <tr><td><code>created_at</code></td><td>timestamptz</td><td></td></tr>
+        <tr><td><code>updated_at</code></td><td>timestamptz</td><td></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Table: <code>onboarding_steps</code></h3>
+    <table class="db-table">
+      <thead>
+        <tr><th>Column</th><th>Type</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>id</code></td><td>uuid PK</td><td>Unique step ID</td></tr>
+        <tr><td><code>guide_id</code></td><td>uuid FK</td><td>References onboarding_guides.id</td></tr>
+        <tr><td><code>step_number</code></td><td>int</td><td>Order within the guide (1, 2, 3...)</td></tr>
+        <tr><td><code>title_en</code></td><td>text</td><td>Step title in English</td></tr>
+        <tr><td><code>title_ru</code></td><td>text</td><td>Step title in Russian</td></tr>
+        <tr><td><code>title_uz</code></td><td>text</td><td>Step title in Uzbek</td></tr>
+        <tr><td><code>body_en</code></td><td>text</td><td>Body text in English</td></tr>
+        <tr><td><code>body_ru</code></td><td>text</td><td>Body text in Russian</td></tr>
+        <tr><td><code>body_uz</code></td><td>text</td><td>Body text in Uzbek</td></tr>
+        <tr><td><code>tip_en</code></td><td>text NULL</td><td>Optional tip/note in English</td></tr>
+        <tr><td><code>tip_ru</code></td><td>text NULL</td><td>Optional tip/note in Russian</td></tr>
+        <tr><td><code>tip_uz</code></td><td>text NULL</td><td>Optional tip/note in Uzbek</td></tr>
+        <tr><td><code>animation_key</code></td><td>text</td><td>CSS animation identifier: "dashboard-stats", "record-transaction", "payment-flow"</td></tr>
+        <tr><td><code>is_active</code></td><td>boolean</td><td></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Table: <code>onboarding_progress</code></h3>
+    <table class="db-table">
+      <thead>
+        <tr><th>Column</th><th>Type</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>id</code></td><td>uuid PK</td><td></td></tr>
+        <tr><td><code>user_id</code></td><td>uuid FK</td><td>References auth.users</td></tr>
+        <tr><td><code>guide_id</code></td><td>uuid FK</td><td>References onboarding_guides.id</td></tr>
+        <tr><td><code>completed</code></td><td>boolean</td><td>Has user finished this guide?</td></tr>
+        <tr><td><code>last_step</code></td><td>int</td><td>Last step viewed (for resume)</td></tr>
+        <tr><td><code>completed_at</code></td><td>timestamptz NULL</td><td></td></tr>
+        <tr><td><code>first_opened_at</code></td><td>timestamptz</td><td></td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top: 12px;"><strong>RLS Policy:</strong> Users can only read/write their own progress rows. Guides and steps are readable by all authenticated users. Only admins can edit guide content.</p>
+  </div>
+</div>
+
+<!-- ==================== INTERACTIVE PROTOTYPE ==================== -->
+<div class="proto-divider">
+  <h2>Interactive Prototype</h2>
+  <p>Click "How it works?" to experience the onboarding flow. Try switching languages!</p>
+</div>
+
+<div class="proto-shell">
+  <div class="browser-frame">
+    <div class="browser-bar">
+      <div class="browser-dot r"></div>
+      <div class="browser-dot y"></div>
+      <div class="browser-dot g"></div>
+      <div class="browser-url">niya.cspace.uz/reception/requests</div>
+    </div>
+
+    <!-- App Header -->
+    <div class="app-header">
+      <div class="logo">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect width="20" height="20" rx="5" fill="white" opacity=".2"/><rect x="3" y="3" width="6" height="6" rx="1.5" fill="white"/><rect x="11" y="3" width="6" height="6" rx="1.5" fill="white" opacity=".6"/><rect x="3" y="11" width="6" height="6" rx="1.5" fill="white" opacity=".6"/><rect x="11" y="11" width="6" height="6" rx="1.5" fill="white" opacity=".4"/></svg>
+        C-Space Niya
+      </div>
+      <div class="nav">
+        <div class="nav-item">Dashboard</div>
+        <div class="nav-item">Transactions</div>
+        <div class="nav-item">Expenses</div>
+        <div class="nav-item active">Requests</div>
+        <div class="nav-item">Shifts</div>
+      </div>
+    </div>
+
+    <!-- App Content -->
+    <div class="app-content" id="appContent">
+      <div class="hub-top-row">
+        <div>
+          <h2 class="hub-title">Requests Hub</h2>
+          <p class="hub-sub">Access all request management systems</p>
+        </div>
+        <button class="how-btn" onclick="openOnboarding()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span data-i18n="howBtn">How it works?</span>
+        </button>
+      </div>
+
+      <div class="hub-cards">
+        <div class="hub-card">
+          <div class="card-count">2<small>items</small></div>
+          <div class="card-icon purple">🧾</div>
+          <h3>Accounting Requests</h3>
+          <p>Reconciliations, payments, confirmations</p>
+        </div>
+        <div class="hub-card">
+          <div class="card-count">1<small>items</small></div>
+          <div class="card-icon blue">⚖️</div>
+          <h3>Legal Requests</h3>
+          <p>Contracts, agreements, registrations</p>
+        </div>
+        <div class="hub-card">
+          <div class="card-count">3<small>items</small></div>
+          <div class="card-icon orange">🔧</div>
+          <h3>Maintenance Issues</h3>
+          <p>Repairs, HVAC, electrical, cleaning</p>
+        </div>
+      </div>
+
+      <!-- ===== ONBOARDING OVERLAY ===== -->
+      <div class="onboard-overlay" id="onboardOverlay">
+        <div class="onboard-modal">
+          <!-- Header -->
+          <div class="onboard-header">
+            <div class="title-area">
+              <h3 data-i18n="modalTitle">Requests Hub Guide</h3>
+              <p data-i18n="modalSub">Learn how to manage all request types</p>
+            </div>
+            <div class="controls">
+              <div class="lang-toggle">
+                <button class="lang-btn active" onclick="setLang('en')">EN</button>
+                <button class="lang-btn" onclick="setLang('ru')">RU</button>
+                <button class="lang-btn" onclick="setLang('uz')">UZ</button>
+              </div>
+              <button class="close-btn" onclick="closeOnboarding()">✕</button>
+            </div>
+          </div>
+
+          <!-- Progress -->
+          <div class="onboard-progress">
+            <div class="progress-bar">
+              <div class="progress-fill" id="progressFill" style="width: 20%"></div>
+            </div>
+            <div class="progress-steps" id="progressSteps">
+              <span class="progress-step active" onclick="goToSlide(0)">Overview</span>
+              <span class="progress-step" onclick="goToSlide(1)">Accounting</span>
+              <span class="progress-step" onclick="goToSlide(2)">Legal</span>
+              <span class="progress-step" onclick="goToSlide(3)">Maintenance</span>
+              <span class="progress-step" onclick="goToSlide(4)">Ready!</span>
+            </div>
+          </div>
+
+          <!-- Slides -->
+          <div class="onboard-body">
+            <!-- SLIDE 1: Overview -->
+            <div class="slide active" id="slide-0">
+              <div class="slide-visual">
+                <div class="anim-container">
+                  <svg viewBox="0 0 220 220">
+                    <!-- Hub icon animated -->
+                    <rect x="40" y="30" width="140" height="160" rx="18" fill="#F5F3FF" stroke="#7C3AED" stroke-width="2" class="float-anim"/>
+                    <!-- Three cards pop in -->
+                    <g style="animation: pop-in .6s .2s ease-out both">
+                      <rect x="55" y="55" width="110" height="30" rx="8" fill="#EDE9FE"/>
+                      <circle cx="72" cy="70" r="8" fill="#7C3AED" opacity=".5"/>
+                      <rect x="86" y="64" width="60" height="5" rx="2" fill="#A78BFA"/>
+                      <rect x="86" y="72" width="40" height="3" rx="1.5" fill="#DDD6FE"/>
+                    </g>
+                    <g style="animation: pop-in .6s .5s ease-out both">
+                      <rect x="55" y="95" width="110" height="30" rx="8" fill="#DBEAFE"/>
+                      <circle cx="72" cy="110" r="8" fill="#3B82F6" opacity=".5"/>
+                      <rect x="86" y="104" width="60" height="5" rx="2" fill="#93C5FD"/>
+                      <rect x="86" y="112" width="40" height="3" rx="1.5" fill="#BFDBFE"/>
+                    </g>
+                    <g style="animation: pop-in .6s .8s ease-out both">
+                      <rect x="55" y="135" width="110" height="30" rx="8" fill="#FEF3C7"/>
+                      <circle cx="72" cy="150" r="8" fill="#F59E0B" opacity=".5"/>
+                      <rect x="86" y="144" width="60" height="5" rx="2" fill="#FCD34D"/>
+                      <rect x="86" y="152" width="40" height="3" rx="1.5" fill="#FDE68A"/>
+                    </g>
+                    <!-- Arrow pointing -->
+                    <path d="M20 110 L42 110" stroke="#7C3AED" stroke-width="2" stroke-dasharray="4 3" style="animation: dash-draw 1s .5s ease-out both; stroke-dashoffset: 30;">
+                    </path>
+                  </svg>
+                </div>
+              </div>
+              <div class="slide-text">
+                <div class="step-label" data-i18n="step1Label">Step 1 of 5</div>
+                <h4 data-i18n="step1Title">Your Request Command Center</h4>
+                <p data-i18n="step1Body">The Requests Hub is your central place to manage all types of requests. Each card shows the count of active items and links to the detailed list.</p>
+                <div class="feature-list">
+                  <div class="feature-item">
+                    <span class="fi-icon purple">🧾</span>
+                    <span data-i18n="step1f1">Accounting — payments, reconciliations, confirmations</span>
+                  </div>
+                  <div class="feature-item">
+                    <span class="fi-icon blue">⚖️</span>
+                    <span data-i18n="step1f2">Legal — contracts, agreements, registrations</span>
+                  </div>
+                  <div class="feature-item">
+                    <span class="fi-icon" style="background: #FEF3C7">🔧</span>
+                    <span data-i18n="step1f3">Maintenance — repairs, HVAC, electrical, cleaning</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SLIDE 2: Accounting -->
+            <div class="slide" id="slide-1">
+              <div class="slide-visual">
+                <div class="anim-container">
+                  <svg viewBox="0 0 220 220">
+                    <!-- Calculator/ledger animation -->
+                    <rect x="45" y="25" width="130" height="170" rx="14" fill="#EDE9FE" stroke="#7C3AED" stroke-width="2"/>
+                    <!-- Header -->
+                    <rect x="55" y="35" width="110" height="24" rx="6" fill="#7C3AED"/>
+                    <text x="110" y="52" text-anchor="middle" font-size="11" fill="white" font-weight="700">ACCOUNTING</text>
+                    <!-- Rows slide in -->
+                    <g style="animation: slide-up .4s .3s ease-out both">
+                      <rect x="55" y="68" width="110" height="22" rx="6" fill="white"/>
+                      <circle cx="68" cy="79" r="5" fill="#F59E0B"/>
+                      <rect x="78" y="75" width="50" height="4" rx="2" fill="#D1D5DB"/>
+                      <rect x="138" y="75" width="20" height="4" rx="2" fill="#10B981"/>
+                    </g>
+                    <g style="animation: slide-up .4s .5s ease-out both">
+                      <rect x="55" y="96" width="110" height="22" rx="6" fill="white"/>
+                      <circle cx="68" cy="107" r="5" fill="#3B82F6"/>
+                      <rect x="78" y="103" width="40" height="4" rx="2" fill="#D1D5DB"/>
+                      <rect x="138" y="103" width="20" height="4" rx="2" fill="#F59E0B"/>
+                    </g>
+                    <g style="animation: slide-up .4s .7s ease-out both">
+                      <rect x="55" y="124" width="110" height="22" rx="6" fill="white"/>
+                      <circle cx="68" cy="135" r="5" fill="#EF4444"/>
+                      <rect x="78" y="131" width="55" height="4" rx="2" fill="#D1D5DB"/>
+                      <rect x="138" y="131" width="20" height="4" rx="2" fill="#7C3AED"/>
+                    </g>
+                    <!-- Plus button -->
+                    <g style="animation: pop-in .5s 1s ease-out both">
+                      <circle cx="110" cy="168" r="14" fill="#7C3AED"/>
+                      <line x1="104" y1="168" x2="116" y2="168" stroke="white" stroke-width="2.5"/>
+                      <line x1="110" y1="162" x2="110" y2="174" stroke="white" stroke-width="2.5"/>
+                    </g>
+                  </svg>
+                </div>
+              </div>
+              <div class="slide-text">
+                <div class="step-label" data-i18n="step2Label">Step 2 of 5</div>
+                <h4 data-i18n="step2Title">Accounting Requests</h4>
+                <p data-i18n="step2Body">Track financial requests like reconciliations, payment approvals, and confirmations. Each request goes through a workflow from submission to completion.</p>
+                <div class="feature-list">
+                  <div class="feature-item">
+                    <span class="fi-icon green">✓</span>
+                    <span data-i18n="step2f1">3 types: Reconciliation, Payment, Confirmation</span>
+                  </div>
+                  <div class="feature-item">
+                    <span class="fi-icon blue">→</span>
+                    <span data-i18n="step2f2">Status flow: Pending → In Progress → Approved → Done</span>
+                  </div>
+                  <div class="feature-item">
+                    <span class="fi-icon purple">+</span>
+                    <span data-i18n="step2f3">Click "New Request" to create one</span>
+                  </div>
+                </div>
+                <div class="tip">
+                  <span class="tip-icon">💡</span>
+                  <span data-i18n="step2Tip">You can filter by status using the quick tabs at the top of the list!</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- SLIDE 3: Legal -->
+            <div class="slide" id="slide-2">
+              <div class="slide-visual">
+                <div class="anim-container">
+                  <svg viewBox="0 0 220 220">
+                    <!-- Legal document animation -->
+                    <rect x="55" y="20" width="110" height="140" rx="8" fill="white" stroke="#6366F1" stroke-width="2" class="float-anim"/>
+                    <!-- Document lines -->
+                    <rect x="68" y="35" width="70" height="5" rx="2" fill="#6366F1" opacity=".8"/>
+                    <rect x="68" y="48" width="84" height="3" rx="1.5" fill="#D1D5DB"/>
+                    <rect x="68" y="56" width="78" height="3" rx="1.5" fill="#D1D5DB"/>
+                    <rect x="68" y="64" width="60" height="3" rx="1.5" fill="#D1D5DB"/>
+                    <!-- Separator -->
+                    <line x1="68" y1="76" x2="152" y2="76" stroke="#E5E7EB" stroke-width="1"/>
+                    <!-- Signature area -->
+                    <rect x="68" y="84" width="50" height="3" rx="1.5" fill="#D1D5DB"/>
+                    <rect x="68" y="92" width="30" height="3" rx="1.5" fill="#D1D5DB"/>
+                    <!-- Signature animation -->
+                    <path d="M75 120 Q85 108 95 118 Q105 128 115 112 Q120 106 130 110" stroke="#6366F1" stroke-width="2" fill="none" stroke-linecap="round"
+                      stroke-dasharray="80" style="animation: dash-draw 2s .5s ease-out both; stroke-dashoffset: 80"/>
+                    <!-- Stamp -->
+                    <g style="animation: pop-in .4s 2s ease-out both">
+                      <circle cx="145" cy="130" r="18" fill="none" stroke="#10B981" stroke-width="2"/>
+                      <text x="145" y="134" text-anchor="middle" font-size="8" fill="#10B981" font-weight="700">OK</text>
+                    </g>
+                    <!-- Gavel -->
+                    <g style="animation: pop-in .5s 1.5s ease-out both">
+                      <rect x="30" y="170" width="50" height="10" rx="3" fill="#6366F1"/>
+                      <rect x="48" y="155" width="14" height="20" rx="3" fill="#8B5CF6"/>
+                    </g>
+                  </svg>
+                </div>
+              </div>
+              <div class="slide-text">
+                <div class="step-label" data-i18n="step3Label">Step 3 of 5</div>
+                <h4 data-i18n="step3Title">Legal Requests</h4>
+                <p data-i18n="step3Body">Manage contracts, supplementary agreements, terminations, and registrations. Track every legal document from submission through review to completion.</p>
+                <div class="feature-list">
+                  <div class="feature-item">
+                    <span class="fi-icon blue">📝</span>
+                    <span data-i18n="step3f1">5 types: Contracts, Supplements, Terminations, Registrations, Guarantees</span>
+                  </div>
+                  <div class="feature-item">
+                    <span class="fi-icon green">👤</span>
+                    <span data-i18n="step3f2">Each request gets assigned to a responsible person</span>
+                  </div>
+                </div>
+                <div class="tip">
+                  <span class="tip-icon">💡</span>
+                  <span data-i18n="step3Tip">Use the search bar to find requests by number or name quickly.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- SLIDE 4: Maintenance -->
+            <div class="slide" id="slide-3">
+              <div class="slide-visual">
+                <div class="anim-container">
+                  <svg viewBox="0 0 220 220">
+                    <!-- Building outline -->
+                    <rect x="40" y="60" width="140" height="130" rx="6" fill="#FEF3C7" stroke="#F59E0B" stroke-width="2"/>
+                    <!-- Windows -->
+                    <rect x="55" y="75" width="25" height="25" rx="3" fill="white" stroke="#FBBF24" stroke-width="1.5"/>
+                    <rect x="90" y="75" width="25" height="25" rx="3" fill="white" stroke="#FBBF24" stroke-width="1.5"/>
+                    <rect x="125" y="75" width="40" height="25" rx="3" fill="white" stroke="#FBBF24" stroke-width="1.5"/>
+                    <rect x="55" y="115" width="25" height="25" rx="3" fill="white" stroke="#FBBF24" stroke-width="1.5"/>
+                    <rect x="90" y="115" width="25" height="25" rx="3" fill="white" stroke="#FBBF24" stroke-width="1.5"/>
+                    <!-- Door -->
+                    <rect x="125" y="115" width="40" height="50" rx="3" fill="#92400E" opacity=".3"/>
+                    <!-- Alert badges pop in -->
+                    <g style="animation: pop-in .4s .5s ease-out both">
+                      <circle cx="80" cy="75" r="9" fill="#EF4444"/>
+                      <text x="80" y="78.5" text-anchor="middle" font-size="9" fill="white" font-weight="700">!</text>
+                    </g>
+                    <g style="animation: pop-in .4s .8s ease-out both">
+                      <circle cx="165" cy="75" r="9" fill="#F59E0B"/>
+                      <text x="165" y="78.5" text-anchor="middle" font-size="9" fill="white" font-weight="700">⚡</text>
+                    </g>
+                    <!-- Wrench -->
+                    <g style="animation: pop-in .5s 1.1s ease-out both" transform="translate(35, 30) rotate(-30)">
+                      <path d="M10 15 L25 30 L28 27 L13 12 Z" fill="#6B7280"/>
+                      <circle cx="8" cy="13" r="7" fill="none" stroke="#6B7280" stroke-width="2"/>
+                    </g>
+                    <!-- Urgency bars -->
+                    <g style="animation: slide-up .4s 1.4s ease-out both">
+                      <rect x="55" y="158" width="55" height="5" rx="2.5" fill="#EF4444" opacity=".8"/>
+                      <text x="55" y="154" font-size="7" fill="#92400E">Critical</text>
+                    </g>
+                    <g style="animation: slide-up .4s 1.6s ease-out both">
+                      <rect x="55" y="173" width="35" height="5" rx="2.5" fill="#F59E0B" opacity=".8"/>
+                      <text x="55" y="169" font-size="7" fill="#92400E">Medium</text>
+                    </g>
+                  </svg>
+                </div>
+              </div>
+              <div class="slide-text">
+                <div class="step-label" data-i18n="step4Label">Step 4 of 5</div>
+                <h4 data-i18n="step4Title">Maintenance Issues</h4>
+                <p data-i18n="step4Body">Report and track facility issues — from a broken AC to a leaky pipe. Set urgency levels and monitor SLA deadlines to keep your workspace running smoothly.</p>
+                <div class="feature-list">
+                  <div class="feature-item">
+                    <span class="fi-icon" style="background:#FEE2E2">🔴</span>
+                    <span data-i18n="step4f1">4 urgency levels: Critical, High, Medium, Low</span>
+                  </div>
+                  <div class="feature-item">
+                    <span class="fi-icon" style="background:#DBEAFE">⏱️</span>
+                    <span data-i18n="step4f2">SLA tracking — see time remaining before breach</span>
+                  </div>
+                  <div class="feature-item">
+                    <span class="fi-icon green">📍</span>
+                    <span data-i18n="step4f3">Include location description for faster resolution</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SLIDE 5: Ready! -->
+            <div class="slide" id="slide-4">
+              <div class="slide-visual">
+                <div class="anim-container">
+                  <svg viewBox="0 0 220 220">
+                    <!-- Celebration -->
+                    <circle cx="110" cy="100" r="50" fill="#D1FAE5" style="animation: pop-in .5s .2s ease-out both"/>
+                    <circle cx="110" cy="100" r="65" fill="none" stroke="#10B981" stroke-width="1.5" opacity=".3" style="animation: ring-pulse 2s .5s ease-out infinite"/>
+                    <!-- Checkmark -->
+                    <path d="M88 100 L104 116 L134 84" stroke="#10B981" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"
+                      stroke-dasharray="60" style="animation: check-mark 1s .5s ease-out both; stroke-dashoffset: 60"/>
+                    <!-- Confetti -->
+                    <circle cx="50" cy="50" r="4" fill="#7C3AED" style="animation: coin-drop .5s .8s ease-out both"/>
+                    <circle cx="170" cy="55" r="3" fill="#F59E0B" style="animation: coin-drop .5s 1s ease-out both"/>
+                    <circle cx="60" cy="160" r="5" fill="#3B82F6" style="animation: coin-drop .5s 1.2s ease-out both"/>
+                    <circle cx="160" cy="150" r="4" fill="#EF4444" style="animation: coin-drop .5s 1.4s ease-out both"/>
+                    <rect x="45" y="80" width="8" height="4" rx="2" fill="#F59E0B" transform="rotate(30 49 82)" style="animation: coin-drop .5s .9s ease-out both"/>
+                    <rect x="165" y="110" width="8" height="4" rx="2" fill="#7C3AED" transform="rotate(-20 169 112)" style="animation: coin-drop .5s 1.1s ease-out both"/>
+                    <!-- Stars -->
+                    <text x="40" y="140" font-size="16" style="animation: pop-in .4s 1.5s ease-out both">⭐</text>
+                    <text x="170" y="85" font-size="12" style="animation: pop-in .4s 1.7s ease-out both">✨</text>
+                  </svg>
+                </div>
+              </div>
+              <div class="slide-text">
+                <div class="step-label" data-i18n="step5Label">Step 5 of 5</div>
+                <h4 data-i18n="step5Title">You're Ready!</h4>
+                <p data-i18n="step5Body">You now know how to navigate the Requests Hub. Click on any card to dive into that section. You can always come back to this guide by clicking "How it works?" at the top.</p>
+                <div class="feature-list">
+                  <div class="feature-item">
+                    <span class="fi-icon green">✓</span>
+                    <span data-i18n="step5f1">Click any request card to open its full list</span>
+                  </div>
+                  <div class="feature-item">
+                    <span class="fi-icon blue">+</span>
+                    <span data-i18n="step5f2">Use "New Request" inside each section to create</span>
+                  </div>
+                  <div class="feature-item">
+                    <span class="fi-icon purple">?</span>
+                    <span data-i18n="step5f3">Every page has its own "How it works?" guide</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="onboard-footer">
+            <button class="skip-btn" onclick="closeOnboarding()" data-i18n="skipBtn">Skip guide</button>
+            <div class="dot-nav" id="dotNav">
+              <div class="dot active" onclick="goToSlide(0)"></div>
+              <div class="dot" onclick="goToSlide(1)"></div>
+              <div class="dot" onclick="goToSlide(2)"></div>
+              <div class="dot" onclick="goToSlide(3)"></div>
+              <div class="dot" onclick="goToSlide(4)"></div>
+            </div>
+            <div class="nav-btns">
+              <button class="nav-btn secondary" id="prevBtn" onclick="prevSlide()" style="display:none" data-i18n="prevBtn">Back</button>
+              <button class="nav-btn primary" id="nextBtn" onclick="nextSlide()" data-i18n="nextBtn">Next</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ======== STATE ========
+let currentSlide = 0;
+const totalSlides = 5;
+let currentLang = 'en';
+
+// ======== I18N ========
+const translations = {
+  en: {
+    howBtn: "How it works?",
+    modalTitle: "Requests Hub Guide",
+    modalSub: "Learn how to manage all request types",
+    step1Label: "Step 1 of 5", step1Title: "Your Request Command Center",
+    step1Body: "The Requests Hub is your central place to manage all types of requests. Each card shows the count of active items and links to the detailed list.",
+    step1f1: "Accounting — payments, reconciliations, confirmations",
+    step1f2: "Legal — contracts, agreements, registrations",
+    step1f3: "Maintenance — repairs, HVAC, electrical, cleaning",
+    step2Label: "Step 2 of 5", step2Title: "Accounting Requests",
+    step2Body: "Track financial requests like reconciliations, payment approvals, and confirmations. Each request goes through a workflow from submission to completion.",
+    step2f1: "3 types: Reconciliation, Payment, Confirmation",
+    step2f2: "Status flow: Pending → In Progress → Approved → Done",
+    step2f3: "Click \"New Request\" to create one",
+    step2Tip: "You can filter by status using the quick tabs at the top of the list!",
+    step3Label: "Step 3 of 5", step3Title: "Legal Requests",
+    step3Body: "Manage contracts, supplementary agreements, terminations, and registrations. Track every legal document from submission through review to completion.",
+    step3f1: "5 types: Contracts, Supplements, Terminations, Registrations, Guarantees",
+    step3f2: "Each request gets assigned to a responsible person",
+    step3Tip: "Use the search bar to find requests by number or name quickly.",
+    step4Label: "Step 4 of 5", step4Title: "Maintenance Issues",
+    step4Body: "Report and track facility issues — from a broken AC to a leaky pipe. Set urgency levels and monitor SLA deadlines to keep your workspace running smoothly.",
+    step4f1: "4 urgency levels: Critical, High, Medium, Low",
+    step4f2: "SLA tracking — see time remaining before breach",
+    step4f3: "Include location description for faster resolution",
+    step5Label: "Step 5 of 5", step5Title: "You're Ready!",
+    step5Body: "You now know how to navigate the Requests Hub. Click on any card to dive into that section. You can always come back by clicking \"How it works?\".",
+    step5f1: "Click any request card to open its full list",
+    step5f2: "Use \"New Request\" inside each section to create",
+    step5f3: "Every page has its own \"How it works?\" guide",
+    skipBtn: "Skip guide", prevBtn: "Back", nextBtn: "Next", finishBtn: "Start Working!"
+  },
+  ru: {
+    howBtn: "Как это работает?",
+    modalTitle: "Гид по Центру Заявок",
+    modalSub: "Узнайте, как управлять всеми типами заявок",
+    step1Label: "Шаг 1 из 5", step1Title: "Ваш центр управления заявками",
+    step1Body: "Центр заявок — ваше единое место для управления всеми типами заявок. Каждая карточка показывает количество активных элементов и ведёт к детальному списку.",
+    step1f1: "Бухгалтерия — платежи, сверки, подтверждения",
+    step1f2: "Юридические — договоры, соглашения, регистрации",
+    step1f3: "Обслуживание — ремонт, HVAC, электрика, уборка",
+    step2Label: "Шаг 2 из 5", step2Title: "Бухгалтерские заявки",
+    step2Body: "Отслеживайте финансовые заявки: сверки, согласования платежей и подтверждения. Каждая заявка проходит путь от подачи до завершения.",
+    step2f1: "3 типа: Сверка, Платёж, Подтверждение",
+    step2f2: "Статус: Ожидание → В работе → Одобрено → Готово",
+    step2f3: "Нажмите «Новая заявка» для создания",
+    step2Tip: "Фильтруйте по статусу с помощью быстрых вкладок вверху списка!",
+    step3Label: "Шаг 3 из 5", step3Title: "Юридические заявки",
+    step3Body: "Управляйте договорами, допсоглашениями, расторжениями и регистрациями. Отслеживайте каждый документ от подачи до завершения.",
+    step3f1: "5 типов: Договоры, Допсоглашения, Расторжения, Регистрации, Гарантийные письма",
+    step3f2: "Каждая заявка назначается ответственному лицу",
+    step3Tip: "Используйте поиск для быстрого нахождения заявок по номеру или названию.",
+    step4Label: "Шаг 4 из 5", step4Title: "Заявки на обслуживание",
+    step4Body: "Сообщайте и отслеживайте проблемы с помещением — от сломанного кондиционера до протечки. Устанавливайте уровни срочности и следите за дедлайнами SLA.",
+    step4f1: "4 уровня срочности: Критический, Высокий, Средний, Низкий",
+    step4f2: "SLA-отслеживание — видно оставшееся время",
+    step4f3: "Укажите местоположение для быстрого решения",
+    step5Label: "Шаг 5 из 5", step5Title: "Вы готовы!",
+    step5Body: "Теперь вы знаете, как работает Центр Заявок. Нажмите на любую карточку для перехода. Кнопка «Как это работает?» всегда доступна.",
+    step5f1: "Нажмите на карточку для открытия списка",
+    step5f2: "Используйте «Новая заявка» в каждом разделе",
+    step5f3: "На каждой странице есть свой гид «Как это работает?»",
+    skipBtn: "Пропустить", prevBtn: "Назад", nextBtn: "Далее", finishBtn: "Начать работу!"
+  },
+  uz: {
+    howBtn: "Bu qanday ishlaydi?",
+    modalTitle: "So'rovlar markazi bo'yicha qo'llanma",
+    modalSub: "Barcha turdagi so'rovlarni boshqarishni o'rganing",
+    step1Label: "1-qadam (5 dan)", step1Title: "So'rovlar boshqaruv markazi",
+    step1Body: "So'rovlar markazi — barcha turdagi so'rovlarni boshqarish uchun yagona joy. Har bir karta faol elementlar sonini ko'rsatadi va batafsil ro'yxatga olib boradi.",
+    step1f1: "Buxgalteriya — to'lovlar, solishtirishlar, tasdiqlashlar",
+    step1f2: "Yuridik — shartnomalar, kelishuvlar, ro'yxatga olish",
+    step1f3: "Xizmat ko'rsatish — ta'mirlash, HVAC, elektr, tozalash",
+    step2Label: "2-qadam (5 dan)", step2Title: "Buxgalteriya so'rovlari",
+    step2Body: "Moliyaviy so'rovlarni kuzating: solishtirishlar, to'lov tasdiqlanishlari. Har bir so'rov topshirishdan yakunlashgacha bo'lgan jarayondan o'tadi.",
+    step2f1: "3 tur: Solishtirish, To'lov, Tasdiqlash",
+    step2f2: "Holat: Kutilmoqda → Jarayonda → Tasdiqlangan → Tayyor",
+    step2f3: "Yangi so'rov yaratish uchun \"Yangi so'rov\" tugmasini bosing",
+    step2Tip: "Ro'yxat tepasidagi tezkor tablar orqali holat bo'yicha filtrlang!",
+    step3Label: "3-qadam (5 dan)", step3Title: "Yuridik so'rovlar",
+    step3Body: "Shartnomalar, qo'shimcha kelishuvlar, bekor qilish va ro'yxatga olishlarni boshqaring. Har bir hujjatni topshirishdan ko'rib chiqishgacha kuzating.",
+    step3f1: "5 tur: Shartnomalar, Qo'shimchalar, Bekor qilish, Ro'yxatga olish, Kafolat xatlari",
+    step3f2: "Har bir so'rov mas'ul shaxsga tayinlanadi",
+    step3Tip: "So'rovlarni raqam yoki nom bo'yicha tezda topish uchun qidiruv satridan foydalaning.",
+    step4Label: "4-qadam (5 dan)", step4Title: "Xizmat ko'rsatish muammolari",
+    step4Body: "Bino muammolarini xabar bering va kuzating — buzilgan konditsionerdan tortib quvur oqishigacha. Shoshilinchlik darajalarini belgilang va SLA muddatlarini nazorat qiling.",
+    step4f1: "4 shoshilinchlik darajasi: Muhim, Yuqori, O'rtacha, Past",
+    step4f2: "SLA kuzatuvi — buzilishgacha qolgan vaqt ko'rinadi",
+    step4f3: "Tezroq hal qilish uchun joylashuvni ko'rsating",
+    step5Label: "5-qadam (5 dan)", step5Title: "Siz tayyorsiz!",
+    step5Body: "Endi siz So'rovlar markazini qanday ishlatishni bilasiz. Istalgan kartaga bosib, bo'limga o'ting. \"Bu qanday ishlaydi?\" tugmasi har doim mavjud.",
+    step5f1: "Istalgan kartaga bosib, to'liq ro'yxatni oching",
+    step5f2: "Har bir bo'limda \"Yangi so'rov\" tugmasidan foydalaning",
+    step5f3: "Har bir sahifada o'z \"Bu qanday ishlaydi?\" qo'llanmasi bor",
+    skipBtn: "O'tkazib yuborish", prevBtn: "Orqaga", nextBtn: "Keyingi", finishBtn: "Ishni boshlash!"
+  }
+};
+
+// ======== FUNCTIONS ========
+function openOnboarding() {
+  currentSlide = 0;
+  updateSlides();
+  document.getElementById('onboardOverlay').classList.add('show');
+}
+
+function closeOnboarding() {
+  document.getElementById('onboardOverlay').classList.remove('show');
+}
+
+function goToSlide(n) {
+  const prev = currentSlide;
+  currentSlide = n;
+  updateSlides(prev);
+}
+
+function nextSlide() {
+  if (currentSlide < totalSlides - 1) {
+    const prev = currentSlide;
+    currentSlide++;
+    updateSlides(prev);
+  } else {
+    closeOnboarding();
+  }
+}
+
+function prevSlide() {
+  if (currentSlide > 0) {
+    const prev = currentSlide;
+    currentSlide--;
+    updateSlides(prev);
+  }
+}
+
+function updateSlides(prevSlide) {
+  // Update slides
+  for (let i = 0; i < totalSlides; i++) {
+    const slide = document.getElementById('slide-' + i);
+    slide.className = 'slide';
+    if (i === currentSlide) {
+      slide.classList.add('active');
+    } else if (prevSlide !== undefined && i === prevSlide) {
+      slide.classList.add(currentSlide > prevSlide ? 'exit-left' : '');
+    }
+  }
+
+  // Progress
+  document.getElementById('progressFill').style.width = ((currentSlide + 1) / totalSlides * 100) + '%';
+
+  // Progress step labels
+  const steps = document.getElementById('progressSteps').children;
+  for (let i = 0; i < steps.length; i++) {
+    steps[i].className = 'progress-step';
+    if (i === currentSlide) steps[i].classList.add('active');
+    if (i < currentSlide) steps[i].classList.add('done');
+  }
+
+  // Dots
+  const dots = document.getElementById('dotNav').children;
+  for (let i = 0; i < dots.length; i++) {
+    dots[i].className = 'dot';
+    if (i === currentSlide) dots[i].classList.add('active');
+    if (i < currentSlide) dots[i].classList.add('done');
+  }
+
+  // Buttons
+  document.getElementById('prevBtn').style.display = currentSlide > 0 ? 'inline-block' : 'none';
+  const nextBtn = document.getElementById('nextBtn');
+  const t = translations[currentLang];
+  if (currentSlide === totalSlides - 1) {
+    nextBtn.className = 'nav-btn finish';
+    nextBtn.textContent = t.finishBtn;
+  } else {
+    nextBtn.className = 'nav-btn primary';
+    nextBtn.textContent = t.nextBtn;
+  }
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  const t = translations[lang];
+
+  // Update language toggle buttons
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.textContent === lang.toUpperCase());
+  });
+
+  // Update all i18n elements
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key]) el.textContent = t[key];
+  });
+
+  // Update nav buttons
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  prevBtn.textContent = t.prevBtn;
+  if (currentSlide === totalSlides - 1) {
+    nextBtn.textContent = t.finishBtn;
+  } else {
+    nextBtn.textContent = t.nextBtn;
+  }
+  document.querySelector('.skip-btn').textContent = t.skipBtn;
+}
+
+// Close on overlay click (outside modal)
+document.getElementById('onboardOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeOnboarding();
+});
+
+// Keyboard support
+document.addEventListener('keydown', function(e) {
+  if (!document.getElementById('onboardOverlay').classList.contains('show')) return;
+  if (e.key === 'ArrowRight') nextSlide();
+  if (e.key === 'ArrowLeft') prevSlide();
+  if (e.key === 'Escape') closeOnboarding();
+});
+</script>
+
+</body>
+</html>
