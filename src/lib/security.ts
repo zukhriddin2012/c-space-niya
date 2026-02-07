@@ -281,8 +281,13 @@ export async function resolveOperatorEmployee(
     }
 
     const db = supabaseAdmin!;
-    const rawOperatorId = request.headers.get('X-Operator-Id') || undefined;
+    let rawOperatorId = request.headers.get('X-Operator-Id') || undefined;
     const branchId = request.headers.get('X-Branch-Id') || user.branchId || '';
+
+    // Filter out non-valid operator IDs (e.g. 'self', empty strings, kiosk IDs)
+    if (rawOperatorId && (rawOperatorId === 'self' || rawOperatorId.startsWith('kiosk:') || rawOperatorId.length < 5)) {
+      rawOperatorId = undefined;
+    }
 
     const opValidation = await validateOperatorSession(rawOperatorId, user.id, branchId);
 

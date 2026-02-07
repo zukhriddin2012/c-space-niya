@@ -16,15 +16,22 @@ export const GET = withAuth(async (request, { user }) => {
     console.log('[Branches API] User:', { id: user.id, role: user.role, email: user.email });
 
     // Roles that can see all branches
-    const canSeeAllBranches = ['ceo', 'general_manager'].includes(user.role);
-    const canSeeAllButNoTotal = ['hr'].includes(user.role);
-    console.log('[Branches API] Permissions:', { canSeeAllBranches, canSeeAllButNoTotal });
+    const isKioskUser = user.id?.startsWith('kiosk:') || user.role === 'reception_kiosk';
+    const canSeeAllBranches = !isKioskUser && ['ceo', 'general_manager'].includes(user.role);
+    const canSeeAllButNoTotal = !isKioskUser && ['hr'].includes(user.role);
+    console.log('[Branches API] Permissions:', { canSeeAllBranches, canSeeAllButNoTotal, isKioskUser });
 
     // Get user's assigned branch - try multiple lookup strategies
     let employee: { id: string; branch_id: string | null } | null = null;
 
+    // Kiosk users have their branchId embedded — skip employee lookup entirely
+    if (isKioskUser) {
+      console.log('[Branches API] Kiosk user — using branchId from session:', user.branchId);
+      // We'll use assignedBranchId = user.branchId below
+    }
+
     // Try by auth_user_id first (most reliable)
-    if (user.id) {
+    if (!isKioskUser && user.id) {
       const { data: empByAuthId } = await supabaseAdmin
         .from('employees')
         .select('id, branch_id')
@@ -107,8 +114,8 @@ export const GET = withAuth(async (request, { user }) => {
       console.log('[Branches API] No employee found for:', { id: user.id, email: user.email, name: user.name });
     }
 
-    const assignedBranchId = employee?.branch_id || null;
-    const employeeId = employee?.id || user.id;
+    const assignedBranchId = employee?.branch_id || user.branchId || null;
+    const employeeId = employee?.id || (isKioskUser ? null : user.id);
     console.log('[Branches API] Assigned branch:', assignedBranchId);
 
     // Get all branches
@@ -123,17 +130,27 @@ export const GET = withAuth(async (request, { user }) => {
     }
 
     // Get additional branch access grants for this user
-    const { data: accessGrants, error: accessError } = await supabaseAdmin
-      .from('reception_branch_access')
-      .select('branch_id')
-      .eq('user_id', employeeId);
+    // Skip for kiosk users — their IDs (e.g. 'kiosk:labzak') are not valid UUIDs
+    // and the reception_branch_access.user_id column is UUID type
+    let grantedBranchIds = new Set<string>();
 
-    if (accessError) {
-      console.error('Error fetching branch access:', accessError);
-      // Don't fail - just continue with assigned branch only
+    const isValidUUID = employeeId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(employeeId);
+
+    if (isValidUUID) {
+      const { data: accessGrants, error: accessError } = await supabaseAdmin
+        .from('reception_branch_access')
+        .select('branch_id')
+        .eq('user_id', employeeId);
+
+      if (accessError) {
+        console.error('Error fetching branch access:', accessError);
+        // Don't fail - just continue with assigned branch only
+      }
+
+      grantedBranchIds = new Set((accessGrants || []).map(g => g.branch_id));
+    } else {
+      console.log('[Branches API] Skipping reception_branch_access query — employeeId is not a UUID:', employeeId);
     }
-
-    const grantedBranchIds = new Set((accessGrants || []).map(g => g.branch_id));
 
     // Build the list of accessible branches
     const branches: BranchOption[] = [];

@@ -347,11 +347,15 @@ export function useReceptionMode() {
 // ═══ Helper: get operator headers for API calls ═══
 
 export function getOperatorHeaders(currentOperator: OperatorIdentity | null, userId: string, branchId?: string | null): Record<string, string> {
-  const headers: Record<string, string> = {
-    'X-Operator-Id': currentOperator?.id ?? userId,
-    'X-Operator-Cross-Branch': currentOperator?.isCrossBranch ? 'true' : 'false',
-  };
-  // Always send the branch ID so the backend can validate operator sessions correctly
+  const headers: Record<string, string> = {};
+
+  // Only send operator header when a PIN-switched operator is active
+  if (currentOperator?.id) {
+    headers['X-Operator-Id'] = currentOperator.id;
+    headers['X-Operator-Cross-Branch'] = currentOperator.isCrossBranch ? 'true' : 'false';
+  }
+
+  // Always send the branch ID so the backend can scope queries correctly
   const effectiveBranchId = currentOperator?.branchId || branchId;
   if (effectiveBranchId) {
     headers['X-Branch-Id'] = effectiveBranchId;
