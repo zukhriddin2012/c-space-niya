@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="clickGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#00B8F0"/>
+      <stop offset="50%" stop-color="#00D0F0"/>
+      <stop offset="100%" stop-color="#00E0FF"/>
+    </linearGradient>
+  </defs>
+  <!-- Rounded background -->
+  <rect width="120" height="120" rx="26" fill="white" stroke="#E5E7EB" stroke-width="1"/>
+  <!-- Blue rounded square shape -->
+  <rect x="16" y="16" width="88" height="88" rx="30" fill="url(#clickGrad)"/>
+  <!-- White circle cutout in center -->
+  <circle cx="60" cy="60" r="22" fill="white"/>
+</svg>

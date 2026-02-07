@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <!-- Purple background -->
+  <rect width="120" height="120" rx="26" fill="#7B2FBE"/>
+  <!-- Green geometric accents -->
+  <polygon points="0,40 0,80 30,60" fill="#A5E844"/>
+  <polygon points="120,40 120,80 90,60" fill="#A5E844"/>
+  <!-- White Ü symbol -->
+  <path d="M44 38 C44 38 44 65 44 70 C44 79 51 86 60 86 C69 86 76 79 76 70 L76 38" stroke="white" stroke-width="9" stroke-linecap="round" fill="none"/>
+  <!-- Dot above the U -->
+  <circle cx="60" cy="30" r="5" fill="white"/>
+  <!-- "bank" text -->
+  <text x="60" y="108" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="22" fill="white">bank</text>
+</svg>

@@ -12,6 +12,8 @@ import { useReceptionMode } from '@/contexts/ReceptionModeContext';
 import { useTranslation } from '@/contexts/LanguageContext';
 import { ClientAutocomplete, CreateClientModal } from '@/components/reception';
 import type { ClientOption } from '@/components/reception';
+import { PaymentIcon } from './PaymentIcon';
+import { PaymentMethodSelect } from './PaymentMethodSelect';
 import type { Transaction, ServiceType, PaymentMethodConfig, CreateTransactionInput } from '@/modules/reception/types';
 
 type QuickDateFilter = 'today' | 'yesterday' | 'week' | 'month' | 'custom' | 'all';
@@ -409,11 +411,12 @@ export default function ReceptionTransactions() {
                 <option value="">{t.reception.allServices}</option>
                 {serviceTypes.map((st) => (<option key={st.id} value={st.id}>{st.icon} {st.name}</option>))}
               </select>
-              <select value={filterPaymentMethod} onChange={(e) => { setFilterPaymentMethod(e.target.value); setPage(1); }}
-                className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-                <option value="">{t.reception.allPayments}</option>
-                {paymentMethods.map((pm) => (<option key={pm.id} value={pm.id}>{pm.icon} {pm.name}</option>))}
-              </select>
+              <PaymentMethodSelect
+                value={filterPaymentMethod}
+                onChange={(val) => { setFilterPaymentMethod(val); setPage(1); }}
+                options={paymentMethods}
+                placeholder={t.reception.allPayments}
+              />
               <input
                 type="date"
                 value={filterDateFrom}
@@ -521,7 +524,7 @@ export default function ReceptionTransactions() {
                       {/* Payment */}
                       <td className="px-4 py-3">
                         <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-blue-50 text-blue-700 rounded-md text-sm">
-                          <span>{txn.paymentMethod?.icon}</span>
+                          <PaymentIcon code={txn.paymentMethod?.code} icon={txn.paymentMethod?.icon} size={18} />
                           <span>{txn.paymentMethod?.name}</span>
                         </span>
                       </td>
@@ -634,11 +637,14 @@ export default function ReceptionTransactions() {
             <Input label="Amount (UZS)" type="number" value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: e.target.value })} placeholder="0" min="0" step="1000" error={formErrors.amount} required />
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">{t.reception.paymentMethod} *</label>
-              <select value={formData.paymentMethodId} onChange={(e) => setFormData({ ...formData, paymentMethodId: e.target.value, transactionCode: '' })}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 ${formErrors.paymentMethodId ? 'border-red-300' : 'border-gray-200'}`} required>
-                <option value="">{t.reception.selectPayment}</option>
-                {paymentMethods.map((pm) => (<option key={pm.id} value={pm.id}>{pm.icon} {pm.name}</option>))}
-              </select>
+              <PaymentMethodSelect
+                value={formData.paymentMethodId}
+                onChange={(val) => setFormData({ ...formData, paymentMethodId: val, transactionCode: '' })}
+                options={paymentMethods}
+                placeholder={t.reception.selectPayment}
+                error={!!formErrors.paymentMethodId}
+                required
+              />
               {formErrors.paymentMethodId && <p className="mt-1 text-sm text-red-600">{formErrors.paymentMethodId}</p>}
             </div>
             <Input label="Date" type="date" value={formData.transactionDate} onChange={(e) => setFormData({ ...formData, transactionDate: e.target.value })} error={formErrors.transactionDate} required />
@@ -702,7 +708,7 @@ export default function ReceptionTransactions() {
               </div>
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Payment Method</p>
-                <p className="font-medium">{selectedTransaction.paymentMethod?.icon} {selectedTransaction.paymentMethod?.name}</p>
+                <p className="font-medium inline-flex items-center gap-1.5"><PaymentIcon code={selectedTransaction.paymentMethod?.code} icon={selectedTransaction.paymentMethod?.icon} size={18} /> {selectedTransaction.paymentMethod?.name}</p>
               </div>
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Recorded By</p>

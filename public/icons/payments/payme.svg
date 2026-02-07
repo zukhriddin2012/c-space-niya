@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <!-- Rounded white background -->
+  <rect width="120" height="120" rx="26" fill="white" stroke="#E5E7EB" stroke-width="1"/>
+  <!-- "pay" text in dark -->
+  <text x="60" y="52" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="38" fill="#2D2D2D">pay</text>
+  <!-- Teal tag/arrow shape for "me" -->
+  <path d="M14 62 H90 L106 82 L90 102 H14 V62Z" rx="4" fill="#2DCCD3"/>
+  <text x="52" y="90" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="38" fill="white">me</text>
+</svg>
