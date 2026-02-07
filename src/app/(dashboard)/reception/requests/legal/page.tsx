@@ -26,11 +26,13 @@ const LEGAL_REQUEST_TYPES = Object.entries(LEGAL_REQUEST_TYPE_LABELS).map(([key,
 }));
 
 interface LegalRequestsResponse {
-  requests: LegalRequest[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
+  data: LegalRequest[];
+  pagination: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  };
 }
 
 export default function LegalRequestsPage() {
@@ -95,9 +97,9 @@ export default function LegalRequestsPage() {
       }
 
       const data: LegalRequestsResponse = await response.json();
-      setRequests(data.requests);
-      setTotalPages(data.totalPages || 1);
-      setTotalCount(data.total || 0);
+      setRequests(data.data || []);
+      setTotalPages(data.pagination?.totalPages || 1);
+      setTotalCount(data.pagination?.total || 0);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load legal requests';
       setError(errorMessage);

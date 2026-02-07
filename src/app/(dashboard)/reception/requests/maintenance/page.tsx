@@ -25,10 +25,14 @@ import {
 } from 'lucide-react';
 
 interface MaintenanceResponse {
-  issues: MaintenanceIssue[];
-  total: number;
-  page: number;
-  pageSize: number;
+  data: MaintenanceIssue[];
+  pagination: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  };
+  urgencyCounts?: Record<string, number>;
 }
 
 interface UrgencyCounts {
@@ -103,15 +107,20 @@ export default function MaintenanceIssuesPage() {
       }
 
       const data: MaintenanceResponse = await response.json();
-      setIssues(data.issues);
-      setTotalPages(Math.ceil(data.total / data.pageSize));
+      const issues = data.data || [];
+      setIssues(issues);
+      setTotalPages(data.pagination?.totalPages || 1);
 
-      // Calculate urgency counts
-      const counts: UrgencyCounts = { critical: 0, high: 0, medium: 0, low: 0 };
-      data.issues.forEach((issue) => {
-        counts[issue.urgency]++;
-      });
-      setUrgencyCounts(counts);
+      // Use server-provided urgency counts, or calculate from page data
+      if (data.urgencyCounts) {
+        setUrgencyCounts(data.urgencyCounts as unknown as UrgencyCounts);
+      } else {
+        const counts: UrgencyCounts = { critical: 0, high: 0, medium: 0, low: 0 };
+        issues.forEach((issue) => {
+          counts[issue.urgency]++;
+        });
+        setUrgencyCounts(counts);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load maintenance issues');
     } finally {

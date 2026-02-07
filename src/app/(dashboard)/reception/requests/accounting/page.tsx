@@ -14,8 +14,8 @@ type FilterStatus = AccountingRequestStatus | 'all';
 interface PaginationData {
   total: number;
   page: number;
-  limit: number;
-  pages: number;
+  pageSize: number;
+  totalPages: number;
 }
 
 interface ApiResponse {
@@ -46,8 +46,8 @@ export default function AccountingRequestsPage() {
   const [pagination, setPagination] = useState<PaginationData>({
     total: 0,
     page: 1,
-    limit: 10,
-    pages: 0,
+    pageSize: 10,
+    totalPages: 0,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +68,7 @@ export default function AccountingRequestsPage() {
       try {
         const params = new URLSearchParams({
           page: page.toString(),
-          limit: pagination.limit.toString(),
+          limit: pagination.pageSize.toString(),
           ...(statusFilter !== 'all' && { status: statusFilter }),
           ...(typeFilter !== 'all' && { type: typeFilter }),
           ...(searchTerm && { search: searchTerm }),
@@ -98,7 +98,7 @@ export default function AccountingRequestsPage() {
         setLoading(false);
       }
     },
-    [selectedBranchId, currentOperator, statusFilter, typeFilter, searchTerm, pagination.limit]
+    [selectedBranchId, currentOperator, statusFilter, typeFilter, searchTerm, pagination.pageSize]
   );
 
   useEffect(() => {
@@ -112,7 +112,7 @@ export default function AccountingRequestsPage() {
   };
 
   const handleNextPage = () => {
-    if (pagination.page < pagination.pages) {
+    if (pagination.page < pagination.totalPages) {
       fetchRequests(pagination.page + 1);
     }
   };
@@ -275,8 +275,8 @@ export default function AccountingRequestsPage() {
             {/* Pagination */}
             <div className="flex items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200">
               <div className="text-sm text-gray-600">
-                Showing {requests.length > 0 ? (pagination.page - 1) * pagination.limit + 1 : 0} to{' '}
-                {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} requests
+                Showing {requests.length > 0 ? (pagination.page - 1) * pagination.pageSize + 1 : 0} to{' '}
+                {Math.min(pagination.page * pagination.pageSize, pagination.total)} of {pagination.total} requests
               </div>
               <div className="flex gap-2">
                 <button
@@ -288,12 +288,12 @@ export default function AccountingRequestsPage() {
                 </button>
                 <div className="flex items-center gap-2 px-3">
                   <span className="text-sm text-gray-700 font-medium">
-                    {pagination.page} / {pagination.pages}
+                    {pagination.page} / {pagination.totalPages}
                   </span>
                 </div>
                 <button
                   onClick={handleNextPage}
-                  disabled={pagination.page >= pagination.pages || loading}
+                  disabled={pagination.page >= pagination.totalPages || loading}
                   className="p-2 border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <ChevronRight className="w-4 h-4" />
