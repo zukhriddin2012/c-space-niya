@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { verifyToken } from './auth';
 import { hasPermission, hasAnyPermission, Permission } from './permissions';
 import { verifyKioskToken, KIOSK_COOKIE_NAME } from './kiosk-auth';
+import { resolveOperatorEmployee, type ResolvedEmployee } from './security';
 import type { User, UserRole } from '@/types';
 
 const COOKIE_NAME = 'c-space-auth';
@@ -13,7 +14,7 @@ export interface AuthenticatedRequest extends NextRequest {
 
 type ApiHandler = (
   request: NextRequest,
-  context: { user: User; params?: Record<string, string> }
+  context: { user: User; employee?: ResolvedEmployee; params?: Record<string, string> }
 ) => Promise<NextResponse>;
 
 interface ProtectOptions {
@@ -25,7 +26,11 @@ interface ProtectOptions {
 }
 
 /**
- * Middleware to protect API routes
+ * Middleware to protect API routes.
+ *
+ * When `allowKiosk: true`, the middleware automatically resolves the
+ * real operator employee (via X-Operator-Id header, auth_user_id, or
+ * email fallback) and provides it as `context.employee`.
  *
  * Usage:
  *
@@ -34,20 +39,14 @@ interface ProtectOptions {
  *   return NextResponse.json({ user });
  * });
  *
- * // With permission check
+ * // Kiosk-enabled route with auto-resolved employee
  * export const POST = withAuth(
- *   async (request, { user }) => {
- *     return NextResponse.json({ success: true });
+ *   async (request, { user, employee }) => {
+ *     // employee is automatically resolved from operator headers
+ *     if (!employee) return NextResponse.json({ error: 'Employee not found' }, { status: 404 });
+ *     return NextResponse.json({ agentId: employee.id });
  *   },
- *   { permission: 'employees:create' }
- * );
- *
- * // With multiple permissions (any)
- * export const PUT = withAuth(
- *   async (request, { user }) => {
- *     return NextResponse.json({ success: true });
- *   },
- *   { permissions: ['employees:edit', 'employees:delete'] }
+ *   { permission: 'reception:transactions:create', allowKiosk: true }
  * );
  *
  * // With role restriction
@@ -143,8 +142,17 @@ export function withAuth(
       // Resolve params if they exist
       const resolvedParams = context?.params ? await context.params : undefined;
 
-      // Call the handler with authenticated user
-      return handler(request, { user, params: resolvedParams });
+      // Auto-resolve operator → employee for kiosk-enabled routes
+      let employee: ResolvedEmployee | undefined;
+      if (options?.allowKiosk) {
+        const resolved = await resolveOperatorEmployee(request, user);
+        if (resolved) {
+          employee = resolved;
+        }
+      }
+
+      // Call the handler with authenticated user and resolved employee
+      return handler(request, { user, employee, params: resolvedParams });
     } catch (error) {
       console.error('API auth error:', error);
       return NextResponse.json(

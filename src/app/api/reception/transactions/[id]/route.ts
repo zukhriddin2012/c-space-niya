@@ -75,7 +75,7 @@ export const GET = withAuth(async (request: NextRequest, { params }) => {
 // DELETE /api/reception/transactions/[id]
 // Void a transaction (soft delete)
 // ============================================
-export const DELETE = withAuth(async (request: NextRequest, { user, params }) => {
+export const DELETE = withAuth(async (request: NextRequest, { employee, params }) => {
   try {
     if (!isSupabaseAdminConfigured()) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
@@ -86,42 +86,7 @@ export const DELETE = withAuth(async (request: NextRequest, { user, params }) =>
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }
 
-    // Get employee for voided_by
-    // First try to find by auth_user_id, then fall back to email
-    let employee: { id: string } | null = null;
-
-    if (user.id) {
-      const { data: empByAuthId } = await supabaseAdmin!
-        .from('employees')
-        .select('id')
-        .eq('auth_user_id', user.id)
-        .single();
-
-      if (empByAuthId) {
-        employee = empByAuthId;
-      }
-    }
-
-    if (!employee && user.email) {
-      const { data: empByEmail } = await supabaseAdmin!
-        .from('employees')
-        .select('id')
-        .eq('email', user.email)
-        .single();
-
-      if (empByEmail) {
-        employee = empByEmail;
-
-        // Auto-link auth_user_id for future lookups
-        if (user.id) {
-          await supabaseAdmin!
-            .from('employees')
-            .update({ auth_user_id: user.id })
-            .eq('id', empByEmail.id);
-        }
-      }
-    }
-
+    // employee is auto-resolved by withAuth (operator PIN → auth_user_id → email)
     if (!employee) {
       return NextResponse.json({
         error: 'Employee not found',

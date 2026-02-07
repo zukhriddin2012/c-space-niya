@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api-auth';
 import { PERMISSIONS } from '@/lib/permissions';
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase';
-import { validateOperatorSession } from '@/lib/security';
 import type { CreateExpenseInput } from '@/modules/reception/types';
 
 // ============================================
@@ -135,67 +134,13 @@ export const GET = withAuth(async (request: NextRequest) => {
 // POST /api/reception/expenses
 // Create a new expense
 // ============================================
-export const POST = withAuth(async (request: NextRequest, { user }) => {
+export const POST = withAuth(async (request: NextRequest, { employee }) => {
   try {
     if (!isSupabaseAdminConfigured()) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
     }
 
-    // Resolve the actual operator (supports kiosk PIN switching)
-    const rawOperatorId = request.headers.get('X-Operator-Id') || undefined;
-    const branchIdParam = request.headers.get('X-Branch-Id') || user.branchId || '';
-
-    const operatorValidation = await validateOperatorSession(
-      rawOperatorId,
-      user.id,
-      branchIdParam
-    );
-
-    // Get employee - try operator ID first, then auth user, then email
-    let employee: { id: string; branch_id: string } | null = null;
-
-    // If operator was switched via PIN, look up by operator's employee ID directly
-    if (operatorValidation.valid && operatorValidation.operatorId) {
-      const { data: empByOp } = await supabaseAdmin!
-        .from('employees')
-        .select('id, branch_id')
-        .eq('id', operatorValidation.operatorId)
-        .single();
-
-      if (empByOp) employee = empByOp;
-    }
-
-    // Try by auth_user_id (for direct login, not kiosk)
-    if (!employee && user.id && !user.id.startsWith('kiosk:')) {
-      const { data: empByAuthId } = await supabaseAdmin!
-        .from('employees')
-        .select('id, branch_id')
-        .eq('auth_user_id', user.id)
-        .single();
-
-      if (empByAuthId) employee = empByAuthId;
-    }
-
-    // Fall back to email lookup
-    if (!employee && user.email) {
-      const { data: empByEmail } = await supabaseAdmin!
-        .from('employees')
-        .select('id, branch_id')
-        .eq('email', user.email)
-        .single();
-
-      if (empByEmail) {
-        employee = empByEmail;
-        // Auto-link auth_user_id for future lookups
-        if (user.id && !user.id.startsWith('kiosk:')) {
-          await supabaseAdmin!
-            .from('employees')
-            .update({ auth_user_id: user.id })
-            .eq('id', empByEmail.id);
-        }
-      }
-    }
-
+    // employee is auto-resolved by withAuth (operator PIN → auth_user_id → email)
     if (!employee) {
       return NextResponse.json({
         error: 'Employee not found',
@@ -220,7 +165,7 @@ export const POST = withAuth(async (request: NextRequest, { user }) => {
     }
 
     // Use provided branch or employee's branch
-    const branchId = body.branchId || employee.branch_id;
+    const branchId = body.branchId || employee.branchId;
     if (!branchId) {
       return NextResponse.json({ error: 'Branch is required' }, { status: 400 });
     }
