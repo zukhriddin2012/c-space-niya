@@ -83,6 +83,7 @@ export interface Translations {
     peopleManagement: string;
     orgChart: string;
     shiftPlanning: string;
+    metronomeSync: string;
   };
 
   // Dashboard
@@ -1142,5 +1143,136 @@ export interface Translations {
     thisWeek: string;
     previousWeek: string;
     nextWeek: string;
+  };
+
+  // Metronome Sync
+  metronome: {
+    title: string;
+    subtitle: string;
+
+    // Pulse Bar
+    daysToSync: string;
+    openDecisions: string;
+    overdue: string;
+    onTrack: string;
+    active: string;
+    lastSync: string;
+    nextSync: string;
+
+    // Actions
+    startSync: string;
+    downloadBrief: string;
+    newInitiative: string;
+    newDecision: string;
+
+    // Columns
+    decide: string;
+    track: string;
+    plan: string;
+
+    // Decisions
+    decided: string;
+    defer: string;
+    whatWasDecided: string;
+    confirm: string;
+    cancel: string;
+    allDecisionsResolved: string;
+    overdueLabel: string;
+    dueLabel: string;
+
+    // Track
+    needsAttention: string;
+    inProgress: string;
+    nextActions: string;
+    showAllActions: string;
+    hideActions: string;
+    moreInitiatives: string;
+    lead: string;
+
+    // Plan
+    upcoming: string;
+    thisWeeksFocus: string;
+    resolvedThisMonth: string;
+
+    // Calendar
+    today: string;
+
+    // Function tags
+    functions: {
+      bd: string;
+      construction: string;
+      hr: string;
+      finance: string;
+      legal: string;
+      strategy: string;
+      service: string;
+    };
+
+    // Priority
+    priority: {
+      critical: string;
+      high: string;
+      strategic: string;
+      resolved: string;
+    };
+
+    // Action item statuses
+    actionStatus: {
+      pending: string;
+      inProgress: string;
+      done: string;
+      blocked: string;
+    };
+
+    // Meeting mode
+    meeting: {
+      title: string;
+      elapsed: string;
+      agenda: string;
+      progress: string;
+      discussed: string;
+      markDiscussed: string;
+      nextItem: string;
+      notes: string;
+      quickDecisions: string;
+      endMeeting: string;
+      endSummary: string;
+      duration: string;
+      itemsDiscussed: string;
+      decisionsMade: string;
+      actionItemsDone: string;
+      attendees: string;
+      nextSyncDate: string;
+      nextSyncFocus: string;
+      save: string;
+    };
+
+    // Download brief
+    brief: {
+      generating: string;
+      preview: string;
+      download: string;
+      confidential: string;
+    };
+
+    // Form
+    form: {
+      title: string;
+      description: string;
+      functionTag: string;
+      priority: string;
+      accountable: string;
+      deadline: string;
+      save: string;
+      cancel: string;
+    };
+
+    // Empty states
+    empty: {
+      noInitiatives: string;
+      noDecisions: string;
+      noKeyDates: string;
+      noActionItems: string;
+    };
   };
 }

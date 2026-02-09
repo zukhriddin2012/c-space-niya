@@ -138,6 +138,14 @@ export const PERMISSIONS = {
   // Operator Switch (R6a)
   OPERATOR_PIN_MANAGE: 'operator:pin:manage',       // Admin: reset others' PINs
   OPERATOR_SWITCH_AUDIT: 'operator:switch:audit',    // View switch logs
+
+  // Metronome Sync
+  METRONOME_VIEW: 'metronome:view',
+  METRONOME_EDIT_OWN: 'metronome:edit_own',
+  METRONOME_EDIT_ALL: 'metronome:edit_all',
+  METRONOME_CREATE: 'metronome:create',
+  METRONOME_RUN_MEETING: 'metronome:run_meeting',
+  METRONOME_MANAGE_DATES: 'metronome:manage_dates',
 } as const;
 
 export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];
@@ -255,6 +263,13 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     PERMISSIONS.RECEPTION_SHIFTS_VIEW,
     PERMISSIONS.OPERATOR_PIN_MANAGE,
     PERMISSIONS.OPERATOR_SWITCH_AUDIT,
+    // Metronome Sync - Full access
+    PERMISSIONS.METRONOME_VIEW,
+    PERMISSIONS.METRONOME_EDIT_OWN,
+    PERMISSIONS.METRONOME_EDIT_ALL,
+    PERMISSIONS.METRONOME_CREATE,
+    PERMISSIONS.METRONOME_RUN_MEETING,
+    PERMISSIONS.METRONOME_MANAGE_DATES,
   ],
 
   ceo: [
@@ -311,6 +326,11 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     PERMISSIONS.MAINTENANCE_VIEW_ALL,
     PERMISSIONS.RECEPTION_SHIFTS_VIEW,
     PERMISSIONS.OPERATOR_SWITCH_AUDIT,
+    // Metronome Sync - View + edit own + run meeting + manage dates
+    PERMISSIONS.METRONOME_VIEW,
+    PERMISSIONS.METRONOME_EDIT_OWN,
+    PERMISSIONS.METRONOME_RUN_MEETING,
+    PERMISSIONS.METRONOME_MANAGE_DATES,
   ],
 
   hr: [
@@ -354,6 +374,9 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     PERMISSIONS.SHIFTS_EDIT,
     PERMISSIONS.SHIFTS_PUBLISH,
     PERMISSIONS.SHIFTS_MANAGE_REQUIREMENTS,
+    // Metronome Sync - View + edit own
+    PERMISSIONS.METRONOME_VIEW,
+    PERMISSIONS.METRONOME_EDIT_OWN,
   ],
 
   branch_manager: [
@@ -403,6 +426,9 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     PERMISSIONS.RECEPTION_MAINTENANCE_REPORT,
     PERMISSIONS.RECEPTION_MAINTENANCE_VIEW,
     PERMISSIONS.RECEPTION_SHIFTS_VIEW,
+    // Metronome Sync - View + edit own
+    PERMISSIONS.METRONOME_VIEW,
+    PERMISSIONS.METRONOME_EDIT_OWN,
   ],
 
   recruiter: [
@@ -731,5 +757,13 @@ export const PERMISSION_GROUPS = {
   'Operator Switch': [
     { key: PERMISSIONS.OPERATOR_PIN_MANAGE, label: 'Manage Employee PINs' },
     { key: PERMISSIONS.OPERATOR_SWITCH_AUDIT, label: 'View Switch Audit Logs' },
+  ],
+  'Metronome Sync': [
+    { key: PERMISSIONS.METRONOME_VIEW, label: 'View Metronome Dashboard' },
+    { key: PERMISSIONS.METRONOME_EDIT_OWN, label: 'Edit Own Initiatives' },
+    { key: PERMISSIONS.METRONOME_EDIT_ALL, label: 'Edit All Initiatives' },
+    { key: PERMISSIONS.METRONOME_CREATE, label: 'Create Initiatives' },
+    { key: PERMISSIONS.METRONOME_RUN_MEETING, label: 'Run Sync Meeting' },
+    { key: PERMISSIONS.METRONOME_MANAGE_DATES, label: 'Manage Key Dates' },
   ],
 };

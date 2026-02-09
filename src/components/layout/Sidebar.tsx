@@ -34,6 +34,7 @@ import {
   TrendingUp,
   Receipt,
   Calendar,
+  RefreshCw,
 } from 'lucide-react';
 import type { User, UserRole } from '@/types';
 import { getRoleLabel } from '@/lib/auth';
@@ -116,6 +117,13 @@ const navItems: NavItem[] = [
     href: '/shifts',
     icon: Calendar,
     roles: ['general_manager', 'hr', 'ceo', 'branch_manager'],
+  },
+  // Metronome Sync
+  {
+    nameKey: 'metronomeSync',
+    href: '/metronome-sync',
+    icon: RefreshCw,
+    roles: ['general_manager', 'ceo', 'hr', 'branch_manager'],
   },
   // Recruitment group
   {
