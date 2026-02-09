@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { X, CheckCircle, Circle } from 'lucide-react';
 import MeetingTimer from './MeetingTimer';
 import EndMeetingModal from './EndMeetingModal';
@@ -30,7 +30,7 @@ export default function MeetingMode({
   initiatives,
   actionItems,
   decisions,
-  userId,
+  userId: _userId,
   onEnd,
   onClose,
   onToggleAction,
@@ -42,6 +42,7 @@ export default function MeetingMode({
   const [showEndModal, setShowEndModal] = useState(false);
   const [quickDecisionTexts, setQuickDecisionTexts] = useState<Record<string, string>>({});
   const [decisionsMadeCount, setDecisionsMadeCount] = useState(0);
+  const [endDurationSecs, setEndDurationSecs] = useState(0);
 
   // Warn on accidental close
   useEffect(() => {
@@ -70,6 +71,7 @@ export default function MeetingMode({
   };
 
   const handleEndMeeting = () => {
+    setEndDurationSecs(Math.floor((Date.now() - startTime.getTime()) / 1000));
     setShowEndModal(true);
   };
 
@@ -266,7 +268,7 @@ export default function MeetingMode({
       {/* End Meeting Modal */}
       {showEndModal && (
         <EndMeetingModal
-          duration={Math.floor((Date.now() - startTime.getTime()) / 1000)}
+          duration={endDurationSecs}
           itemsDiscussed={discussed.size}
           decisionsMade={decisionsMadeCount}
           actionItemsDone={actionItemsDone}

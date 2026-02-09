@@ -7,6 +7,7 @@ import MonthCalendar from './MonthCalendar';
 import DecisionCard from './DecisionCard';
 import InitiativeCard from './InitiativeCard';
 import MeetingMode from './MeetingMode';
+import NewInitiativeModal from './NewInitiativeModal';
 import type {
   MetronomeSummary,
   MetronomeInitiativeRow,
@@ -27,11 +28,11 @@ interface MetronomeDashboardProps {
 
 export default function MetronomeDashboard({
   userId,
-  userRole,
+  userRole: _userRole,
   canEdit,
   canCreate,
   canRunMeeting,
-  canManageDates,
+  canManageDates: _canManageDates,
 }: MetronomeDashboardProps) {
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState<MetronomeSummary | null>(null);
@@ -247,6 +248,38 @@ export default function MetronomeDashboard({
     }
   };
 
+  const handleCreateInitiative = async (data: {
+    title: string;
+    description: string | null;
+    function_tag: string;
+    priority: string;
+    owner_label: string | null;
+    status_label: string | null;
+    deadline: string | null;
+    deadline_label: string | null;
+  }) => {
+    try {
+      const res = await fetch('/api/metronome/initiatives', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Failed to create initiative' }));
+        setError(err.error || 'Failed to create initiative');
+        setTimeout(() => setError(null), 5000);
+        return;
+      }
+
+      setShowNewForm(false);
+      fetchData();
+    } catch {
+      setError('Network error — initiative not created');
+      setTimeout(() => setError(null), 5000);
+    }
+  };
+
   // Categorize initiatives
   const needsAttention = initiatives.filter(i => {
     const items = actionItemsMap[i.id] || [];
@@ -451,6 +484,14 @@ export default function MetronomeDashboard({
           onClose={() => setShowMeeting(false)}
           onToggleAction={handleToggleAction}
           onDecide={handleDecide}
+        />
+      )}
+
+      {/* New Initiative Modal */}
+      {showNewForm && (
+        <NewInitiativeModal
+          onSave={handleCreateInitiative}
+          onClose={() => setShowNewForm(false)}
         />
       )}
     </div>

@@ -26,7 +26,8 @@ export default function MonthCalendar({ keyDates, onMonthChange }: MonthCalendar
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
 
-  const todayStr = now.toISOString().split('T')[0];
+  // Use local date components (not UTC via toISOString) to match calendar cell dates
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
   const goToPrev = () => {
     const newMonth = month === 0 ? 11 : month - 1;

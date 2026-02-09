@@ -8,3 +8,4 @@ export { default as PriorityIndicator } from './PriorityIndicator';
 export { default as MeetingMode } from './MeetingMode';
 export { default as MeetingTimer } from './MeetingTimer';
 export { default as EndMeetingModal } from './EndMeetingModal';
+export { default as NewInitiativeModal } from './NewInitiativeModal';
