@@ -17,7 +17,6 @@ const PUBLIC_API_ROUTES = new Set([
   '/api/auth/logout',
   '/api/telegram-bot/webhook',  // Has its own secret_token auth
   '/api/config',                // Public config endpoint
-  '/api/documents/sign',        // Document signing API (no auth required)
   '/api/employees/language',    // Language preference API (for bot)
 ]);
 
@@ -27,6 +26,7 @@ const PUBLIC_API_PREFIXES = [
   '/api/attendance/checkout-check',  // Telegram mini app checkout reminder
   '/api/attendance/checkout-action', // Telegram mini app checkout action
   '/api/reception/kiosk',       // Reception kiosk auth (has its own password/JWT auth)
+  '/api/documents/sign',        // Document signing API — token-based auth, no JWT needed
 ];
 
 // API routes with custom auth (not JWT — they handle their own authentication)
