@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api-auth';
 import { PERMISSIONS } from '@/lib/permissions';
 import { getMetronomeInitiatives, createMetronomeInitiative } from '@/lib/db';
+import { CreateInitiativeSchema } from '@/lib/validators/metronome';
 import type { MetronomeFunctionTag, MetronomePriority } from '@/lib/db/metronome';
 
 // GET /api/metronome/initiatives - List initiatives
@@ -15,13 +16,17 @@ export const GET = withAuth(async (request: NextRequest) => {
     const limit = searchParams.get('limit');
     const offset = searchParams.get('offset');
 
+    // SEC-C4: Clamp query params to safe ranges
+    const parsedLimit = limit ? Math.min(Math.max(parseInt(limit) || 20, 1), 100) : undefined;
+    const parsedOffset = offset ? Math.max(parseInt(offset) || 0, 0) : undefined;
+
     const initiatives = await getMetronomeInitiatives({
       priority: priority || undefined,
       functionTag: functionTag || undefined,
       isArchived: archived !== null ? archived === 'true' : undefined,
       search: search || undefined,
-      limit: limit ? parseInt(limit) : undefined,
-      offset: offset ? parseInt(offset) : undefined,
+      limit: parsedLimit,
+      offset: parsedOffset,
     });
 
     return NextResponse.json({ data: initiatives, total: initiatives.length });
@@ -35,21 +40,12 @@ export const GET = withAuth(async (request: NextRequest) => {
 export const POST = withAuth(async (request: NextRequest, { user }) => {
   try {
     const body = await request.json();
-    const { title, description, function_tag, priority, accountable_ids, owner_label, status_label, deadline, deadline_label } = body;
-
-    if (!title || !function_tag || !priority) {
-      return NextResponse.json({ error: 'Title, function_tag, and priority are required' }, { status: 400 });
+    const parsed = CreateInitiativeSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid input', details: parsed.error.flatten().fieldErrors }, { status: 400 });
     }
 
-    const validTags: MetronomeFunctionTag[] = ['bd', 'construction', 'hr', 'finance', 'legal', 'strategy', 'service'];
-    if (!validTags.includes(function_tag)) {
-      return NextResponse.json({ error: 'Invalid function_tag' }, { status: 400 });
-    }
-
-    const validPriorities: MetronomePriority[] = ['critical', 'high', 'strategic', 'resolved'];
-    if (!validPriorities.includes(priority)) {
-      return NextResponse.json({ error: 'Invalid priority' }, { status: 400 });
-    }
+    const { title, description, function_tag, priority, accountable_ids, owner_label, status_label, deadline, deadline_label } = parsed.data;
 
     const result = await createMetronomeInitiative({
       title,
@@ -67,7 +63,7 @@ export const POST = withAuth(async (request: NextRequest, { user }) => {
     });
 
     if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 400 });
+      return NextResponse.json({ error: 'Failed to create initiative' }, { status: 400 });
     }
 
     return NextResponse.json({ data: result.initiative }, { status: 201 });

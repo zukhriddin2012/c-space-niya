@@ -41,6 +41,7 @@ export default function MetronomeDashboard({
   const [actionItemsMap, setActionItemsMap] = useState<Record<string, MetronomeActionItemRow[]>>({});
   const [showMeeting, setShowMeeting] = useState(false);
   const [showNewForm, setShowNewForm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Current month for calendar
   const now = new Date();
@@ -49,16 +50,19 @@ export default function MetronomeDashboard({
 
   const fetchData = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const monthStart = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-01`;
       const lastDay = new Date(calYear, calMonth + 1, 0).getDate();
       const monthEnd = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${lastDay}`;
 
-      const [summaryRes, initRes, decRes, datesRes] = await Promise.all([
+      // SEC-H3: Fetch all action items in a single request instead of N+1
+      const [summaryRes, initRes, decRes, datesRes, allItemsRes] = await Promise.all([
         fetch('/api/metronome/syncs/summary'),
         fetch('/api/metronome/initiatives?archived=false'),
         fetch('/api/metronome/decisions?status=open'),
         fetch(`/api/metronome/key-dates?from=${monthStart}&to=${monthEnd}`),
+        fetch('/api/metronome/action-items'),
       ]);
 
       if (summaryRes.ok) {
@@ -69,15 +73,17 @@ export default function MetronomeDashboard({
       if (initRes.ok) {
         const { data } = await initRes.json();
         setInitiatives(data || []);
+      }
 
-        // Fetch action items for each initiative
+      // SEC-H3: Group all action items by initiative_id client-side
+      if (allItemsRes.ok) {
+        const { data: allItems } = await allItemsRes.json();
         const itemsMap: Record<string, MetronomeActionItemRow[]> = {};
-        for (const init of (data || [])) {
-          const itemsRes = await fetch(`/api/metronome/action-items?initiative_id=${init.id}`);
-          if (itemsRes.ok) {
-            const { data: items } = await itemsRes.json();
-            itemsMap[init.id] = items || [];
+        for (const item of (allItems || [])) {
+          if (!itemsMap[item.initiative_id]) {
+            itemsMap[item.initiative_id] = [];
           }
+          itemsMap[item.initiative_id].push(item);
         }
         setActionItemsMap(itemsMap);
       }
@@ -91,8 +97,9 @@ export default function MetronomeDashboard({
         const { data } = await datesRes.json();
         setKeyDates(data || []);
       }
-    } catch (error) {
-      console.error('Error fetching metronome data:', error);
+    } catch (err) {
+      console.error('Error fetching metronome data:', err);
+      setError('Failed to load data');
     } finally {
       setLoading(false);
     }
@@ -107,65 +114,92 @@ export default function MetronomeDashboard({
     setCalMonth(month);
   };
 
-  // Action handlers
+  // SEC-H2: Action handlers with optimistic updates + rollback on failure
   const handleToggleAction = async (actionId: string) => {
+    // Save previous state for rollback
+    const prevMap = { ...actionItemsMap };
+
+    // Optimistic update
+    setActionItemsMap(prev => {
+      const updated = { ...prev };
+      for (const initId of Object.keys(updated)) {
+        updated[initId] = updated[initId].map(item => {
+          if (item.id === actionId) {
+            return {
+              ...item,
+              status: item.status === 'done' ? 'pending' as const : 'done' as const,
+              completed_at: item.status === 'done' ? null : new Date().toISOString(),
+            };
+          }
+          return item;
+        });
+      }
+      return updated;
+    });
+
     try {
-      await fetch('/api/metronome/action-items', {
+      const res = await fetch('/api/metronome/action-items', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'toggle', id: actionId }),
       });
-
-      // Optimistic update
-      setActionItemsMap(prev => {
-        const updated = { ...prev };
-        for (const initId of Object.keys(updated)) {
-          updated[initId] = updated[initId].map(item => {
-            if (item.id === actionId) {
-              return {
-                ...item,
-                status: item.status === 'done' ? 'pending' as const : 'done' as const,
-                completed_at: item.status === 'done' ? null : new Date().toISOString(),
-              };
-            }
-            return item;
-          });
-        }
-        return updated;
-      });
-    } catch (error) {
-      console.error('Error toggling action item:', error);
+      if (!res.ok) {
+        setActionItemsMap(prevMap);
+        setError('Failed to toggle action item');
+        setTimeout(() => setError(null), 3000);
+      }
+    } catch {
+      setActionItemsMap(prevMap);
+      setError('Network error — changes reverted');
+      setTimeout(() => setError(null), 3000);
     }
   };
 
   const handleDecide = async (decisionId: string, decisionText: string) => {
+    const prevDecisions = [...decisions];
+
+    setDecisions(prev =>
+      prev.map(d => d.id === decisionId ? { ...d, status: 'decided' as const, decision_text: decisionText } : d)
+    );
+
     try {
-      await fetch('/api/metronome/decisions', {
+      const res = await fetch('/api/metronome/decisions', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'decide', id: decisionId, decision_text: decisionText }),
       });
-
-      // Optimistic update
-      setDecisions(prev =>
-        prev.map(d => d.id === decisionId ? { ...d, status: 'decided' as const, decision_text: decisionText } : d)
-      );
-    } catch (error) {
-      console.error('Error deciding:', error);
+      if (!res.ok) {
+        setDecisions(prevDecisions);
+        setError('Failed to save decision');
+        setTimeout(() => setError(null), 3000);
+      }
+    } catch {
+      setDecisions(prevDecisions);
+      setError('Network error — decision reverted');
+      setTimeout(() => setError(null), 3000);
     }
   };
 
   const handleDefer = async (decisionId: string) => {
+    const prevDecisions = [...decisions];
+
+    setDecisions(prev => prev.filter(d => d.id !== decisionId));
+
     try {
-      await fetch('/api/metronome/decisions', {
+      const res = await fetch('/api/metronome/decisions', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'defer', id: decisionId }),
       });
-
-      setDecisions(prev => prev.filter(d => d.id !== decisionId));
-    } catch (error) {
-      console.error('Error deferring decision:', error);
+      if (!res.ok) {
+        setDecisions(prevDecisions);
+        setError('Failed to defer decision');
+        setTimeout(() => setError(null), 3000);
+      }
+    } catch {
+      setDecisions(prevDecisions);
+      setError('Network error — decision reverted');
+      setTimeout(() => setError(null), 3000);
     }
   };
 
@@ -200,9 +234,10 @@ export default function MetronomeDashboard({
       });
 
       setShowMeeting(false);
-      fetchData(); // Refresh all data
-    } catch (error) {
-      console.error('Error saving sync:', error);
+      fetchData();
+    } catch {
+      setError('Failed to save meeting record');
+      setTimeout(() => setError(null), 3000);
     }
   };
 
@@ -220,6 +255,9 @@ export default function MetronomeDashboard({
   // Open decisions only
   const openDecisions = decisions.filter(d => d.status === 'open');
 
+  // SEC-L1: Determine if user can mutate (decide/defer/toggle)
+  const canMutate = canEdit || canRunMeeting;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -230,6 +268,13 @@ export default function MetronomeDashboard({
 
   return (
     <div className="space-y-4">
+      {/* SEC-H2: Error toast */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-2 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
       {/* Header */}
       <div>
         <h1 className="text-xl font-semibold text-gray-900">Metronome Sync</h1>
@@ -270,8 +315,8 @@ export default function MetronomeDashboard({
                 <DecisionCard
                   key={dec.id}
                   decision={dec}
-                  onDecide={handleDecide}
-                  onDefer={handleDefer}
+                  onDecide={canMutate ? handleDecide : undefined}
+                  onDefer={canMutate ? handleDefer : undefined}
                 />
               ))}
             </div>
@@ -293,7 +338,7 @@ export default function MetronomeDashboard({
                     key={init.id}
                     initiative={init}
                     actionItems={actionItemsMap[init.id] || []}
-                    onToggleAction={handleToggleAction}
+                    onToggleAction={canMutate ? handleToggleAction : undefined}
                   />
                 ))}
               </div>
@@ -309,7 +354,7 @@ export default function MetronomeDashboard({
                     key={init.id}
                     initiative={init}
                     actionItems={actionItemsMap[init.id] || []}
-                    onToggleAction={handleToggleAction}
+                    onToggleAction={canMutate ? handleToggleAction : undefined}
                   />
                 ))}
               </div>

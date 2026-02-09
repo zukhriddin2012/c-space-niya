@@ -7,8 +7,8 @@ import type { MetronomeDecisionRow } from '@/lib/db/metronome';
 
 interface DecisionCardProps {
   decision: MetronomeDecisionRow;
-  onDecide: (id: string, decisionText: string) => void;
-  onDefer: (id: string) => void;
+  onDecide?: (id: string, decisionText: string) => void;
+  onDefer?: (id: string) => void;
 }
 
 export default function DecisionCard({ decision, onDecide, onDefer }: DecisionCardProps) {
@@ -21,7 +21,7 @@ export default function DecisionCard({ decision, onDecide, onDefer }: DecisionCa
     : null;
 
   const handleDecide = () => {
-    if (decisionText.trim()) {
+    if (decisionText.trim() && onDecide) {
       onDecide(decision.id, decisionText.trim());
       setShowInput(false);
       setDecisionText('');
@@ -61,49 +61,55 @@ export default function DecisionCard({ decision, onDecide, onDefer }: DecisionCa
         </div>
       </div>
 
-      {showInput ? (
-        <div className="mt-3">
-          <textarea
-            value={decisionText}
-            onChange={(e) => setDecisionText(e.target.value)}
-            placeholder="What was decided?"
-            className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none resize-none"
-            rows={2}
-            autoFocus
-          />
-          <div className="flex items-center gap-2 mt-2">
-            <button
-              onClick={handleDecide}
-              disabled={!decisionText.trim()}
-              className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Confirm
-            </button>
-            <button
-              onClick={() => { setShowInput(false); setDecisionText(''); }}
-              className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 transition-colors"
-            >
-              Cancel
-            </button>
+      {(onDecide || onDefer) && (
+        showInput ? (
+          <div className="mt-3">
+            <textarea
+              value={decisionText}
+              onChange={(e) => setDecisionText(e.target.value)}
+              placeholder="What was decided?"
+              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none resize-none"
+              rows={2}
+              autoFocus
+            />
+            <div className="flex items-center gap-2 mt-2">
+              <button
+                onClick={handleDecide}
+                disabled={!decisionText.trim()}
+                className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={() => { setShowInput(false); setDecisionText(''); }}
+                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
-        </div>
-      ) : (
-        <div className="flex items-center gap-2 mt-3">
-          <button
-            onClick={() => setShowInput(true)}
-            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors"
-          >
-            <CheckCircle size={12} />
-            Decide
-          </button>
-          <button
-            onClick={() => onDefer(decision.id)}
-            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <ArrowRight size={12} />
-            Defer
-          </button>
-        </div>
+        ) : (
+          <div className="flex items-center gap-2 mt-3">
+            {onDecide && (
+              <button
+                onClick={() => setShowInput(true)}
+                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                <CheckCircle size={12} />
+                Decide
+              </button>
+            )}
+            {onDefer && (
+              <button
+                onClick={() => onDefer(decision.id)}
+                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <ArrowRight size={12} />
+                Defer
+              </button>
+            )}
+          </div>
+        )
       )}
     </div>
   );

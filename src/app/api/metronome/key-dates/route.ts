@@ -6,7 +6,7 @@ import {
   createMetronomeKeyDate,
   deleteMetronomeKeyDate,
 } from '@/lib/db';
-import type { MetronomeKeyDateCategory } from '@/lib/db/metronome';
+import { CreateKeyDateSchema, DeleteKeyDateSchema } from '@/lib/validators/metronome';
 
 // GET /api/metronome/key-dates - List key dates
 export const GET = withAuth(async (request: NextRequest) => {
@@ -31,30 +31,25 @@ export const GET = withAuth(async (request: NextRequest) => {
 export const POST = withAuth(async (request: NextRequest, { user }) => {
   try {
     const body = await request.json();
-    const { date, title, emoji, category, initiative_id, is_recurring } = body;
-
-    if (!date || !title) {
-      return NextResponse.json({ error: 'date and title are required' }, { status: 400 });
+    const parsed = CreateKeyDateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid input', details: parsed.error.flatten().fieldErrors }, { status: 400 });
     }
 
-    const validCategories: MetronomeKeyDateCategory[] = ['critical', 'high', 'meeting', 'strategic', 'event', 'holiday'];
-    const cat = category || 'event';
-    if (!validCategories.includes(cat)) {
-      return NextResponse.json({ error: 'Invalid category' }, { status: 400 });
-    }
+    const { date, title, emoji, category, initiative_id, is_recurring } = parsed.data;
 
     const result = await createMetronomeKeyDate({
       date,
       title,
       emoji: emoji || null,
-      category: cat,
+      category: category || 'event',
       initiative_id: initiative_id || null,
       is_recurring: is_recurring || false,
       created_by: user.id,
     });
 
     if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 400 });
+      return NextResponse.json({ error: 'Failed to create key date' }, { status: 400 });
     }
 
     return NextResponse.json({ data: result.keyDate }, { status: 201 });
@@ -68,15 +63,14 @@ export const POST = withAuth(async (request: NextRequest, { user }) => {
 export const DELETE = withAuth(async (request: NextRequest) => {
   try {
     const body = await request.json();
-    const { id } = body;
-
-    if (!id) {
-      return NextResponse.json({ error: 'id is required' }, { status: 400 });
+    const parsed = DeleteKeyDateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid input', details: parsed.error.flatten().fieldErrors }, { status: 400 });
     }
 
-    const result = await deleteMetronomeKeyDate(id);
+    const result = await deleteMetronomeKeyDate(parsed.data.id);
     if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 400 });
+      return NextResponse.json({ error: 'Failed to delete key date' }, { status: 400 });
     }
 
     return NextResponse.json({ success: true });

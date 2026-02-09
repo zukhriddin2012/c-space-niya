@@ -1,6 +1,23 @@
 import { supabaseAdmin, isSupabaseAdminConfigured } from './connection';
 
 // ============================================
+// HELPERS
+// ============================================
+
+/** SEC-C1: Sanitize search input to prevent PostgREST filter injection.
+ *  Strips commas, dots-as-operators, and percent signs that could
+ *  manipulate `.or()` filter syntax. */
+function sanitizeSearch(raw: string): string {
+  return raw.replace(/[,%.()]/g, '').trim().slice(0, 200);
+}
+
+/** Validate UUID v4 format */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export function isValidUUID(value: string): boolean {
+  return UUID_RE.test(value);
+}
+
+// ============================================
 // METRONOME SYNC TYPES
 // ============================================
 
@@ -227,7 +244,10 @@ export async function getMetronomeInitiatives(filters?: {
     query = query.eq('is_archived', filters.isArchived);
   }
   if (filters?.search) {
-    query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
+    const safe = sanitizeSearch(filters.search);
+    if (safe.length > 0) {
+      query = query.or(`title.ilike.%${safe}%,description.ilike.%${safe}%`);
+    }
   }
   if (filters?.limit) {
     query = query.limit(filters.limit);
@@ -283,7 +303,7 @@ export async function createMetronomeInitiative(
 
   if (error) {
     console.error('Error creating initiative:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: 'Operation failed' };
   }
 
   return { success: true, initiative: result };
@@ -304,7 +324,7 @@ export async function updateMetronomeInitiative(
 
   if (error) {
     console.error('Error updating initiative:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: 'Operation failed' };
   }
 
   return { success: true };
@@ -335,6 +355,29 @@ export async function getActionItemsByInitiative(
   }
 
   return data || [];
+}
+
+/** SEC-H1: Single-row lookup for action item by ID (replaces full table scan) */
+export async function getActionItemById(
+  id: string
+): Promise<MetronomeActionItemRow | null> {
+  if (!isSupabaseAdminConfigured()) {
+    console.error('Supabase not configured');
+    return null;
+  }
+
+  const { data, error } = await supabaseAdmin!
+    .from('metronome_action_items')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    console.error('Error fetching action item by id:', error);
+    return null;
+  }
+
+  return data;
 }
 
 export async function getActionItems(filters?: {
@@ -387,7 +430,7 @@ export async function createActionItem(
 
   if (error) {
     console.error('Error creating action item:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: 'Operation failed' };
   }
 
   return { success: true, actionItem: result };
@@ -408,7 +451,7 @@ export async function updateActionItem(
 
   if (error) {
     console.error('Error updating action item:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: 'Operation failed' };
   }
 
   return { success: true };
@@ -428,7 +471,7 @@ export async function deleteActionItem(
 
   if (error) {
     console.error('Error deleting action item:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: 'Operation failed' };
   }
 
   return { success: true };
@@ -450,7 +493,7 @@ export async function reorderActionItems(
 
     if (error) {
       console.error('Error reordering action items:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: 'Operation failed' };
     }
   }
 
@@ -494,6 +537,29 @@ export async function getMetronomeDecisions(filters?: {
   return data || [];
 }
 
+/** SEC-C3: Single-row lookup for decision by ID (for ownership checks) */
+export async function getDecisionById(
+  id: string
+): Promise<MetronomeDecisionRow | null> {
+  if (!isSupabaseAdminConfigured()) {
+    console.error('Supabase not configured');
+    return null;
+  }
+
+  const { data, error } = await supabaseAdmin!
+    .from('metronome_decisions')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    console.error('Error fetching decision by id:', error);
+    return null;
+  }
+
+  return data;
+}
+
 export async function createMetronomeDecision(
   data: Omit<MetronomeDecisionRow, 'id' | 'created_at' | 'updated_at' | 'decided_at'>
 ): Promise<{ success: boolean; decision?: MetronomeDecisionRow; error?: string }> {
@@ -509,7 +575,7 @@ export async function createMetronomeDecision(
 
   if (error) {
     console.error('Error creating decision:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: 'Operation failed' };
   }
 
   return { success: true, decision: result };
@@ -530,7 +596,7 @@ export async function updateMetronomeDecision(
 
   if (error) {
     console.error('Error updating decision:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: 'Operation failed' };
   }
 
   return { success: true };
@@ -587,7 +653,7 @@ export async function createMetronomeKeyDate(
 
   if (error) {
     console.error('Error creating key date:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: 'Operation failed' };
   }
 
   return { success: true, keyDate: result };
@@ -607,7 +673,7 @@ export async function deleteMetronomeKeyDate(
 
   if (error) {
     console.error('Error deleting key date:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: 'Operation failed' };
   }
 
   return { success: true };
@@ -664,7 +730,7 @@ export async function createMetronomeSync(
 
   if (error) {
     console.error('Error creating sync:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: 'Operation failed' };
   }
 
   return { success: true, sync: result };
@@ -739,34 +805,43 @@ export async function getMetronomeSummary(): Promise<MetronomeSummary> {
 
     defaultSummary.overdueDecisions = overdueDecCount || 0;
 
-    // 5. Compute on-track percentage
+    // 5. Compute on-track percentage (SEC-H4: single query instead of N+1)
     if (initiatives && initiatives.length > 0) {
-      const initiativeIds = initiatives.map(i => i.id);
-      let onTrackCount = 0;
+      const { data: allItems } = await supabaseAdmin!
+        .from('metronome_action_items')
+        .select('initiative_id, status');
 
-      for (const initId of initiativeIds) {
-        const { data: items } = await supabaseAdmin!
-          .from('metronome_action_items')
-          .select('status')
-          .eq('initiative_id', initId);
+      if (allItems && allItems.length > 0) {
+        // Group by initiative_id
+        const byInitiative: Record<string, { total: number; done: number }> = {};
+        for (const item of allItems) {
+          if (!byInitiative[item.initiative_id]) {
+            byInitiative[item.initiative_id] = { total: 0, done: 0 };
+          }
+          byInitiative[item.initiative_id].total++;
+          if (item.status === 'done') {
+            byInitiative[item.initiative_id].done++;
+          }
+        }
 
-        if (items && items.length > 0) {
-          const doneCount = items.filter(i => i.status === 'done').length;
-          if (doneCount / items.length >= 0.5) {
+        let onTrackCount = 0;
+        for (const init of initiatives) {
+          const counts = byInitiative[init.id];
+          if (counts && counts.total > 0 && counts.done / counts.total >= 0.5) {
             onTrackCount++;
           }
         }
-      }
 
-      defaultSummary.onTrackPercentage = Math.round(
-        (onTrackCount / initiatives.length) * 100
-      );
+        defaultSummary.onTrackPercentage = Math.round(
+          (onTrackCount / initiatives.length) * 100
+        );
+      }
     }
 
-    // 6. Get last sync date
+    // 6. Get last sync date (single query for both fields)
     const { data: lastSync } = await supabaseAdmin!
       .from('metronome_syncs')
-      .select('sync_date')
+      .select('sync_date, next_sync_date')
       .order('sync_date', { ascending: false })
       .limit(1)
       .single();
@@ -774,17 +849,9 @@ export async function getMetronomeSummary(): Promise<MetronomeSummary> {
     if (lastSync) {
       defaultSummary.lastSync.date = lastSync.sync_date;
 
-      // Check if there's a next_sync_date from the last sync
-      const { data: lastSyncFull } = await supabaseAdmin!
-        .from('metronome_syncs')
-        .select('next_sync_date')
-        .order('sync_date', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (lastSyncFull?.next_sync_date) {
-        defaultSummary.nextSync.date = lastSyncFull.next_sync_date;
-        const nextDate = new Date(lastSyncFull.next_sync_date);
+      if (lastSync.next_sync_date) {
+        defaultSummary.nextSync.date = lastSync.next_sync_date;
+        const nextDate = new Date(lastSync.next_sync_date);
         const todayDate = new Date(today);
         const diffTime = nextDate.getTime() - todayDate.getTime();
         defaultSummary.nextSync.daysUntil = Math.ceil(diffTime / (1000 * 60 * 60 * 24));

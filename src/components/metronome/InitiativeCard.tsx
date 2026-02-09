@@ -9,7 +9,7 @@ import type { MetronomeInitiativeRow, MetronomeActionItemRow } from '@/lib/db/me
 interface InitiativeCardProps {
   initiative: MetronomeInitiativeRow;
   actionItems: MetronomeActionItemRow[];
-  onToggleAction: (id: string) => void;
+  onToggleAction?: (id: string) => void;
 }
 
 export default function InitiativeCard({ initiative, actionItems, onToggleAction }: InitiativeCardProps) {
@@ -85,7 +85,7 @@ export default function InitiativeCard({ initiative, actionItems, onToggleAction
               const isDone = item.status === 'done';
               const itemOverdue = !isDone && item.deadline && new Date(item.deadline) < new Date();
 
-              return (
+              return onToggleAction ? (
                 <button
                   key={item.id}
                   onClick={() => onToggleAction(item.id)}
@@ -100,6 +100,20 @@ export default function InitiativeCard({ initiative, actionItems, onToggleAction
                     {item.title}
                   </span>
                 </button>
+              ) : (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-2 w-full"
+                >
+                  {isDone ? (
+                    <CheckCircle size={14} className="text-green-500 shrink-0" />
+                  ) : (
+                    <Circle size={14} className="text-gray-300 shrink-0" />
+                  )}
+                  <span className={`text-xs truncate ${isDone ? 'line-through text-gray-400' : itemOverdue ? 'text-red-600' : 'text-gray-700'}`}>
+                    {item.title}
+                  </span>
+                </div>
               );
             })}
           </div>

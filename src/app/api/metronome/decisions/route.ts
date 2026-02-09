@@ -3,10 +3,17 @@ import { withAuth } from '@/lib/api-auth';
 import { PERMISSIONS, hasPermission } from '@/lib/permissions';
 import {
   getMetronomeDecisions,
+  getDecisionById,
   createMetronomeDecision,
   updateMetronomeDecision,
 } from '@/lib/db';
-import type { MetronomeDecisionStatus, MetronomeFunctionTag } from '@/lib/db/metronome';
+import {
+  CreateDecisionSchema,
+  DecideSchema,
+  DeferSchema,
+  UpdateDecisionSchema,
+} from '@/lib/validators/metronome';
+import type { MetronomeDecisionStatus } from '@/lib/db/metronome';
 
 // GET /api/metronome/decisions - List decisions
 export const GET = withAuth(async (request: NextRequest) => {
@@ -31,18 +38,12 @@ export const GET = withAuth(async (request: NextRequest) => {
 export const POST = withAuth(async (request: NextRequest, { user }) => {
   try {
     const body = await request.json();
-    const { question, initiative_id, function_tag, deadline } = body;
-
-    if (!question) {
-      return NextResponse.json({ error: 'Question is required' }, { status: 400 });
+    const parsed = CreateDecisionSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid input', details: parsed.error.flatten().fieldErrors }, { status: 400 });
     }
 
-    if (function_tag) {
-      const validTags: MetronomeFunctionTag[] = ['bd', 'construction', 'hr', 'finance', 'legal', 'strategy', 'service'];
-      if (!validTags.includes(function_tag)) {
-        return NextResponse.json({ error: 'Invalid function_tag' }, { status: 400 });
-      }
-    }
+    const { question, initiative_id, function_tag, deadline } = parsed.data;
 
     const result = await createMetronomeDecision({
       question,
@@ -56,7 +57,7 @@ export const POST = withAuth(async (request: NextRequest, { user }) => {
     });
 
     if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 400 });
+      return NextResponse.json({ error: 'Failed to create decision' }, { status: 400 });
     }
 
     return NextResponse.json({ data: result.decision }, { status: 201 });
@@ -70,61 +71,93 @@ export const POST = withAuth(async (request: NextRequest, { user }) => {
 export const PATCH = withAuth(async (request: NextRequest, { user }) => {
   try {
     const body = await request.json();
-    const { action, id, ...fields } = body;
+    const { action } = body;
 
-    if (!action || !id) {
-      return NextResponse.json({ error: 'action and id are required' }, { status: 400 });
+    if (!action) {
+      return NextResponse.json({ error: 'action is required' }, { status: 400 });
     }
 
     const canEditAll = hasPermission(user.role, PERMISSIONS.METRONOME_EDIT_ALL);
+    const canRunMeeting = hasPermission(user.role, PERMISSIONS.METRONOME_RUN_MEETING);
 
     switch (action) {
       case 'decide': {
-        const { decision_text } = fields;
-        if (!decision_text) {
-          return NextResponse.json({ error: 'decision_text is required' }, { status: 400 });
+        const parsed = DecideSchema.safeParse(body);
+        if (!parsed.success) {
+          return NextResponse.json({ error: 'Invalid input', details: parsed.error.flatten().fieldErrors }, { status: 400 });
         }
 
-        const result = await updateMetronomeDecision(id, {
+        // SEC-C3: Ownership check — decide requires EDIT_ALL, RUN_MEETING, or being the creator
+        const decision = await getDecisionById(parsed.data.id);
+        if (!decision) {
+          return NextResponse.json({ error: 'Decision not found' }, { status: 404 });
+        }
+
+        if (!canEditAll && !canRunMeeting && decision.created_by !== user.id) {
+          return NextResponse.json({ error: 'You can only decide on your own decisions or during meetings' }, { status: 403 });
+        }
+
+        const result = await updateMetronomeDecision(parsed.data.id, {
           status: 'decided',
-          decision_text,
+          decision_text: parsed.data.decision_text,
           decided_by: user.id,
           decided_at: new Date().toISOString(),
         });
 
         if (!result.success) {
-          return NextResponse.json({ error: result.error }, { status: 400 });
+          return NextResponse.json({ error: 'Failed to decide' }, { status: 400 });
         }
         break;
       }
 
       case 'defer': {
-        const result = await updateMetronomeDecision(id, {
+        const parsed = DeferSchema.safeParse(body);
+        if (!parsed.success) {
+          return NextResponse.json({ error: 'Invalid input', details: parsed.error.flatten().fieldErrors }, { status: 400 });
+        }
+
+        // SEC-C3: Ownership check — defer requires EDIT_ALL, RUN_MEETING, or being the creator
+        const decision = await getDecisionById(parsed.data.id);
+        if (!decision) {
+          return NextResponse.json({ error: 'Decision not found' }, { status: 404 });
+        }
+
+        if (!canEditAll && !canRunMeeting && decision.created_by !== user.id) {
+          return NextResponse.json({ error: 'You can only defer your own decisions or during meetings' }, { status: 403 });
+        }
+
+        const result = await updateMetronomeDecision(parsed.data.id, {
           status: 'deferred',
         });
 
         if (!result.success) {
-          return NextResponse.json({ error: result.error }, { status: 400 });
+          return NextResponse.json({ error: 'Failed to defer decision' }, { status: 400 });
         }
         break;
       }
 
       case 'update': {
+        const parsed = UpdateDecisionSchema.safeParse(body);
+        if (!parsed.success) {
+          return NextResponse.json({ error: 'Invalid input', details: parsed.error.flatten().fieldErrors }, { status: 400 });
+        }
+
         if (!canEditAll) {
           return NextResponse.json({ error: 'Edit all permission required for update' }, { status: 403 });
         }
 
+        const { id, action: _action, ...fields } = parsed.data;
         const allowedFields: Record<string, unknown> = {};
         const editableKeys = ['question', 'deadline', 'function_tag', 'initiative_id'];
         for (const key of editableKeys) {
           if (key in fields) {
-            allowedFields[key] = fields[key];
+            allowedFields[key] = (fields as Record<string, unknown>)[key];
           }
         }
 
         const result = await updateMetronomeDecision(id, allowedFields);
         if (!result.success) {
-          return NextResponse.json({ error: result.error }, { status: 400 });
+          return NextResponse.json({ error: 'Failed to update decision' }, { status: 400 });
         }
         break;
       }
