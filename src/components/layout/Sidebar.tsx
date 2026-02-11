@@ -35,6 +35,9 @@ import {
   Receipt,
   Calendar,
   RefreshCw,
+  Briefcase,
+  Target,
+  Terminal,
 } from 'lucide-react';
 import type { User, UserRole } from '@/types';
 import { getRoleLabel } from '@/lib/auth';
