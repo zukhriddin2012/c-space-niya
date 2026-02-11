@@ -22,6 +22,11 @@ import {
   MessageSquare,
   Inbox,
   ClipboardCheck,
+  Calendar,
+  DollarSign,
+  RefreshCw,
+  Code2,
+  Bot,
 } from 'lucide-react';
 import type { User, UserRole } from '@/types';
 import { getRoleLabel } from '@/lib/auth';
@@ -39,29 +44,26 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
+  // Dashboard
   {
     nameKey: 'dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
     roles: ['general_manager', 'ceo', 'hr', 'recruiter', 'branch_manager', 'employee', 'accountant', 'chief_accountant', 'legal_manager'],
   },
+  // My Portal
   {
     nameKey: 'myPortal',
     href: '/my-portal',
     icon: UserCircle,
     roles: ['general_manager', 'ceo', 'hr', 'recruiter', 'branch_manager', 'employee', 'accountant', 'chief_accountant', 'legal_manager'],
   },
+  // People Management
   {
     nameKey: 'employees',
     href: '/employees',
     icon: Users,
     roles: ['general_manager', 'ceo', 'hr', 'branch_manager'],
-  },
-  {
-    nameKey: 'branches',
-    href: '/branches',
-    icon: MapPin,
-    roles: ['general_manager', 'hr'],
   },
   {
     nameKey: 'attendance',
@@ -76,10 +78,23 @@ const navItems: NavItem[] = [
     roles: ['general_manager', 'ceo', 'hr'],
   },
   {
-    nameKey: 'recruitment',
-    href: '/recruitment',
-    icon: UserPlus,
-    roles: ['general_manager', 'hr', 'recruiter'],
+    nameKey: 'departments',
+    href: '/departments',
+    icon: Building2,
+    roles: ['general_manager', 'hr'],
+  },
+  // Operations
+  {
+    nameKey: 'shiftPlanning',
+    href: '/shifts',
+    icon: Calendar,
+    roles: ['general_manager', 'hr', 'ceo', 'branch_manager'],
+  },
+  {
+    nameKey: 'branches',
+    href: '/branches',
+    icon: MapPin,
+    roles: ['general_manager', 'hr'],
   },
   {
     nameKey: 'approvals',
@@ -87,24 +102,41 @@ const navItems: NavItem[] = [
     icon: ClipboardCheck,
     roles: ['general_manager', 'ceo', 'hr', 'chief_accountant'],
   },
+  // Recruitment
   {
-    nameKey: 'reports',
-    href: '/reports',
-    icon: BarChart3,
-    roles: ['general_manager', 'ceo'],
+    nameKey: 'recruitment',
+    href: '/recruitment',
+    icon: UserPlus,
+    roles: ['general_manager', 'hr', 'recruiter'],
   },
+  // Accounting
   {
     nameKey: 'accounting',
     href: '/accounting/my-requests',
     icon: Calculator,
     roles: ['general_manager', 'ceo', 'chief_accountant', 'accountant', 'branch_manager', 'legal_manager', 'hr', 'employee', 'recruiter'],
   },
+  // Finances
   {
-    nameKey: 'departments',
-    href: '/departments',
-    icon: Building2,
-    roles: ['general_manager', 'hr'],
+    nameKey: 'finances',
+    href: '/finances',
+    icon: DollarSign,
+    roles: ['general_manager', 'ceo', 'branch_manager', 'reports_manager', 'chief_accountant', 'accountant'],
   },
+  // Strategy
+  {
+    nameKey: 'metronomeSync',
+    href: '/metronome-sync',
+    icon: RefreshCw,
+    roles: ['general_manager', 'ceo', 'hr', 'branch_manager'],
+  },
+  {
+    nameKey: 'reports',
+    href: '/reports',
+    icon: BarChart3,
+    roles: ['general_manager', 'ceo'],
+  },
+  // Feedback
   {
     nameKey: 'feedback',
     href: '/feedback',
@@ -117,6 +149,20 @@ const navItems: NavItem[] = [
     icon: Inbox,
     roles: ['general_manager', 'ceo'],
   },
+  // Developer
+  {
+    nameKey: 'devBoard',
+    href: '/dev-board',
+    icon: Code2,
+    roles: ['general_manager'],
+  },
+  {
+    nameKey: 'telegramBot',
+    href: '/telegram-bot',
+    icon: Bot,
+    roles: ['general_manager'],
+  },
+  // Settings
   {
     nameKey: 'settings',
     href: '/settings',
@@ -149,6 +195,11 @@ export default function MobileNav({ user }: MobileNavProps) {
       feedback: t.nav.feedback,
       feedbackInbox: t.nav.feedbackInbox,
       settings: t.nav.settings,
+      shiftPlanning: t.nav.shiftPlanning || 'Shift Planning',
+      metronomeSync: t.nav.metronomeSync || 'Metronome Sync',
+      devBoard: t.nav.devBoard || 'Dev Board',
+      telegramBot: t.nav.telegramBot || 'Telegram Bot',
+      finances: t.nav.finances || 'Finances',
     };
     return labels[key] || key;
   };

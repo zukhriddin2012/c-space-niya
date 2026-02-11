@@ -84,6 +84,14 @@ export const uz: Translations = {
     devBoard: "Dev Board",
     shiftPlanning: "Smena rejalashtirish",
     metronomeSync: 'Metronom Sink',
+    operations: 'Operatsiyalar',
+    strategy: 'Strategiya',
+    developer: 'Dasturchi',
+    telegramBot: 'Telegram Bot',
+    finances: 'Moliya',
+    financesDashboard: 'Bosh sahifa',
+    myBranchFinances: 'Mening filialim',
+    financesTransactions: 'Tranzaksiyalar',
   },
 
   // Dashboard

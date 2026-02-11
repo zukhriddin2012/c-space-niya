@@ -114,19 +114,32 @@ const navItems: NavItem[] = [
       },
     ],
   },
-  // Shift Planning
+  // Operations group
   {
-    nameKey: 'shiftPlanning',
+    nameKey: 'operations',
     href: '/shifts',
-    icon: Calendar,
-    roles: ['general_manager', 'hr', 'ceo', 'branch_manager'],
-  },
-  // Metronome Sync
-  {
-    nameKey: 'metronomeSync',
-    href: '/metronome-sync',
-    icon: RefreshCw,
-    roles: ['general_manager', 'ceo', 'hr', 'branch_manager'],
+    icon: Briefcase,
+    roles: ['general_manager', 'ceo', 'hr', 'branch_manager', 'chief_accountant'],
+    children: [
+      {
+        nameKey: 'shiftPlanning',
+        href: '/shifts',
+        icon: Calendar,
+        roles: ['general_manager', 'hr', 'ceo', 'branch_manager'],
+      },
+      {
+        nameKey: 'branches',
+        href: '/branches',
+        icon: MapPin,
+        roles: ['general_manager', 'hr'],
+      },
+      {
+        nameKey: 'approvals',
+        href: '/approvals',
+        icon: ClipboardCheck,
+        roles: ['general_manager', 'ceo', 'hr', 'chief_accountant'],
+      },
+    ],
   },
   // Recruitment group
   {
@@ -149,13 +162,6 @@ const navItems: NavItem[] = [
       },
     ],
   },
-  // Approvals Hub (for managers)
-  {
-    nameKey: 'approvals',
-    href: '/approvals',
-    icon: ClipboardCheck,
-    roles: ['general_manager', 'ceo', 'hr', 'chief_accountant'],
-  },
   // Accounting group
   {
     nameKey: 'accounting',
@@ -176,12 +182,6 @@ const navItems: NavItem[] = [
         roles: ['general_manager', 'ceo', 'chief_accountant', 'accountant'],
       },
     ],
-  },
-  {
-    nameKey: 'branches',
-    href: '/branches',
-    icon: MapPin,
-    roles: ['general_manager', 'hr'],
   },
   // Finances group
   {
@@ -210,12 +210,28 @@ const navItems: NavItem[] = [
       },
     ],
   },
+  // Strategy group
   {
-    nameKey: 'reports',
-    href: '/reports',
-    icon: BarChart3,
-    roles: ['general_manager', 'ceo'],
+    nameKey: 'strategy',
+    href: '/metronome-sync',
+    icon: Target,
+    roles: ['general_manager', 'ceo', 'hr', 'branch_manager'],
+    children: [
+      {
+        nameKey: 'metronomeSync',
+        href: '/metronome-sync',
+        icon: RefreshCw,
+        roles: ['general_manager', 'ceo', 'hr', 'branch_manager'],
+      },
+      {
+        nameKey: 'reports',
+        href: '/reports',
+        icon: BarChart3,
+        roles: ['general_manager', 'ceo'],
+      },
+    ],
   },
+  // Feedback
   {
     nameKey: 'feedback',
     href: '/feedback',
@@ -228,22 +244,32 @@ const navItems: NavItem[] = [
     icon: Inbox,
     roles: ['general_manager', 'ceo'],
   },
+  // Developer group
+  {
+    nameKey: 'developer',
+    href: '/dev-board',
+    icon: Terminal,
+    roles: ['general_manager'],
+    children: [
+      {
+        nameKey: 'devBoard',
+        href: '/dev-board',
+        icon: Code2,
+        roles: ['general_manager'],
+      },
+      {
+        nameKey: 'telegramBot',
+        href: '/telegram-bot',
+        icon: Bot,
+        roles: ['general_manager'],
+      },
+    ],
+  },
+  // Settings
   {
     nameKey: 'settings',
     href: '/settings',
     icon: Settings,
-    roles: ['general_manager'],
-  },
-  {
-    nameKey: 'devBoard',
-    href: '/dev-board',
-    icon: Code2,
-    roles: ['general_manager'],
-  },
-  {
-    nameKey: 'telegramBot',
-    href: '/telegram-bot',
-    icon: Bot,
     roles: ['general_manager'],
   },
 ];
@@ -256,8 +282,13 @@ export default function Sidebar({ user }: SidebarProps) {
     // Auto-expand if we're on a child route
     const expanded: string[] = [];
     navItems.forEach(item => {
-      if (item.children && pathname.startsWith(item.href)) {
-        expanded.push(item.href);
+      if (item.children) {
+        const isOnChild = item.children.some(child =>
+          pathname === child.href || pathname.startsWith(child.href + '/')
+        );
+        if (isOnChild || pathname.startsWith(item.href)) {
+          expanded.push(item.href);
+        }
       }
     });
     return expanded;
@@ -284,16 +315,20 @@ export default function Sidebar({ user }: SidebarProps) {
       approvals: t.nav.approvals,
       departments: t.nav.departments,
       salaryImport: 'Salary Import',
-      finances: 'Finances',
-      financesDashboard: 'Dashboard',
-      myBranchFinances: 'My Branch',
-      financesTransactions: 'Transactions',
+      finances: t.nav.finances || 'Finances',
+      financesDashboard: t.nav.financesDashboard || 'Dashboard',
+      myBranchFinances: t.nav.myBranchFinances || 'My Branch',
+      financesTransactions: t.nav.financesTransactions || 'Transactions',
       feedback: t.nav.feedback,
       feedbackInbox: t.nav.feedbackInbox,
       settings: t.nav.settings,
-      devBoard: 'Dev Board',
-      telegramBot: 'Telegram Bot',
+      devBoard: t.nav.devBoard || 'Dev Board',
+      telegramBot: t.nav.telegramBot || 'Telegram Bot',
       shiftPlanning: t.nav.shiftPlanning || 'Shift Planning',
+      metronomeSync: t.nav.metronomeSync || 'Metronome Sync',
+      operations: t.nav.operations || 'Operations',
+      strategy: t.nav.strategy || 'Strategy',
+      developer: t.nav.developer || 'Developer',
     };
     return labels[key] || key;
   };
@@ -330,7 +365,9 @@ export default function Sidebar({ user }: SidebarProps) {
     const isActive = pathname === item.href ||
       (hasChildren && pathname.startsWith(item.href + '/')) ||
       (!hasChildren && pathname.startsWith(item.href + '/'));
-    const isChildActive = hasChildren && item.children?.some(child => pathname === child.href);
+    const isChildActive = hasChildren && item.children?.some(child =>
+      pathname === child.href || pathname.startsWith(child.href + '/')
+    );
     const Icon = item.icon;
     const itemName = getNavLabel(item.nameKey);
 

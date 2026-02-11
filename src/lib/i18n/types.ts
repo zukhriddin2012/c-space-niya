@@ -84,6 +84,14 @@ export interface Translations {
     orgChart: string;
     shiftPlanning: string;
     metronomeSync: string;
+    operations: string;
+    strategy: string;
+    developer: string;
+    telegramBot: string;
+    finances: string;
+    financesDashboard: string;
+    myBranchFinances: string;
+    financesTransactions: string;
   };
 
   // Dashboard
