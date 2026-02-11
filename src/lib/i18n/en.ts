@@ -84,6 +84,14 @@ export const en: Translations = {
     devBoard: 'Dev Board',
     shiftPlanning: 'Shift Planning',
     metronomeSync: 'Metronome Sync',
+    operations: 'Operations',
+    strategy: 'Strategy',
+    developer: 'Developer',
+    telegramBot: 'Telegram Bot',
+    finances: 'Finances',
+    financesDashboard: 'Dashboard',
+    myBranchFinances: 'My Branch',
+    financesTransactions: 'Transactions',
   },
 
   // Dashboard

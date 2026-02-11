@@ -84,6 +84,14 @@ export const ru: Translations = {
     devBoard: 'Dev Board',
     shiftPlanning: 'Планирование смен',
     metronomeSync: 'Метроном Синк',
+    operations: 'Операции',
+    strategy: 'Стратегия',
+    developer: 'Разработка',
+    telegramBot: 'Телеграм бот',
+    finances: 'Финансы',
+    financesDashboard: 'Панель',
+    myBranchFinances: 'Мой филиал',
+    financesTransactions: 'Транзакции',
   },
 
   // Dashboard
