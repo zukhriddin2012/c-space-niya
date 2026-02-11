@@ -113,6 +113,7 @@ export default function InitiativeCard({
 
   return (
     <div
+      data-onboarding="initiative-card"
       className={`bg-white border rounded-lg p-3 ${
         isResolved ? 'opacity-60 border-gray-200' : hasOverdue ? 'border-red-200' : 'border-gray-200'
       }`}
@@ -201,7 +202,7 @@ export default function InitiativeCard({
 
       {/* Action items */}
       {totalCount > 0 && (
-        <div className="mt-2 border-t border-gray-100 pt-2">
+        <div data-onboarding="action-items" className="mt-2 border-t border-gray-100 pt-2">
           <div className="space-y-1">
             {visibleActions.map(item => {
               const isDone = item.status === 'done';

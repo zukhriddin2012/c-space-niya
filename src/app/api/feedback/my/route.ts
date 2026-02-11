@@ -9,7 +9,10 @@ export const GET = withAuth(async (request: NextRequest, context: { user: User }
   try {
     const { user } = context;
 
-    const feedback = await getMyFeedback(user.employeeId!);
+    // BUG-010 fix: user.employeeId contains the employee code (e.g. "HN001"), not the UUID.
+    // user.id IS the employee UUID (set in auth.ts as employee.id), which matches
+    // feedback_submissions.employee_id (UUID FK to employees.id).
+    const feedback = await getMyFeedback(user.id);
 
     return NextResponse.json({ feedback });
   } catch (error) {

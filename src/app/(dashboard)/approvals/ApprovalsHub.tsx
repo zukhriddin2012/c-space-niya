@@ -52,7 +52,6 @@ interface WageChangeRequest {
 
 interface PaymentRequest {
   id: string;
-  request_number: string;
   request_type: string;
   total_amount: number;
   description: string | null;
@@ -574,7 +573,7 @@ export function ApprovalsHub({
                             href={`/accounting/requests/${request.id}`}
                             className="font-medium text-purple-600 hover:text-purple-700"
                           >
-                            {request.request_number}
+                            {request.request_type.toUpperCase()}-{request.id.slice(0, 8).toUpperCase()}
                           </Link>
                           <p className="text-sm text-gray-500">
                             {request.description || request.request_type}

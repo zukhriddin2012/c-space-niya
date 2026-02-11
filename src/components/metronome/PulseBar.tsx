@@ -92,6 +92,7 @@ export default function PulseBar({
             </div>
           ) : (
             <div
+              data-onboarding="next-sync"
               onClick={onUpdateNextSync ? handleStartEdit : undefined}
               className={`flex items-center gap-2 ${onUpdateNextSync ? 'cursor-pointer hover:bg-gray-50 rounded-lg px-2 py-1 -mx-2 -my-1' : ''}`}
               title={onUpdateNextSync ? 'Click to edit next sync date' : undefined}

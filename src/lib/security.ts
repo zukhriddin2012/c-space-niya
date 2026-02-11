@@ -292,6 +292,12 @@ export async function resolveOperatorEmployee(
     const isKioskUser = user.id?.startsWith('kiosk:') || user.role === 'reception_kiosk';
     const isValidUUID = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
+    // BUG-006 fix: Kiosk users without an operator switch have synthetic IDs (kiosk:branchId)
+    // and no email. All lookup strategies will fail, so return null early to avoid log noise.
+    if (isKioskUser && !rawOperatorId) {
+      return null;
+    }
+
     const opValidation = await validateOperatorSession(rawOperatorId, user.id, branchId);
 
     // 1. Operator switched via PIN — look up by their employee ID

@@ -1146,7 +1146,6 @@ interface ChiefAccountantDashboardProps {
   };
   pendingRequests: Array<{
     id: string;
-    request_number: string;
     description?: string;
     request_type: string;
     total_amount: number;
@@ -1222,7 +1221,7 @@ export function ChiefAccountantDashboard({
             pendingRequests.map((request) => (
               <div key={request.id} className="flex justify-between items-center p-3 bg-amber-50 rounded-lg">
                 <div>
-                  <span className="font-medium text-gray-900">{request.request_number}</span>
+                  <span className="font-medium text-gray-900">{request.request_type.toUpperCase()}-{request.id.slice(0, 8).toUpperCase()}</span>
                   <span className="text-sm text-gray-500 ml-2">- {request.description || request.request_type}</span>
                 </div>
                 <div className="flex items-center gap-3">

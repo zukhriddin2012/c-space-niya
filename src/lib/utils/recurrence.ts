@@ -58,9 +58,9 @@ export function expandRecurringEvents(
         });
       }
 
-      // Advance to next occurrence
-      current = advanceDate(current, kd.recurrence_rule);
+      // Advance to next occurrence — pass startDate to avoid monthly day-of-month drift
       instanceCount++;
+      current = computeNthOccurrence(startDate, kd.recurrence_rule, instanceCount);
 
       // Safety: break if we've generated more than 500 instances (prevents infinite loop)
       if (instanceCount > 500) break;
@@ -71,30 +71,37 @@ export function expandRecurringEvents(
 }
 
 /**
- * Advance a date by one recurrence interval.
+ * Compute the Nth occurrence from a start date by recurrence rule.
+ * For monthly: always computes from the original start date to avoid
+ * "sticky clamping" drift (e.g., Jan 31 → Feb 28 → Mar 31, not Mar 28).
+ * For weekly/biweekly: simple day arithmetic from start date.
  */
-function advanceDate(date: Date, rule: MetronomeRecurrenceRule): Date {
-  const next = new Date(date);
+function computeNthOccurrence(startDate: Date, rule: MetronomeRecurrenceRule, n: number): Date {
   switch (rule) {
-    case 'weekly':
-      next.setDate(next.getDate() + 7);
-      break;
-    case 'biweekly':
-      next.setDate(next.getDate() + 14);
-      break;
+    case 'weekly': {
+      const next = new Date(startDate);
+      next.setDate(next.getDate() + 7 * n);
+      return next;
+    }
+    case 'biweekly': {
+      const next = new Date(startDate);
+      next.setDate(next.getDate() + 14 * n);
+      return next;
+    }
     case 'monthly': {
-      // Fix: Clamp to last day of target month to prevent month-end overflow
-      // e.g., Jan 31 → setMonth(1) would overflow to Mar 2/3 without clamping
-      const targetMonth = next.getMonth() + 1;
-      next.setMonth(targetMonth);
-      // If overflow occurred (e.g., Feb 31 → Mar 3), clamp to last day of intended month
-      if (next.getMonth() !== targetMonth % 12) {
-        next.setDate(0); // Sets to last day of previous month (the intended month)
+      // Compute target month from the ORIGINAL start date (not from clamped previous)
+      // This preserves the original day-of-month intent across all months
+      const targetMonthIndex = startDate.getMonth() + n;
+      const candidate = new Date(startDate.getFullYear(), targetMonthIndex, startDate.getDate());
+      // Check if day overflowed into the next month (e.g., Feb 31 → Mar 3)
+      const expectedMonth = targetMonthIndex % 12;
+      if (candidate.getMonth() !== expectedMonth) {
+        // Clamp to last day of the intended month: day 0 of next month = last day of target month
+        return new Date(startDate.getFullYear(), targetMonthIndex + 1, 0);
       }
-      break;
+      return candidate;
     }
   }
-  return next;
 }
 
 /**

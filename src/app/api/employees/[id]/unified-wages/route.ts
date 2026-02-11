@@ -100,13 +100,13 @@ export const GET = withAuth(async (
         .eq('is_active', true),
 
       // Additional wages from employee_branch_wages
+      // Note: employee_branch_wages has no wage_type column — these are always 'additional'
       supabaseAdmin!
         .from('employee_branch_wages')
         .select(`
           id,
           branch_id,
           wage_amount,
-          wage_type,
           is_active,
           branches(id, name)
         `)
@@ -171,13 +171,13 @@ export const GET = withAuth(async (
       is_active: w.is_active,
     }));
 
-    // Process additional wages
+    // Process additional wages (branch wages are always type 'additional')
     const additionalSources: WageSource[] = branchWages.map((w: any) => ({
       source_type: 'additional' as const,
       source_id: w.branch_id,
       source_name: w.branches?.name || w.branch_id,
       wage_amount: Number(w.wage_amount) || 0,
-      wage_type: w.wage_type || 'additional',
+      wage_type: 'additional',
       is_active: w.is_active,
     }));
 

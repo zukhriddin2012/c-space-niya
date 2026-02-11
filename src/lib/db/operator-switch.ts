@@ -43,6 +43,7 @@ export async function getEmployeesWithPin(branchId: string): Promise<
   }
 
   // Get employees with PIN from cross-branch assignments
+  // BUG-004 fix: Disambiguate FK — use employee_id FK (not assigned_by FK) to join employees
   const { data: crossBranchData, error: crossError } = await supabaseAdmin!
     .from('branch_employee_assignments')
     .select(
@@ -50,7 +51,7 @@ export async function getEmployeesWithPin(branchId: string): Promise<
       employee_id,
       assigned_branch_id,
       home_branch_id,
-      employees!inner(id, full_name, operator_pin_hash)
+      employees!branch_employee_assignments_employee_id_fkey(id, full_name, operator_pin_hash)
     `
     )
     .eq('assigned_branch_id', branchId)
@@ -163,6 +164,15 @@ export async function logOperatorSwitch(params: {
 }): Promise<{ success: boolean; error?: string }> {
   if (!isSupabaseAdminConfigured()) {
     return { success: false, error: 'Database not configured' };
+  }
+
+  // BUG-005 fix: Kiosk users have synthetic IDs like "kiosk:labzak" which are not valid UUIDs.
+  // The session_user_id column in operator_switch_log is UUID type, so skip logging for kiosk sessions.
+  // The PIN was already validated server-side before reaching this point.
+  const isKioskSession = params.sessionUserId.startsWith('kiosk:');
+  if (isKioskSession) {
+    // Still return success — the PIN switch itself worked, we just can't log the kiosk session ID
+    return { success: true };
   }
 
   const { error } = await supabaseAdmin!
@@ -361,6 +371,7 @@ export async function getActiveBranchAssignments(
 
   const now = new Date().toISOString();
 
+  // BUG-004 fix: Disambiguate employees FK (employee_id vs assigned_by)
   const { data, error } = await supabaseAdmin!
     .from('branch_employee_assignments')
     .select(
@@ -374,10 +385,10 @@ export async function getActiveBranchAssignments(
       ends_at,
       removed_at,
       created_at,
-      employees(id, full_name),
+      employees!branch_employee_assignments_employee_id_fkey(id, full_name),
       assigned_branch:branches!assigned_branch_id(id, name),
       home_branch:branches!home_branch_id(id, name),
-      assigned_user:employees!assigned_by(id, full_name)
+      assigned_user:employees!branch_employee_assignments_assigned_by_fkey(id, full_name)
     `
     )
     .eq('assigned_branch_id', branchId)

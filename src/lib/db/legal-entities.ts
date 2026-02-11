@@ -31,7 +31,7 @@ export async function getLegalEntities(): Promise<LegalEntity[]> {
 
   const { data, error } = await supabaseAdmin!
     .from('legal_entities')
-    .select('*, branches!employees_branch_id_fkey(name)')
+    .select('*, branches(name)')
     .eq('status', 'active')
     .order('name');
 
@@ -50,7 +50,7 @@ export async function getLegalEntityById(id: string): Promise<LegalEntity | null
 
   const { data, error } = await supabaseAdmin!
     .from('legal_entities')
-    .select('*, branches!employees_branch_id_fkey(name)')
+    .select('*, branches(name)')
     .eq('id', id)
     .single();
 
