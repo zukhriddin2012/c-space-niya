@@ -71,9 +71,9 @@ export async function getAccountingDashboardStats(forChiefAccountant: boolean = 
 }
 
 // Get pending payment requests for approval (Chief Accountant)
+// BUG-009 fix: removed request_number — column doesn't exist in payment_requests table
 export async function getPendingPaymentRequestsForApproval(limit: number = 5): Promise<{
   id: string;
-  request_number: string;
   request_type: string;
   total_amount: number;
   description: string | null;
@@ -86,7 +86,7 @@ export async function getPendingPaymentRequestsForApproval(limit: number = 5): P
 
   const { data, error } = await supabaseAdmin!
     .from('payment_requests')
-    .select('id, request_number, request_type, total_amount, description, status, created_at')
+    .select('id, request_type, total_amount, description, status, created_at')
     .in('status', ['submitted', 'pending_review', 'approved'])
     .order('created_at', { ascending: false })
     .limit(limit);
@@ -128,9 +128,9 @@ export async function getMyPaymentRequestStats(employeeId: string): Promise<{
 }
 
 // Get recent payment requests by employee
+// BUG-009 fix: removed request_number — column doesn't exist in payment_requests table
 export async function getMyRecentPaymentRequests(employeeId: string, limit: number = 5): Promise<{
   id: string;
-  request_number: string;
   request_type: string;
   total_amount: number;
   description: string | null;
@@ -143,7 +143,7 @@ export async function getMyRecentPaymentRequests(employeeId: string, limit: numb
 
   const { data, error } = await supabaseAdmin!
     .from('payment_requests')
-    .select('id, request_number, request_type, total_amount, description, status, created_at')
+    .select('id, request_type, total_amount, description, status, created_at')
     .eq('created_by', employeeId)
     .order('created_at', { ascending: false })
     .limit(limit);

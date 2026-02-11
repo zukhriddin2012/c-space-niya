@@ -108,15 +108,15 @@ export async function getWageChangeRequests(
     return [];
   }
 
+  // BUG-008 fix: legal_entity_id and branch_id have no FK constraints in the DB schema,
+  // so explicit FK hints fail. Remove those joins — data is fetched without relational lookup.
   let query = supabaseAdmin!
     .from('wage_change_requests')
     .select(`
       *,
       employee:employees!wage_change_requests_employee_id_fkey(full_name, employee_id),
       requester:employees!wage_change_requests_requested_by_fkey(full_name),
-      approver:employees!wage_change_requests_approved_by_fkey(full_name),
-      legal_entity:legal_entities!wage_change_requests_legal_entity_id_fkey(name),
-      branch:branches!wage_change_requests_branch_id_fkey(name)
+      approver:employees!wage_change_requests_approved_by_fkey(full_name)
     `)
     .order('created_at', { ascending: false });
 
@@ -147,9 +147,7 @@ export async function getWageChangeRequestById(
       *,
       employee:employees!wage_change_requests_employee_id_fkey(full_name, employee_id),
       requester:employees!wage_change_requests_requested_by_fkey(full_name),
-      approver:employees!wage_change_requests_approved_by_fkey(full_name),
-      legal_entity:legal_entities!wage_change_requests_legal_entity_id_fkey(name),
-      branch:branches!wage_change_requests_branch_id_fkey(name)
+      approver:employees!wage_change_requests_approved_by_fkey(full_name)
     `)
     .eq('id', requestId)
     .single();
@@ -173,8 +171,6 @@ export async function getEmployeePendingWageChanges(
     .from('wage_change_requests')
     .select(`
       *,
-      legal_entity:legal_entities!wage_change_requests_legal_entity_id_fkey(name),
-      branch:branches!wage_change_requests_branch_id_fkey(name),
       requester:employees!wage_change_requests_requested_by_fkey(full_name)
     `)
     .eq('employee_id', employeeId)

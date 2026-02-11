@@ -112,7 +112,6 @@ describe('ApprovalsHub', () => {
   const mockPaymentRequests = [
     {
       id: 'pay-1',
-      request_number: 'PAY-001',
       request_type: 'vendor_payment',
       total_amount: 10000000,
       description: 'Office supplies',

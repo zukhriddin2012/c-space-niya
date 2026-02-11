@@ -69,8 +69,10 @@ export const POST = withAuth(async (request: NextRequest, context: { user: User 
     }
 
     // Create feedback
+    // BUG-010 fix: user.employeeId is the employee code (e.g. "HN001"), not UUID.
+    // feedback_submissions.employee_id is UUID FK to employees.id — use user.id instead.
     const result = await createFeedback({
-      employee_id: user.employeeId!,
+      employee_id: user.id,
       is_anonymous: is_anonymous || false,
       category: category as FeedbackCategory,
       feedback_text,
@@ -87,8 +89,8 @@ export const POST = withAuth(async (request: NextRequest, context: { user: User 
       if (gmTelegramId && result.feedback) {
         // Get employee name for non-anonymous feedback
         let employeeName: string | undefined;
-        if (!is_anonymous && user.employeeId) {
-          const employee = await getEmployeeById(user.employeeId);
+        if (!is_anonymous) {
+          const employee = await getEmployeeById(user.id);
           employeeName = employee?.full_name;
         }
 
