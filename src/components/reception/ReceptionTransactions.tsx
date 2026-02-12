@@ -107,6 +107,7 @@ interface TransactionFormData {
   transactionCode: string;
   notes: string;
   transactionDate: string;
+  isInkasso: boolean;
 }
 
 // Use local date to fix timezone bug
@@ -118,6 +119,7 @@ const initialFormData: TransactionFormData = {
   transactionCode: '',
   notes: '',
   transactionDate: getLocalDateString(),
+  isInkasso: false,
 };
 
 export default function ReceptionTransactions() {
@@ -175,6 +177,7 @@ export default function ReceptionTransactions() {
 
   const selectedPaymentMethod = paymentMethods.find(pm => pm.id === formData.paymentMethodId);
   const requiresTransactionCode = selectedPaymentMethod?.requiresCode || false;
+  const isCashPayment = selectedPaymentMethod?.code === 'cash';
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -264,6 +267,7 @@ export default function ReceptionTransactions() {
         transactionCode: formData.transactionCode.trim() || undefined,
         notes: formData.notes.trim() || undefined,
         transactionDate: formData.transactionDate,
+        isInkasso: isCashPayment ? formData.isInkasso : undefined,
       };
       const response = await fetch('/api/reception/transactions', {
         method: 'POST',
@@ -523,10 +527,22 @@ export default function ReceptionTransactions() {
                       </td>
                       {/* Payment */}
                       <td className="px-4 py-3">
-                        <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-blue-50 text-blue-700 rounded-md text-sm">
-                          <PaymentIcon code={txn.paymentMethod?.code} icon={txn.paymentMethod?.icon} size={18} />
-                          <span>{txn.paymentMethod?.name}</span>
-                        </span>
+                        <div className="flex flex-col gap-1">
+                          <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-blue-50 text-blue-700 rounded-md text-sm">
+                            <PaymentIcon code={txn.paymentMethod?.code} icon={txn.paymentMethod?.icon} size={18} />
+                            <span>{txn.paymentMethod?.name}</span>
+                          </span>
+                          {txn.isInkasso === true && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-medium">
+                              🧾 Inkasso
+                            </span>
+                          )}
+                          {txn.isInkasso === false && txn.paymentMethod?.code === 'cash' && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-xs">
+                              No receipt
+                            </span>
+                          )}
+                        </div>
                       </td>
                       {/* Branch */}
                       {showBranchColumn && (
@@ -653,6 +669,22 @@ export default function ReceptionTransactions() {
                 <Input label="Transaction Code" value={formData.transactionCode} onChange={(e) => setFormData({ ...formData, transactionCode: e.target.value })} placeholder="Enter code" error={formErrors.transactionCode} required />
               </div>
             )}
+            {isCashPayment && (
+              <div className="md:col-span-2">
+                <label className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.isInkasso}
+                    onChange={(e) => setFormData({ ...formData, isInkasso: e.target.checked })}
+                    className="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                  />
+                  <div>
+                    <span className="text-sm font-medium text-amber-800">Official Receipt (Inkasso)</span>
+                    <p className="text-xs text-amber-600 mt-0.5">Check if this cash payment has an official receipt for tax authorities</p>
+                  </div>
+                </label>
+              </div>
+            )}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
               <textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} placeholder="Optional notes" rows={2} className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
@@ -727,6 +759,16 @@ export default function ReceptionTransactions() {
                 </div>
               )}
             </div>
+
+            {/* Inkasso Status (Cash Management) */}
+            {selectedTransaction.isInkasso !== null && selectedTransaction.isInkasso !== undefined && (
+              <div className={`rounded-lg p-4 ${selectedTransaction.isInkasso ? 'bg-amber-50 border border-amber-200' : 'bg-gray-50'}`}>
+                <p className="text-sm text-gray-500 mb-1">Cash Receipt Status</p>
+                <p className={`font-medium ${selectedTransaction.isInkasso ? 'text-amber-800' : 'text-gray-600'}`}>
+                  {selectedTransaction.isInkasso ? '🧾 Official Receipt (Inkasso)' : 'No official receipt'}
+                </p>
+              </div>
+            )}
 
             {/* Transaction Code */}
             {selectedTransaction.transactionCode && (

@@ -83,6 +83,7 @@ export const POST = withAuth(async (request: NextRequest, { user, employee }) =>
     if (typeof opexPortion !== 'number' || opexPortion < 0) errors.push('opexPortion must be >= 0');
     if (typeof dividendPortion !== 'number' || dividendPortion <= 0) errors.push('dividendPortion must be > 0');
     if (!reason?.trim()) errors.push('reason is required');
+    if (reason?.trim() && reason.trim().length < 10) errors.push('reason must be at least 10 characters');
 
     // H-04: Length validation
     if (expenseSubject && expenseSubject.length > MAX_LENGTH.DESCRIPTION) errors.push(`expenseSubject exceeds ${MAX_LENGTH.DESCRIPTION} characters`);

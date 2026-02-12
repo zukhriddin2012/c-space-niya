@@ -2,22 +2,34 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api-auth';
 import { PERMISSIONS } from '@/lib/permissions';
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase';
+import { validateBranchAccess, parsePagination, MAX_LENGTH } from '@/lib/security';
+import { audit, getRequestMeta } from '@/lib/audit';
+import { getCashAllocationBalance } from '@/lib/db/cash-management';
 import type { CreateExpenseInput } from '@/modules/reception/types';
 
 // ============================================
 // GET /api/reception/expenses
 // List expenses with filters
 // ============================================
-export const GET = withAuth(async (request: NextRequest) => {
+export const GET = withAuth(async (request: NextRequest, { user }) => {
   try {
     if (!isSupabaseAdminConfigured()) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const page = parseInt(searchParams.get('page') || '1');
-    const pageSize = parseInt(searchParams.get('pageSize') || '20');
-    const branchId = searchParams.get('branchId');
+
+    // H-02: Validate branch access (IDOR prevention) — PR2-066 security alignment
+    const branchAccess = validateBranchAccess(user, searchParams.get('branchId'));
+    if (branchAccess.error) {
+      return NextResponse.json({ error: branchAccess.error }, { status: branchAccess.status });
+    }
+
+    // M-02: Safe pagination
+    const { page, pageSize } = parsePagination(
+      searchParams.get('page'), searchParams.get('pageSize')
+    );
+    const branchId = branchAccess.branchId;
     const expenseTypeId = searchParams.get('expenseTypeId');
     const paymentMethod = searchParams.get('paymentMethod');
     const recordedBy = searchParams.get('recordedBy');
@@ -90,7 +102,7 @@ export const GET = withAuth(async (request: NextRequest) => {
 
     if (error) {
       console.error('Database error:', error);
-      return NextResponse.json({ error: 'Database error', details: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to fetch expenses' }, { status: 500 });
     }
 
     // Transform data
@@ -134,7 +146,7 @@ export const GET = withAuth(async (request: NextRequest) => {
 // POST /api/reception/expenses
 // Create a new expense
 // ============================================
-export const POST = withAuth(async (request: NextRequest, { employee }) => {
+export const POST = withAuth(async (request: NextRequest, { user, employee }) => {
   try {
     if (!isSupabaseAdminConfigured()) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
@@ -142,13 +154,20 @@ export const POST = withAuth(async (request: NextRequest, { employee }) => {
 
     // employee is auto-resolved by withAuth (operator PIN → auth_user_id → email)
     if (!employee) {
-      return NextResponse.json({
-        error: 'Employee not found',
-        details: 'No employee record found for this user. Please contact admin to link your account.'
-      }, { status: 404 });
+      return NextResponse.json({ error: 'Employee not found' }, { status: 404 });
     }
 
     const body: CreateExpenseInput = await request.json();
+
+    // H-02: Validate branch access (IDOR prevention) — PR2-066 security alignment
+    const branchAccess = validateBranchAccess(user, body.branchId || employee.branchId);
+    if (branchAccess.error) {
+      return NextResponse.json({ error: branchAccess.error }, { status: branchAccess.status });
+    }
+    const branchId = branchAccess.branchId || employee.branchId;
+    if (!branchId) {
+      return NextResponse.json({ error: 'Branch is required' }, { status: 400 });
+    }
 
     // Validate required fields
     const errors: string[] = [];
@@ -159,15 +178,26 @@ export const POST = withAuth(async (request: NextRequest, { employee }) => {
     if (body.paymentMethod && !['cash', 'bank'].includes(body.paymentMethod)) {
       errors.push('Payment method must be "cash" or "bank"');
     }
+    // H-04: Length validation
+    if (body.subject && body.subject.length > MAX_LENGTH.DESCRIPTION) {
+      errors.push(`Subject exceeds ${MAX_LENGTH.DESCRIPTION} characters`);
+    }
 
     if (errors.length > 0) {
       return NextResponse.json({ error: 'Validation failed', details: errors }, { status: 400 });
     }
 
-    // Use provided branch or employee's branch
-    const branchId = body.branchId || employee.branchId;
-    if (!branchId) {
-      return NextResponse.json({ error: 'Branch is required' }, { status: 400 });
+    // PR2-066: OpEx balance check for cash expenses (informational, non-blocking)
+    let opexWarning: string | undefined;
+    if (body.paymentMethod === 'cash') {
+      try {
+        const balance = await getCashAllocationBalance(branchId);
+        if (body.amount > balance.allocation.opex.available) {
+          opexWarning = 'This expense exceeds the available OpEx balance. Consider using a dividend spend request for the excess.';
+        }
+      } catch {
+        // Non-blocking: if balance check fails, just skip the warning
+      }
     }
 
     // Insert expense
@@ -192,8 +222,19 @@ export const POST = withAuth(async (request: NextRequest, { employee }) => {
 
     if (error) {
       console.error('Database error:', error);
-      return NextResponse.json({ error: 'Failed to create expense', details: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to create expense' }, { status: 500 });
     }
+
+    // SEC-024: Audit trail for expense creation
+    await audit({
+      user_id: user.id,
+      action: 'expense.created',
+      resource_type: 'expenses',
+      resource_id: data.id,
+      details: { branchId, amount: body.amount, paymentMethod: body.paymentMethod, subject: body.subject },
+      severity: 'medium',
+      ...getRequestMeta(request),
+    });
 
     return NextResponse.json({
       id: data.id,
@@ -206,6 +247,7 @@ export const POST = withAuth(async (request: NextRequest, { employee }) => {
       branchName: data.branch?.name,
       expenseDate: data.expense_date,
       createdAt: data.created_at,
+      ...(opexWarning ? { opexWarning } : {}),
     }, { status: 201 });
   } catch (error) {
     console.error('Server error:', error);

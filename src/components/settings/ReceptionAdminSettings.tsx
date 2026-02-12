@@ -20,6 +20,7 @@ import {
   Download,
   Building2,
   ExternalLink,
+  Wallet,
 } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -55,7 +56,7 @@ interface PinAssignment {
   pin: string;
 }
 
-type SubTab = 'service-types' | 'expense-types' | 'payment-methods' | 'operator-pins' | 'kiosk-passwords';
+type SubTab = 'service-types' | 'expense-types' | 'payment-methods' | 'operator-pins' | 'kiosk-passwords' | 'cash-settings';
 
 const subTabs: Array<{ id: SubTab; label: string; icon: React.ReactNode }> = [
   { id: 'service-types', label: 'Service Types', icon: <Layers size={16} /> },
@@ -63,6 +64,7 @@ const subTabs: Array<{ id: SubTab; label: string; icon: React.ReactNode }> = [
   { id: 'payment-methods', label: 'Payment Methods', icon: <CreditCard size={16} /> },
   { id: 'operator-pins', label: 'Operator PINs', icon: <KeyRound size={16} /> },
   { id: 'kiosk-passwords', label: 'Kiosk Passwords', icon: <Building2 size={16} /> },
+  { id: 'cash-settings', label: 'Cash Settings', icon: <Wallet size={16} /> },
 ];
 
 const commonEmojis = ['📦', '💵', '📱', '💳', '🏦', '👥', '🪑', '🗓️', '🎤', '🏢', '🖥️', '🔄', '📅', '📆', '🎓', '🛒', '⚡', '👷', '🧾', '🔧', '📢', '🏗️', '❤️', '🍇', '🖱️'];
@@ -105,6 +107,9 @@ export default function ReceptionAdminSettings() {
 
       {/* Kiosk Passwords */}
       {activeSubTab === 'kiosk-passwords' && <KioskPasswordsPanel />}
+
+      {/* Cash Settings (PR2-066) */}
+      {activeSubTab === 'cash-settings' && <CashSettingsPanel />}
     </div>
   );
 }
@@ -649,6 +654,258 @@ function OperatorPinsPanel() {
         <p className="mt-2 text-sm text-gray-500">PINs are guaranteed unique within each branch. You&apos;ll see the generated PINs in a table to copy or download.</p>
       </Modal>
     </>
+  );
+}
+
+// ============================================
+// KIOSK PASSWORDS PANEL
+// ============================================
+
+// ============================================
+// CASH SETTINGS PANEL (PR2-066)
+// ============================================
+
+interface CashSettingsData {
+  branchId: string;
+  opexPercentage: number;
+  marketingPercentage: number;
+  transferThreshold: number;
+}
+
+function CashSettingsPanel() {
+  const { user, isRole, isAnyRole } = useAuth();
+  const [branches, setBranches] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedBranch, setSelectedBranch] = useState<string>('');
+  const [settings, setSettings] = useState<CashSettingsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [marketingPct, setMarketingPct] = useState<string>('2.5');
+  const [threshold, setThreshold] = useState<string>('5000000');
+
+  const canManage = isAnyRole(['general_manager', 'ceo']);
+
+  // Fetch branches
+  useEffect(() => {
+    async function fetchBranches() {
+      try {
+        const response = await fetch('/api/branches');
+        if (response.ok) {
+          const data = await response.json();
+          const list = (data.branches || data || []).map((b: Record<string, unknown>) => ({
+            id: b.id as string,
+            name: b.name as string,
+          }));
+          if (isRole('branch_manager') && user?.branchId) {
+            setBranches(list.filter((b: { id: string }) => b.id === user.branchId));
+          } else {
+            setBranches(list);
+          }
+          // Auto-select first or user's branch
+          const defaultBranch = user?.branchId || (list.length > 0 ? list[0].id : '');
+          if (defaultBranch) setSelectedBranch(defaultBranch);
+        }
+      } catch {
+        setError('Failed to load branches');
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchBranches();
+  }, [user, isRole]);
+
+  // Fetch cash settings when branch changes
+  useEffect(() => {
+    if (!selectedBranch) return;
+    setError(null);
+    setSuccess(null);
+    async function fetchSettings() {
+      try {
+        const response = await fetch(`/api/reception/cash-management/settings?branchId=${selectedBranch}`);
+        if (response.ok) {
+          const data = await response.json();
+          setSettings(data);
+          setMarketingPct(String(data.marketingPercentage));
+          setThreshold(String(data.transferThreshold));
+        }
+      } catch {
+        setError('Failed to load cash settings');
+      }
+    }
+    fetchSettings();
+  }, [selectedBranch]);
+
+  const handleSave = async () => {
+    if (!selectedBranch) return;
+    setError(null);
+    setSuccess(null);
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/reception/cash-management/settings`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          branchId: selectedBranch,
+          marketingPercentage: parseFloat(marketingPct),
+          transferThreshold: parseFloat(threshold),
+        }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setSettings(data);
+        setSuccess('Cash settings saved successfully');
+        setTimeout(() => setSuccess(null), 4000);
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Failed to save settings');
+      }
+    } catch {
+      setError('Failed to save settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!canManage) {
+    return (
+      <div className="text-center py-12">
+        <Wallet size={48} className="mx-auto mb-4 text-gray-300" />
+        <p className="text-gray-500">Only General Managers and CEOs can manage cash settings.</p>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <Loader2 size={24} className="animate-spin mx-auto text-purple-500 mb-2" />
+        <p className="text-sm text-gray-500">Loading...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Branch selector */}
+      {branches.length > 1 && (
+        <select
+          value={selectedBranch}
+          onChange={(e) => setSelectedBranch(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+        >
+          {branches.map((b) => (
+            <option key={b.id} value={b.id}>{b.name}</option>
+          ))}
+        </select>
+      )}
+
+      {error && (
+        <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
+          <AlertCircle size={16} className="text-red-500 flex-shrink-0" />
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
+      )}
+      {success && (
+        <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-xl">
+          <Check size={16} className="text-green-500 flex-shrink-0" />
+          <p className="text-sm text-green-700">{success}</p>
+        </div>
+      )}
+
+      {settings && (
+        <Card>
+          <div className="p-6 space-y-6">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-purple-100 rounded-xl">
+                <Wallet size={24} className="text-purple-600" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Cash Allocation Settings</h2>
+                <p className="text-sm text-gray-500 mt-1">Configure how non-inkasso cash revenue is split between OpEx, Marketing, and Dividend.</p>
+              </div>
+            </div>
+
+            {/* OpEx (fixed - read-only) */}
+            <div className="bg-gray-50 rounded-xl p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-700">OpEx Percentage</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Fixed at {settings.opexPercentage}% — covers operational expenses</p>
+                </div>
+                <span className="text-lg font-bold text-gray-600">{settings.opexPercentage}%</span>
+              </div>
+            </div>
+
+            {/* Marketing Percentage */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Marketing / Charity Percentage</label>
+              <div className="flex gap-3">
+                {['2.5', '5.0'].map((val) => (
+                  <button
+                    key={val}
+                    onClick={() => setMarketingPct(val)}
+                    className={`flex-1 py-3 px-4 rounded-xl border-2 text-center font-medium transition-colors ${
+                      marketingPct === val
+                        ? 'border-purple-500 bg-purple-50 text-purple-700'
+                        : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    {val}%
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500 mt-2">Dividend gets the remaining {(100 - settings.opexPercentage - parseFloat(marketingPct)).toFixed(1)}%</p>
+            </div>
+
+            {/* Transfer Threshold */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Transfer Threshold (UZS)</label>
+              <input
+                type="number"
+                value={threshold}
+                onChange={(e) => setThreshold(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                min="0"
+                step="500000"
+              />
+              <p className="text-xs text-gray-500 mt-2">When non-inkasso cash exceeds this amount, a transfer alert is shown.</p>
+            </div>
+
+            {/* Allocation Preview */}
+            <div className="bg-blue-50 rounded-xl p-4">
+              <p className="text-sm font-medium text-blue-800 mb-2">Allocation Preview (per 1,000,000 UZS)</p>
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div>
+                  <p className="text-lg font-bold text-blue-700">{((settings.opexPercentage / 100) * 1000000).toLocaleString()}</p>
+                  <p className="text-xs text-blue-600">OpEx ({settings.opexPercentage}%)</p>
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-blue-700">{((parseFloat(marketingPct) / 100) * 1000000).toLocaleString()}</p>
+                  <p className="text-xs text-blue-600">Marketing ({marketingPct}%)</p>
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-blue-700">{(((100 - settings.opexPercentage - parseFloat(marketingPct)) / 100) * 1000000).toLocaleString()}</p>
+                  <p className="text-xs text-blue-600">Dividend ({(100 - settings.opexPercentage - parseFloat(marketingPct)).toFixed(1)}%)</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Save Button */}
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="flex items-center gap-2 px-5 py-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+              >
+                {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                {saving ? 'Saving...' : 'Save Settings'}
+              </button>
+            </div>
+          </div>
+        </Card>
+      )}
+    </div>
   );
 }
 

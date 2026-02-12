@@ -24,7 +24,9 @@ export type AuditAction =
   | 'cash.transfer_created'
   | 'cash.dividend_spend_requested'
   | 'cash.dividend_spend_approved'
-  | 'cash.dividend_spend_rejected';
+  | 'cash.dividend_spend_rejected'
+  // Expenses (PR2-066 security alignment)
+  | 'expense.created';
 
 export type AuditSeverity = 'info' | 'warning' | 'critical' | 'high' | 'medium';
 

@@ -160,6 +160,11 @@ CREATE INDEX IF NOT EXISTS idx_dividend_spend_requests_status
   ON dividend_spend_requests (status)
   WHERE status = 'pending';
 
+-- D-9: Index for reviewer lookup on pending requests
+CREATE INDEX IF NOT EXISTS idx_dividend_spend_requests_reviewer
+  ON dividend_spend_requests (reviewed_by)
+  WHERE status = 'pending';
+
 -- RLS
 ALTER TABLE dividend_spend_requests ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Enable all for authenticated users" ON dividend_spend_requests FOR ALL USING (true);

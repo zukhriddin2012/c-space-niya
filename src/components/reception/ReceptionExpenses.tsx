@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Plus, Search, Filter, X, Eye, Ban, ChevronLeft, ChevronRight, Building2, Calendar, Clock, User, ArrowUpDown, ArrowDown, ArrowUp } from 'lucide-react';
+import { Plus, Search, Filter, X, Eye, Ban, ChevronLeft, ChevronRight, Building2, Calendar, Clock, User, ArrowUpDown, ArrowDown, ArrowUp, AlertTriangle } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -124,6 +124,10 @@ export default function ReceptionExpenses() {
   const [sortBy, setSortBy] = useState<'date' | 'amount' | 'created'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const pageSize = 15;
+
+  // PR2-066: Cash management - OpEx balance awareness
+  const [opexAvailable, setOpexAvailable] = useState<number | null>(null);
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
 
   // Toggle sort
   const handleSort = (column: 'date' | 'amount' | 'created') => {
@@ -299,6 +303,33 @@ export default function ReceptionExpenses() {
   };
 
   const hasActiveFilters = searchQuery || filterExpenseType || filterPaymentMethod || quickDateFilter !== 'today';
+
+  // PR2-066: Fetch OpEx balance when add modal opens with cash payment
+  const fetchOpexBalance = useCallback(async () => {
+    if (!selectedBranchId) return;
+    setIsLoadingBalance(true);
+    try {
+      const response = await fetch(`/api/reception/cash-management/summary?branchId=${selectedBranchId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setOpexAvailable(data.balance?.allocation?.opex?.available ?? null);
+      }
+    } catch {
+      // Non-blocking: balance display is informational only
+    } finally {
+      setIsLoadingBalance(false);
+    }
+  }, [selectedBranchId]);
+
+  // Fetch balance when modal opens
+  useEffect(() => {
+    if (showAddModal && formData.paymentMethod === 'cash') {
+      fetchOpexBalance();
+    }
+  }, [showAddModal, formData.paymentMethod, fetchOpexBalance]);
+
+  const expenseAmountNum = parseFloat(formData.amount) || 0;
+  const wouldExceedOpex = opexAvailable !== null && formData.paymentMethod === 'cash' && expenseAmountNum > opexAvailable;
 
   return (
     <div className="space-y-4">
@@ -551,9 +582,42 @@ export default function ReceptionExpenses() {
         )}
       </Card>
 
-      <Modal isOpen={showAddModal} onClose={() => { setShowAddModal(false); setFormData(initialFormData); setFormErrors({}); }} title="New Expense" size="lg">
+      <Modal isOpen={showAddModal} onClose={() => { setShowAddModal(false); setFormData(initialFormData); setFormErrors({}); setOpexAvailable(null); }} title="New Expense" size="lg">
         <form onSubmit={handleSubmit} className="space-y-4">
           {formErrors.submit && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">{formErrors.submit}</div>}
+
+          {/* PR2-066: OpEx balance info for cash expenses */}
+          {formData.paymentMethod === 'cash' && opexAvailable !== null && (
+            <div className={`flex items-start gap-3 p-3 rounded-lg border ${
+              wouldExceedOpex
+                ? 'bg-amber-50 border-amber-200'
+                : 'bg-green-50 border-green-200'
+            }`}>
+              {wouldExceedOpex ? (
+                <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
+              ) : (
+                <span className="text-green-500 mt-0.5 flex-shrink-0">💰</span>
+              )}
+              <div className="text-sm">
+                <p className={wouldExceedOpex ? 'text-amber-800 font-medium' : 'text-green-800'}>
+                  {t.cashManagement.opexAvailable}: {formatCurrency(opexAvailable)}
+                </p>
+                {wouldExceedOpex && (
+                  <p className="text-amber-600 mt-1">
+                    This expense exceeds OpEx balance. Consider using{' '}
+                    <a href="/reception/cash-management" className="underline font-medium hover:text-amber-800">
+                      {t.cashManagement.requestDividendSpend}
+                    </a>{' '}
+                    for the excess amount.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+          {formData.paymentMethod === 'cash' && isLoadingBalance && (
+            <div className="text-xs text-gray-400 italic">Loading OpEx balance...</div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <Input label="Subject" value={formData.subject} onChange={(e) => setFormData({ ...formData, subject: e.target.value })} placeholder="What was this expense for?" error={formErrors.subject} required />
