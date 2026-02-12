@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api-auth';
 import { PERMISSIONS } from '@/lib/permissions';
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase';
+import { escapeIlike, MAX_LENGTH } from '@/lib/security';
 import type { CreateTransactionInput } from '@/modules/reception/types';
 
 // ============================================
@@ -65,7 +66,9 @@ export const GET = withAuth(async (request: NextRequest, { user }) => {
       query = query.lte('transaction_date', dateTo);
     }
     if (search) {
-      query = query.or(`customer_name.ilike.%${search}%,transaction_number.ilike.%${search}%,notes.ilike.%${search}%`);
+      // C-05 + H-04: Escape ILIKE wildcards and limit length
+      const escapedSearch = escapeIlike(search.slice(0, MAX_LENGTH.SEARCH_QUERY));
+      query = query.or(`customer_name.ilike.%${escapedSearch}%,transaction_number.ilike.%${escapedSearch}%,notes.ilike.%${escapedSearch}%`);
     }
     // Cash status filter (AT-2)
     if (cashStatus === 'all_cash') {

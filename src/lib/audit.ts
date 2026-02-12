@@ -17,9 +17,16 @@ export type AuditAction =
   | 'employee.delete'
   | 'employee.terminate'
   | 'role.change'
-  | 'permission.denied';
+  | 'permission.denied'
+  // Cash Management (PR2-066)
+  | 'cash.settings_updated'
+  | 'cash.inkasso_delivery_created'
+  | 'cash.transfer_created'
+  | 'cash.dividend_spend_requested'
+  | 'cash.dividend_spend_approved'
+  | 'cash.dividend_spend_rejected';
 
-export type AuditSeverity = 'info' | 'warning' | 'critical';
+export type AuditSeverity = 'info' | 'warning' | 'critical' | 'high' | 'medium';
 
 interface AuditLogEntry {
   user_id?: string;

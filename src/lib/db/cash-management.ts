@@ -424,34 +424,41 @@ export async function createCashTransfer(
   input: CreateCashTransferInput,
   employeeId: string
 ): Promise<CashTransfer> {
-  // Verify balances
-  const balance = await getCashAllocationBalance(input.branchId);
+  // SEC-066-03: Use atomic RPC with advisory lock to prevent TOCTOU race condition
+  // The PG function checks balance AND inserts under an advisory lock
+  const { data: transferId, error: rpcError } = await supabaseAdmin!
+    .rpc('create_cash_transfer_atomic', {
+      p_branch_id: input.branchId,
+      p_dividend_amount: input.dividendAmount,
+      p_marketing_amount: input.marketingAmount,
+      p_transferred_by: employeeId,
+      p_transfer_date: input.transferDate || new Date().toISOString(),
+      p_notes: input.notes || null,
+    });
 
-  if (input.dividendAmount > balance.allocation.dividend.available) {
-    throw new Error(`Dividend amount (${input.dividendAmount}) exceeds available balance (${balance.allocation.dividend.available})`);
-  }
-  if (input.marketingAmount > balance.allocation.marketing.available) {
-    throw new Error(`Marketing amount (${input.marketingAmount}) exceeds available balance (${balance.allocation.marketing.available})`);
+  if (rpcError) {
+    // Map PG exceptions to safe error messages (SEC-066-08)
+    if (rpcError.message?.includes('Insufficient dividend')) {
+      throw new Error('Insufficient dividend balance');
+    }
+    if (rpcError.message?.includes('Insufficient marketing')) {
+      throw new Error('Insufficient marketing balance');
+    }
+    throw new Error('Failed to create cash transfer');
   }
 
+  // Fetch the created transfer with joins
   const { data, error } = await supabaseAdmin!
     .from('cash_transfers')
-    .insert({
-      branch_id: input.branchId,
-      dividend_amount: input.dividendAmount,
-      marketing_amount: input.marketingAmount,
-      transferred_by: employeeId,
-      transfer_date: input.transferDate || new Date().toISOString(),
-      notes: input.notes || null,
-    })
     .select(`
       *,
       transferred_by_employee:employees!transferred_by(full_name),
       branch:branches!branch_id(name)
     `)
+    .eq('id', transferId)
     .single();
 
-  if (error) throw new Error(`Failed to create cash transfer: ${error.message}`);
+  if (error) throw new Error('Failed to fetch created transfer');
 
   return {
     id: data.id,
@@ -558,7 +565,8 @@ export async function createDividendSpendRequest(
   const balance = await getCashAllocationBalance(input.branchId);
 
   if (input.opexPortion > balance.allocation.opex.available) {
-    throw new Error(`OpEx portion (${input.opexPortion}) exceeds available (${balance.allocation.opex.available})`);
+    // SEC-066-08: Don't leak exact balance amounts in errors
+    throw new Error('Insufficient OpEx balance for requested portion');
   }
 
   const { data, error } = await supabaseAdmin!
@@ -599,7 +607,7 @@ export async function reviewDividendSpendRequest(
   input: ReviewDividendSpendInput,
   reviewerId: string
 ): Promise<DividendSpendRequest> {
-  // Get the request
+  // Get the request first (for return data and pre-validation)
   const { data: request, error: fetchError } = await supabaseAdmin!
     .from('dividend_spend_requests')
     .select('*')
@@ -610,41 +618,22 @@ export async function reviewDividendSpendRequest(
   if (request.status !== 'pending') throw new Error('Request is no longer pending');
 
   if (input.action === 'approve') {
-    // 1. Update request status
-    const { error: updateError } = await supabaseAdmin!
-      .from('dividend_spend_requests')
-      .update({
-        status: 'approved',
-        reviewed_by: reviewerId,
-        reviewed_at: new Date().toISOString(),
-        review_note: input.reviewNote || null,
-      })
-      .eq('id', input.requestId);
+    // SEC-066-02: Use atomic RPC function (single PG transaction with row lock)
+    const { data: rpcResult, error: rpcError } = await supabaseAdmin!
+      .rpc('approve_dividend_spend', {
+        p_request_id: input.requestId,
+        p_reviewer_id: reviewerId,
+        p_review_note: input.reviewNote || null,
+      });
 
-    if (updateError) throw new Error(`Failed to approve: ${updateError.message}`);
+    if (rpcError) {
+      if (rpcError.message?.includes('not found or no longer pending')) {
+        throw new Error('Request is no longer pending');
+      }
+      throw new Error('Failed to approve dividend spend');
+    }
 
-    // 2. Create the expense
-    const { data: expense, error: expenseError } = await supabaseAdmin!
-      .from('expenses')
-      .insert({
-        subject: request.expense_subject,
-        amount: request.expense_amount,
-        expense_type_id: request.expense_type_id,
-        payment_method: 'cash',
-        branch_id: request.branch_id,
-        recorded_by: request.requested_by,
-        expense_date: request.expense_date,
-      })
-      .select('id')
-      .single();
-
-    if (expenseError) throw new Error(`Failed to create expense: ${expenseError.message}`);
-
-    // 3. Link expense to request
-    await supabaseAdmin!
-      .from('dividend_spend_requests')
-      .update({ expense_id: expense.id })
-      .eq('id', input.requestId);
+    const result = rpcResult as { request_id: string; expense_id: string; status: string };
 
     return {
       id: request.id,
@@ -662,10 +651,10 @@ export async function reviewDividendSpendRequest(
       reviewedBy: reviewerId,
       reviewedAt: new Date().toISOString(),
       reviewNote: input.reviewNote,
-      expenseId: expense.id,
+      expenseId: result.expense_id,
     };
   } else {
-    // Reject
+    // Reject — single update, no atomicity concern
     const { error: updateError } = await supabaseAdmin!
       .from('dividend_spend_requests')
       .update({
@@ -676,7 +665,7 @@ export async function reviewDividendSpendRequest(
       })
       .eq('id', input.requestId);
 
-    if (updateError) throw new Error(`Failed to reject: ${updateError.message}`);
+    if (updateError) throw new Error('Failed to reject dividend spend');
 
     return {
       id: request.id,
