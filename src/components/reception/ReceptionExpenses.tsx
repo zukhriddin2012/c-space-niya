@@ -95,7 +95,7 @@ const initialFormData: ExpenseFormData = {
   expenseDate: new Date().toISOString().split('T')[0],
 };
 
-export default function ReceptionExpenses() {
+export default function ReceptionExpenses({ autoOpenCreate, onAutoOpenConsumed }: { autoOpenCreate?: boolean; onAutoOpenConsumed?: () => void } = {}) {
   const { selectedBranchId, currentOperator } = useServiceHub();
   const { t } = useTranslation();
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -109,6 +109,14 @@ export default function ReceptionExpenses() {
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
   const [voidReason, setVoidReason] = useState('');
   const [formData, setFormData] = useState<ExpenseFormData>(initialFormData);
+
+  // CSN-030: Auto-open create modal when triggered from dashboard quick action
+  useEffect(() => {
+    if (autoOpenCreate) {
+      setShowAddModal(true);
+      onAutoOpenConsumed?.();
+    }
+  }, [autoOpenCreate, onAutoOpenConsumed]);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');

@@ -122,7 +122,7 @@ const initialFormData: TransactionFormData = {
   isInkasso: false,
 };
 
-export default function ReceptionTransactions() {
+export default function ReceptionTransactions({ autoOpenCreate, onAutoOpenConsumed }: { autoOpenCreate?: boolean; onAutoOpenConsumed?: () => void } = {}) {
   const { selectedBranchId, currentOperator } = useServiceHub();
   const { t } = useTranslation();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -137,6 +137,14 @@ export default function ReceptionTransactions() {
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [voidReason, setVoidReason] = useState('');
   const [formData, setFormData] = useState<TransactionFormData>(initialFormData);
+
+  // CSN-030: Auto-open create modal when triggered from dashboard quick action
+  useEffect(() => {
+    if (autoOpenCreate) {
+      setShowAddModal(true);
+      onAutoOpenConsumed?.();
+    }
+  }, [autoOpenCreate, onAutoOpenConsumed]);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [selectedClient, setSelectedClient] = useState<ClientOption | null>(null);
   const [showCreateClientModal, setShowCreateClientModal] = useState(false);

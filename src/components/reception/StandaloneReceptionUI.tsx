@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import {
   LayoutGrid,
   LayoutDashboard,
@@ -71,8 +71,25 @@ function KioskInner({ branchId, branchName, expiresAt, onLogout }: StandaloneRec
   const [activeTab, setActiveTab] = useState<KioskTab>('dashboard');
   const [showOperatorSwitch, setShowOperatorSwitch] = useState(false);
   const [remainingTime, setRemainingTime] = useState(() => calculateRemainingTime(expiresAt));
+  const [pendingQuickAction, setPendingQuickAction] = useState<'new-transaction' | 'new-expense' | null>(null);
 
   const { currentOperator, setSelectedBranch } = useServiceHub();
+
+  // CSN-030: Quick action handler — switches tab and signals auto-open
+  const handleQuickAction = useCallback((action: 'new-transaction' | 'new-expense') => {
+    setPendingQuickAction(action);
+    setActiveTab(action === 'new-transaction' ? 'transactions' : 'expenses');
+  }, []);
+
+  // CSN-030: Dashboard tab change handler
+  const handleDashboardTabChange = useCallback((tab: string) => {
+    setActiveTab(tab as KioskTab);
+  }, []);
+
+  // CSN-030: Clear pending action once consumed by child
+  const handleAutoOpenConsumed = useCallback(() => {
+    setPendingQuickAction(null);
+  }, []);
 
   // Set branch on mount
   const initializedRef = useRef(false);
@@ -190,9 +207,24 @@ function KioskInner({ branchId, branchName, expiresAt, onLogout }: StandaloneRec
       <main className="flex-1 overflow-auto">
         <div className="max-w-7xl mx-auto p-4 sm:p-6">
           <Suspense fallback={<LoadingSpinner />}>
-            {activeTab === 'dashboard' && <ReceptionDashboard />}
-            {activeTab === 'transactions' && <ReceptionTransactions />}
-            {activeTab === 'expenses' && <ReceptionExpenses />}
+            {activeTab === 'dashboard' && (
+              <ReceptionDashboard
+                onTabChange={handleDashboardTabChange}
+                onQuickAction={handleQuickAction}
+              />
+            )}
+            {activeTab === 'transactions' && (
+              <ReceptionTransactions
+                autoOpenCreate={pendingQuickAction === 'new-transaction'}
+                onAutoOpenConsumed={handleAutoOpenConsumed}
+              />
+            )}
+            {activeTab === 'expenses' && (
+              <ReceptionExpenses
+                autoOpenCreate={pendingQuickAction === 'new-expense'}
+                onAutoOpenConsumed={handleAutoOpenConsumed}
+              />
+            )}
             {activeTab === 'cash-management' && <CashManagementDashboard />}
             {activeTab === 'requests' && <ReceptionRequests />}
             {activeTab === 'shifts' && <ReceptionShifts />}
