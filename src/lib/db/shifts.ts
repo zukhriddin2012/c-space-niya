@@ -734,6 +734,164 @@ export async function getAvailableEmployeesForShift(
     }));
 }
 
+// ============================================
+// RECEPTION DASHBOARD — SHIFT SUMMARY (CSN-030)
+// ============================================
+
+export async function getShiftDashboardData(
+  branchId: string,
+  operatorId: string | null
+): Promise<{
+  today: {
+    date: string;
+    dayShift: { assigned: number; required: number; employees: Array<{ employeeId: string; employeeName: string; employeeStatus: string }> };
+    nightShift: { assigned: number; required: number; employees: Array<{ employeeId: string; employeeName: string; employeeStatus: string }> };
+  };
+  week: {
+    weekStart: string;
+    days: Array<{
+      date: string;
+      dayOfWeek: string;
+      dayCount: number;
+      nightCount: number;
+      dayRequired: number;
+      nightRequired: number;
+    }>;
+  };
+  myShifts: Array<{ date: string; shiftType: 'day' | 'night'; branchName: string }>;
+} | null> {
+  if (!isSupabaseAdminConfigured()) return null;
+
+  // Step 1: Get today's date (Tashkent timezone: UTC+5)
+  const now = new Date();
+  const tashkentOffset = 5 * 60 * 60 * 1000;
+  const tashkentNow = new Date(now.getTime() + tashkentOffset);
+  const todayStr = tashkentNow.toISOString().split('T')[0];
+
+  // Step 2: Calculate current week's Monday
+  const dayOfWeek = tashkentNow.getUTCDay(); // 0=Sun ... 6=Sat
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const monday = new Date(tashkentNow);
+  monday.setUTCDate(monday.getUTCDate() + mondayOffset);
+  const weekStart = monday.toISOString().split('T')[0];
+
+  // Step 3: Find published schedule for this week
+  const { data: schedule } = await supabaseAdmin!
+    .from('shift_schedules')
+    .select('id')
+    .eq('week_start_date', weekStart)
+    .eq('status', 'published')
+    .maybeSingle();
+
+  if (!schedule) {
+    return null; // "No published schedule" state
+  }
+
+  // Step 4: Parallel fetch — assignments + requirements + operator's shifts
+  // Only fetch operator shifts if operatorId is a valid UUID (not a kiosk ID like "kiosk:xxx")
+  const isValidOperatorId = operatorId && !operatorId.startsWith('kiosk:');
+
+  const [assignmentsResult, requirementsResult, myShiftsResult] = await Promise.all([
+    supabaseAdmin!
+      .from('shift_assignments')
+      .select('date, shift_type, employee_id, employee:employees(id, full_name, status)')
+      .eq('schedule_id', schedule.id)
+      .eq('branch_id', branchId),
+
+    supabaseAdmin!
+      .from('branch_shift_requirements')
+      .select('shift_type, min_staff, has_shift')
+      .eq('branch_id', branchId),
+
+    isValidOperatorId
+      ? supabaseAdmin!
+          .from('shift_assignments')
+          .select('date, shift_type, branch:branches(name)')
+          .eq('schedule_id', schedule.id)
+          .eq('employee_id', operatorId!)
+          .gte('date', todayStr)
+          .order('date', { ascending: true })
+          .limit(7)
+      : Promise.resolve({ data: null, error: null }),
+  ]);
+
+  // Step 5: Build requirements lookup
+  const requirements: Record<string, number> = { day: 0, night: 0 };
+  (requirementsResult.data || []).forEach((r: any) => {
+    if (r.has_shift) requirements[r.shift_type] = r.min_staff;
+  });
+
+  // Step 6: Build 7-day week structure
+  const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const days: Array<{ date: string; dayOfWeek: string; dayCount: number; nightCount: number; dayRequired: number; nightRequired: number }> = [];
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setUTCDate(d.getUTCDate() + i);
+    const dateStr = d.toISOString().split('T')[0];
+    days.push({
+      date: dateStr,
+      dayOfWeek: DAY_NAMES[d.getUTCDay()],
+      dayCount: 0,
+      nightCount: 0,
+      dayRequired: requirements.day,
+      nightRequired: requirements.night,
+    });
+  }
+
+  // Step 7: Populate counts and today's employee lists
+  const todayDayEmployees: Array<{ employeeId: string; employeeName: string; employeeStatus: string }> = [];
+  const todayNightEmployees: Array<{ employeeId: string; employeeName: string; employeeStatus: string }> = [];
+
+  (assignmentsResult.data || []).forEach((a: any) => {
+    const dayEntry = days.find(d => d.date === a.date);
+    if (!dayEntry) return;
+
+    if (a.shift_type === 'day') {
+      dayEntry.dayCount++;
+    } else if (a.shift_type === 'night') {
+      dayEntry.nightCount++;
+    }
+
+    if (a.date === todayStr && a.employee) {
+      const emp = {
+        employeeId: a.employee.id,
+        employeeName: a.employee.full_name,
+        employeeStatus: a.employee.status || 'active',
+      };
+      if (a.shift_type === 'day') todayDayEmployees.push(emp);
+      else todayNightEmployees.push(emp);
+    }
+  });
+
+  // Step 8: Build myShifts (operator's upcoming)
+  const myShifts = (myShiftsResult.data || [])
+    .filter((s: any) => s.date > todayStr)
+    .map((s: any) => ({
+      date: s.date,
+      shiftType: s.shift_type as 'day' | 'night',
+      branchName: s.branch?.name || '',
+    }));
+
+  return {
+    today: {
+      date: todayStr,
+      dayShift: {
+        assigned: todayDayEmployees.length,
+        required: requirements.day,
+        employees: todayDayEmployees,
+      },
+      nightShift: {
+        assigned: todayNightEmployees.length,
+        required: requirements.night,
+        employees: todayNightEmployees,
+      },
+    },
+    week: { weekStart, days },
+    myShifts,
+  };
+}
+
 // Calculate coverage status for a schedule
 export async function getScheduleCoverageStatus(scheduleId: string): Promise<{
   total_shifts: number;

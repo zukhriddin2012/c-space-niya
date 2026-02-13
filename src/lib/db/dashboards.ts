@@ -342,6 +342,45 @@ export async function getPendingHRApprovals(limit: number = 5): Promise<{
   };
 }
 
+// ==================== RECEPTION DASHBOARD FUNCTIONS ====================
+
+// Get accounting request status counts for reception dashboard (CSN-030)
+export async function getAccountingRequestStatusCounts(branchId: string): Promise<{
+  pending: number;
+  in_progress: number;
+  needs_info: number;
+  pending_approval: number;
+  approved: number;
+  completed: number;
+  rejected: number;
+  cancelled: number;
+} | null> {
+  if (!isSupabaseAdminConfigured()) return null;
+
+  const { data, error } = await supabaseAdmin!
+    .from('accounting_requests')
+    .select('status')
+    .eq('branch_id', branchId);
+
+  if (error) {
+    console.error('Error fetching accounting request counts:', error);
+    return null;
+  }
+
+  const counts = {
+    pending: 0, in_progress: 0, needs_info: 0, pending_approval: 0,
+    approved: 0, completed: 0, rejected: 0, cancelled: 0,
+  };
+
+  (data || []).forEach(row => {
+    if (row.status in counts) {
+      counts[row.status as keyof typeof counts]++;
+    }
+  });
+
+  return counts;
+}
+
 // Get branch attendance summary for GM dashboard
 export async function getBranchAttendanceSummaryForGM(): Promise<{
   id: string;
