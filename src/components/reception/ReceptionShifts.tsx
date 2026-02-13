@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useReceptionMode } from '@/contexts/ReceptionModeContext';
+import { useServiceHub } from '@/contexts/ServiceHubContext';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import {
@@ -70,7 +70,7 @@ const getStatusLabel = (status: string): string => {
 };
 
 export default function ReceptionShifts() {
-  const { selectedBranchId } = useReceptionMode();
+  const { selectedBranchId } = useServiceHub();
   const [weekStart, setWeekStart] = useState<string>(() => getWeekStart(new Date()));
   const [schedule, setSchedule] = useState<DayShifts[]>([]);
   const [isLoading, setIsLoading] = useState(true);

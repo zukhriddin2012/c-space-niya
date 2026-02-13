@@ -3,5 +3,4 @@ export { default as SidebarToggle } from './SidebarToggle';
 export { default as MobileNav } from './MobileNav';
 export { default as QuickSwitch } from './QuickSwitch';
 export { default as NotificationBell } from './NotificationBell';
-export { ReceptionHeader } from './ReceptionHeader';
 export { DashboardContent } from './DashboardContent';

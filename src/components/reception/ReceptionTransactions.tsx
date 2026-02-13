@@ -8,7 +8,7 @@ import Input from '@/components/ui/Input';
 import Modal from '@/components/ui/Modal';
 import Badge from '@/components/ui/Badge';
 import { formatCurrency } from '@/modules/reception/lib/constants';
-import { useReceptionMode, getOperatorHeaders } from '@/contexts/ReceptionModeContext';
+import { useServiceHub, getOperatorHeaders } from '@/contexts/ServiceHubContext';
 import { useTranslation } from '@/contexts/LanguageContext';
 import { ClientAutocomplete, CreateClientModal } from '@/components/reception';
 import type { ClientOption } from '@/components/reception';
@@ -123,7 +123,7 @@ const initialFormData: TransactionFormData = {
 };
 
 export default function ReceptionTransactions() {
-  const { selectedBranchId, currentOperator } = useReceptionMode();
+  const { selectedBranchId, currentOperator } = useServiceHub();
   const { t } = useTranslation();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);

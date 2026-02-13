@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
-import { useReceptionMode, getOperatorHeaders } from '@/contexts/ReceptionModeContext';
+import { useServiceHub, getOperatorHeaders } from '@/contexts/ServiceHubContext';
 import type { AccountingRequest, AccountingRequestType, AccountingRequestStatus } from '@/modules/accounting/types';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -40,8 +39,8 @@ const typeConfig: Record<AccountingRequestType, { label: string; color: string }
   confirmation: { label: 'Confirmation', color: 'bg-green-100 text-green-800' },
 };
 
-export default function AccountingRequestsPage() {
-  const { selectedBranchId, currentOperator } = useReceptionMode();
+export default function AccountingRequestsView() {
+  const { selectedBranchId, currentOperator } = useServiceHub();
   const [requests, setRequests] = useState<AccountingRequest[]>([]);
   const [pagination, setPagination] = useState<PaginationData>({
     total: 0,
@@ -54,6 +53,7 @@ export default function AccountingRequestsPage() {
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
   const [typeFilter, setTypeFilter] = useState<AccountingRequestType | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [showNewForm, setShowNewForm] = useState(false);
 
   const fetchRequests = useCallback(
     async (page: number = 1) => {
@@ -147,12 +147,10 @@ export default function AccountingRequestsPage() {
               <p className="text-gray-600">Manage reconciliation, payments, and invoices</p>
             </div>
           </div>
-          <Link href="/reception/requests/accounting/new">
-            <Button className="flex items-center gap-2">
-              <Plus className="w-4 h-4" />
-              New Request
-            </Button>
-          </Link>
+          <Button onClick={() => setShowNewForm(!showNewForm)} className="flex items-center gap-2">
+            <Plus className="w-4 h-4" />
+            New Request
+          </Button>
         </div>
 
         {/* Status Tabs */}
@@ -260,11 +258,9 @@ export default function AccountingRequestsPage() {
                         {formatDate(request.createdAt)}
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <Link href={`/reception/requests/accounting/${request.id}`}>
-                          <Button variant="secondary" size="sm">
-                            View
-                          </Button>
-                        </Link>
+                        <Button variant="secondary" size="sm">
+                          View
+                        </Button>
                       </td>
                     </tr>
                   ))}
@@ -317,12 +313,10 @@ export default function AccountingRequestsPage() {
                 ? 'Try adjusting your filters or search term.'
                 : 'Create your first accounting request to get started.'}
             </p>
-            <Link href="/reception/requests/accounting/new">
-              <Button className="flex items-center gap-2 mx-auto">
-                <Plus className="w-4 h-4" />
-                Create Request
-              </Button>
-            </Link>
+            <Button onClick={() => setShowNewForm(!showNewForm)} className="flex items-center gap-2 mx-auto">
+              <Plus className="w-4 h-4" />
+              Create Request
+            </Button>
           </Card>
         )}
       </div>

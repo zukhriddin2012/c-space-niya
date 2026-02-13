@@ -3,7 +3,7 @@
 import { Building2, Globe, ArrowRight, AlertTriangle } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
-import { useReceptionMode } from '@/contexts/ReceptionModeContext';
+import { useServiceHub } from '@/contexts/ServiceHubContext';
 
 export function BranchSwitchModal() {
   const {
@@ -13,7 +13,7 @@ export function BranchSwitchModal() {
     accessibleBranches,
     confirmBranchSwitch,
     cancelBranchSwitch,
-  } = useReceptionMode();
+  } = useServiceHub();
 
   const pendingBranch = accessibleBranches.find(b => b.id === pendingBranchId);
 

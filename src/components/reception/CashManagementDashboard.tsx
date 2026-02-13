@@ -1,18 +1,29 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { Banknote, Receipt, ArrowRight, AlertTriangle, TrendingUp, FileCheck, Send, ClipboardCheck } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import { formatCurrency } from '@/modules/reception/lib/constants';
-import { useReceptionMode } from '@/contexts/ReceptionModeContext';
+import { useServiceHub } from '@/contexts/ServiceHubContext';
 import type { CashPositionSummary } from '@/modules/reception/types';
 
-export default function CashManagementPage() {
+/**
+ * CashManagementDashboard — Shared component for cash management overview.
+ * Used by both the standalone kiosk (StandaloneReceptionUI) and previously
+ * the dashboard reception overlay. Extracted from the route file as part of
+ * CSN-028 (ServiceHub migration) to break the cross-boundary import.
+ *
+ * Note: The "Quick Actions" section previously used <Link> to sub-pages
+ * (/reception/cash-management/inkasso-deliveries, /transfers, /dividend-requests).
+ * These sub-pages are being deleted as part of CSN-028. The links have been
+ * converted to informational cards (no navigation) since the sub-page content
+ * was only meaningful within the dashboard route context.
+ */
+export function CashManagementDashboard() {
   const [summary, setSummary] = useState<CashPositionSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { selectedBranch } = useReceptionMode();
+  const { selectedBranch } = useServiceHub();
 
   useEffect(() => {
     if (selectedBranch?.id && !selectedBranch.isAllBranches) {
@@ -47,7 +58,7 @@ export default function CashManagementPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-4 border-sky-600 border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -57,7 +68,7 @@ export default function CashManagementPage() {
       <div className="text-center py-12">
         <p className="text-red-600 mb-4">{error || 'No data'}</p>
         <button onClick={() => selectedBranch?.id && fetchSummary(selectedBranch.id)}
-          className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+          className="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700">
           Retry
         </button>
       </div>
@@ -195,52 +206,43 @@ export default function CashManagementPage() {
         </Card>
       </div>
 
-      {/* Quick Actions */}
+      {/* Quick Actions (informational cards — sub-pages removed in CSN-028) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Link href="/reception/cash-management/inkasso-deliveries">
-          <Card className="hover:border-blue-300 hover:shadow-md transition-all cursor-pointer">
-            <div className="flex items-center gap-4 p-2">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                <FileCheck className="w-6 h-6 text-blue-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900">Inkasso Deliveries</h3>
-                <p className="text-sm text-gray-500">{inkasso.pending.count} pending delivery</p>
-              </div>
-              <ArrowRight className="w-5 h-5 text-gray-400" />
+        <Card className="border-blue-200">
+          <div className="flex items-center gap-4 p-2">
+            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+              <FileCheck className="w-6 h-6 text-blue-600" />
             </div>
-          </Card>
-        </Link>
+            <div className="flex-1">
+              <h3 className="font-semibold text-gray-900">Inkasso Deliveries</h3>
+              <p className="text-sm text-gray-500">{inkasso.pending.count} pending delivery</p>
+            </div>
+          </div>
+        </Card>
 
-        <Link href="/reception/cash-management/transfers">
-          <Card className="hover:border-purple-300 hover:shadow-md transition-all cursor-pointer">
-            <div className="flex items-center gap-4 p-2">
-              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                <Send className="w-6 h-6 text-purple-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900">Safe Transfers</h3>
-                <p className="text-sm text-gray-500">{recentTransfers.length} recent transfers</p>
-              </div>
-              <ArrowRight className="w-5 h-5 text-gray-400" />
+        <Card className="border-purple-200">
+          <div className="flex items-center gap-4 p-2">
+            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+              <Send className="w-6 h-6 text-purple-600" />
             </div>
-          </Card>
-        </Link>
+            <div className="flex-1">
+              <h3 className="font-semibold text-gray-900">Safe Transfers</h3>
+              <p className="text-sm text-gray-500">{recentTransfers.length} recent transfers</p>
+            </div>
+          </div>
+        </Card>
 
-        <Link href="/reception/cash-management/dividend-requests">
-          <Card className="hover:border-orange-300 hover:shadow-md transition-all cursor-pointer">
-            <div className="flex items-center gap-4 p-2">
-              <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-                <ClipboardCheck className="w-6 h-6 text-orange-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900">Dividend Approvals</h3>
-                <p className="text-sm text-gray-500">{pendingDividendRequests.count} pending approval</p>
-              </div>
-              <ArrowRight className="w-5 h-5 text-gray-400" />
+        <Card className="border-orange-200">
+          <div className="flex items-center gap-4 p-2">
+            <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+              <ClipboardCheck className="w-6 h-6 text-orange-600" />
             </div>
-          </Card>
-        </Link>
+            <div className="flex-1">
+              <h3 className="font-semibold text-gray-900">Dividend Approvals</h3>
+              <p className="text-sm text-gray-500">{pendingDividendRequests.count} pending approval</p>
+            </div>
+          </div>
+        </Card>
       </div>
 
       {/* Recent Transfers */}
@@ -269,3 +271,5 @@ export default function CashManagementPage() {
     </div>
   );
 }
+
+export default CashManagementDashboard;

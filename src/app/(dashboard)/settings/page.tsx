@@ -11,7 +11,7 @@ import {
   Check,
   X,
   Globe,
-  Receipt,
+  LayoutGrid,
 } from 'lucide-react';
 import ReceptionAdminSettings from '@/components/settings/ReceptionAdminSettings';
 import { RoleGuard, PageGuard } from '@/components/auth';
@@ -25,6 +25,7 @@ import {
   PERMISSION_GROUPS,
 } from '@/lib/permissions';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { languages, type Language } from '@/lib/i18n';
 
 type SettingsTab = 'roles' | 'branches' | 'notifications' | 'security' | 'language' | 'reception';
@@ -33,14 +34,18 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('language');
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const { language, setLanguage, t } = useLanguage();
+  const { user } = useAuth();
+
+  // ServiceHub tab: GM-only access (CSN-028)
+  const isGM = user?.role === 'general_manager';
 
   const tabs = [
-    { id: 'language' as const, name: t.settings.language, icon: Globe, permission: PERMISSIONS.SETTINGS_VIEW },
-    { id: 'roles' as const, name: t.settings.rolesPermissions, icon: Shield, permission: PERMISSIONS.USERS_ASSIGN_ROLES },
-    { id: 'branches' as const, name: t.settings.branchSettings, icon: Building2, permission: PERMISSIONS.BRANCHES_EDIT },
-    { id: 'notifications' as const, name: t.settings.notifications, icon: Bell, permission: PERMISSIONS.SETTINGS_VIEW },
-    { id: 'security' as const, name: t.settings.security, icon: Key, permission: PERMISSIONS.SETTINGS_EDIT },
-    { id: 'reception' as const, name: t.reception.title, icon: Receipt, permission: PERMISSIONS.RECEPTION_ADMIN },
+    { id: 'language' as const, name: t.settings.language, icon: Globe, permission: PERMISSIONS.SETTINGS_VIEW, visible: true },
+    { id: 'roles' as const, name: t.settings.rolesPermissions, icon: Shield, permission: PERMISSIONS.USERS_ASSIGN_ROLES, visible: true },
+    { id: 'branches' as const, name: t.settings.branchSettings, icon: Building2, permission: PERMISSIONS.BRANCHES_EDIT, visible: true },
+    { id: 'notifications' as const, name: t.settings.notifications, icon: Bell, permission: PERMISSIONS.SETTINGS_VIEW, visible: true },
+    { id: 'security' as const, name: t.settings.security, icon: Key, permission: PERMISSIONS.SETTINGS_EDIT, visible: true },
+    { id: 'reception' as const, name: 'ServiceHub', icon: LayoutGrid, permission: PERMISSIONS.RECEPTION_ADMIN, visible: isGM },
   ];
 
   return (
@@ -65,7 +70,7 @@ export default function SettingsPage() {
             <nav className="bg-white rounded-xl border border-gray-200 overflow-hidden">
               {/* Mobile: Horizontal scroll tabs */}
               <div className="lg:hidden flex overflow-x-auto">
-                {tabs.map((tab) => {
+                {tabs.filter(tab => tab.visible).map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
 
@@ -89,7 +94,7 @@ export default function SettingsPage() {
               </div>
               {/* Desktop: Vertical sidebar */}
               <div className="hidden lg:block">
-                {tabs.map((tab) => {
+                {tabs.filter(tab => tab.visible).map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
 
@@ -105,6 +110,9 @@ export default function SettingsPage() {
                       >
                         <Icon size={20} className={isActive ? 'text-purple-600' : 'text-gray-400'} />
                         {tab.name}
+                        {tab.id === 'reception' && (
+                          <span className="ml-1 px-1.5 py-0.5 text-[10px] font-bold uppercase rounded-full bg-blue-100 text-blue-700 leading-none">GM Only</span>
+                        )}
                         <ChevronRight
                           size={16}
                           className={`ml-auto ${isActive ? 'text-purple-600' : 'text-gray-300'}`}
@@ -360,9 +368,9 @@ export default function SettingsPage() {
 
             {activeTab === 'reception' && (
               <div className="bg-white rounded-xl border border-gray-200 p-4 lg:p-6">
-                <h2 className="text-base lg:text-lg font-semibold text-gray-900 mb-2">{t.settings.receptionConfig}</h2>
+                <h2 className="text-base lg:text-lg font-semibold text-gray-900 mb-2">ServiceHub Configuration</h2>
                 <p className="text-sm text-gray-500 mb-4 lg:mb-6">
-                  {t.settings.receptionConfigDesc}
+                  Manage service types, expenses, payment methods, operator PINs, and kiosk access.
                 </p>
                 <ReceptionAdminSettings />
               </div>

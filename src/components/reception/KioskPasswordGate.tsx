@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Building2, Lock, LogIn, Loader2 } from 'lucide-react';
+import { LayoutGrid, Lock, LogIn, Loader2 } from 'lucide-react';
 
 interface Branch {
   id: string;
@@ -69,7 +69,7 @@ export function KioskPasswordGate({ onAuthenticated }: KioskPasswordGateProps) {
             setError('Invalid password. Please try again.');
             break;
           case 'reception_not_enabled':
-            setError('Reception kiosk is not enabled for this branch.');
+            setError('ServiceHub is not enabled for this branch.');
             break;
           case 'branch_not_found':
             setError('Branch not found.');
@@ -87,20 +87,20 @@ export function KioskPasswordGate({ onAuthenticated }: KioskPasswordGateProps) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-white to-blue-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-50 via-white to-blue-50 p-4">
       <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 w-full max-w-md">
         {/* Logo / Branding */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Building2 size={32} className="text-purple-600" />
+          <div className="w-16 h-16 bg-sky-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <LayoutGrid size={32} className="text-sky-600" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Reception Kiosk</h1>
+          <h1 className="text-2xl font-bold text-gray-900">ServiceHub</h1>
           <p className="text-gray-500 text-sm mt-1">C-Space Coworking</p>
         </div>
 
         {loadingBranches ? (
           <div className="text-center py-8">
-            <Loader2 size={24} className="animate-spin mx-auto text-purple-500 mb-2" />
+            <Loader2 size={24} className="animate-spin mx-auto text-sky-500 mb-2" />
             <p className="text-sm text-gray-500">Loading branches...</p>
           </div>
         ) : branches.length === 0 ? (
@@ -122,7 +122,7 @@ export function KioskPasswordGate({ onAuthenticated }: KioskPasswordGateProps) {
                   setSelectedBranchId(e.target.value);
                   setError('');
                 }}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-200 bg-white"
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200 bg-white"
                 required
                 disabled={submitting}
               >
@@ -148,7 +148,7 @@ export function KioskPasswordGate({ onAuthenticated }: KioskPasswordGateProps) {
                     setError('');
                   }}
                   placeholder="Enter branch password"
-                  className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-200"
+                  className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
                   required
                   disabled={submitting}
                   autoFocus={branches.length === 1}
@@ -167,14 +167,14 @@ export function KioskPasswordGate({ onAuthenticated }: KioskPasswordGateProps) {
             <button
               type="submit"
               disabled={submitting || !selectedBranchId}
-              className="w-full flex items-center justify-center gap-2 bg-purple-600 text-white py-2.5 rounded-xl font-medium hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              className="w-full flex items-center justify-center gap-2 bg-sky-600 text-white py-2.5 rounded-xl font-medium hover:bg-sky-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
               {submitting ? (
                 <Loader2 size={18} className="animate-spin" />
               ) : (
                 <LogIn size={18} />
               )}
-              {submitting ? 'Authenticating...' : 'Enter Reception'}
+              {submitting ? 'Authenticating...' : 'Enter ServiceHub'}
             </button>
           </form>
         )}

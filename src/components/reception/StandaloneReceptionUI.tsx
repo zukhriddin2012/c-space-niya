@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import {
-  Receipt,
+  LayoutGrid,
   LayoutDashboard,
   ArrowLeftRight,
   Wallet,
@@ -16,7 +16,7 @@ import {
   Banknote,
 } from 'lucide-react';
 import { AuthProvider } from '@/contexts/AuthContext';
-import { ReceptionModeProvider, useReceptionMode } from '@/contexts/ReceptionModeContext';
+import { ServiceHubProvider, useServiceHub } from '@/contexts/ServiceHubContext';
 import { PinSwitchOverlay } from '@/components/reception/PinSwitchOverlay';
 import { BranchSwitchModal } from '@/components/reception/BranchSwitchModal';
 import type { User as UserType } from '@/types';
@@ -28,7 +28,7 @@ const ReceptionExpenses = lazy(() => import('@/components/reception/ReceptionExp
 const ReceptionSettings = lazy(() => import('@/components/reception/ReceptionSettings'));
 const ReceptionRequests = lazy(() => import('@/components/reception/ReceptionRequests'));
 const ReceptionShifts = lazy(() => import('@/components/reception/ReceptionShifts'));
-const CashManagementPage = lazy(() => import('@/app/(dashboard)/reception/cash-management/page'));
+const CashManagementDashboard = lazy(() => import('@/components/reception/CashManagementDashboard'));
 
 type KioskTab = 'dashboard' | 'transactions' | 'expenses' | 'cash-management' | 'requests' | 'shifts' | 'settings';
 
@@ -52,7 +52,7 @@ interface StandaloneReceptionUIProps {
 function LoadingSpinner() {
   return (
     <div className="flex items-center justify-center h-64">
-      <div className="animate-spin w-8 h-8 border-3 border-purple-600 border-t-transparent rounded-full" />
+      <div className="animate-spin w-8 h-8 border-3 border-sky-600 border-t-transparent rounded-full" />
     </div>
   );
 }
@@ -72,17 +72,14 @@ function KioskInner({ branchId, branchName, expiresAt, onLogout }: StandaloneRec
   const [showOperatorSwitch, setShowOperatorSwitch] = useState(false);
   const [remainingTime, setRemainingTime] = useState(() => calculateRemainingTime(expiresAt));
 
-  const { currentOperator, isReceptionMode, setReceptionMode, setSelectedBranch } = useReceptionMode();
+  const { currentOperator, setSelectedBranch } = useServiceHub();
 
-  // Auto-activate reception mode and set branch (once on mount)
+  // Set branch on mount
   const initializedRef = useRef(false);
   useEffect(() => {
     if (initializedRef.current) return;
     initializedRef.current = true;
 
-    if (!isReceptionMode) {
-      setReceptionMode(true);
-    }
     if (branchId) {
       setSelectedBranch(branchId);
     }
@@ -112,8 +109,8 @@ function KioskInner({ branchId, branchName, expiresAt, onLogout }: StandaloneRec
 
   return (
     <div className="fixed inset-0 z-50 bg-gray-100 flex flex-col overflow-hidden">
-      {/* Kiosk Header */}
-      <header className="bg-gradient-to-r from-purple-700 to-purple-900 text-white shadow-lg">
+      {/* ServiceHub Header */}
+      <header className="bg-gradient-to-r from-sky-700 to-sky-900 text-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           {/* Top Bar */}
           <div className="flex items-center justify-between h-16">
@@ -121,11 +118,11 @@ function KioskInner({ branchId, branchName, expiresAt, onLogout }: StandaloneRec
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                  <Receipt className="w-6 h-6" />
+                  <LayoutGrid className="w-6 h-6" />
                 </div>
                 <div className="hidden sm:block">
-                  <h1 className="text-xl font-bold">Reception Kiosk <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold uppercase rounded-full bg-amber-400/30 text-amber-100 leading-none align-middle">Beta</span></h1>
-                  <p className="text-purple-200 text-xs">{branchName}</p>
+                  <h1 className="text-xl font-bold">ServiceHub <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold uppercase rounded-full bg-green-400/30 text-green-100 leading-none align-middle">v1</span></h1>
+                  <p className="text-sky-200 text-xs">{branchName}</p>
                 </div>
               </div>
             </div>
@@ -153,11 +150,11 @@ function KioskInner({ branchId, branchName, expiresAt, onLogout }: StandaloneRec
                 )}
               </div>
 
-              {/* Exit Kiosk Button */}
+              {/* Exit Button */}
               <button
                 onClick={onLogout}
                 className="flex items-center gap-2 px-3 py-1.5 bg-red-500/30 hover:bg-red-500/50 rounded-lg transition-colors text-sm"
-                title="Exit Kiosk"
+                title="Exit"
               >
                 <LogOut className="w-4 h-4" />
                 <span className="hidden sm:inline">Exit</span>
@@ -177,7 +174,7 @@ function KioskInner({ branchId, branchName, expiresAt, onLogout }: StandaloneRec
                   className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                     isActive
                       ? 'border-white text-white bg-white/10'
-                      : 'border-transparent text-purple-200 hover:text-white hover:bg-white/5'
+                      : 'border-transparent text-sky-200 hover:text-white hover:bg-white/5'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -196,7 +193,7 @@ function KioskInner({ branchId, branchName, expiresAt, onLogout }: StandaloneRec
             {activeTab === 'dashboard' && <ReceptionDashboard />}
             {activeTab === 'transactions' && <ReceptionTransactions />}
             {activeTab === 'expenses' && <ReceptionExpenses />}
-            {activeTab === 'cash-management' && <CashManagementPage />}
+            {activeTab === 'cash-management' && <CashManagementDashboard />}
             {activeTab === 'requests' && <ReceptionRequests />}
             {activeTab === 'shifts' && <ReceptionShifts />}
             {activeTab === 'settings' && <ReceptionSettings />}
@@ -206,7 +203,7 @@ function KioskInner({ branchId, branchName, expiresAt, onLogout }: StandaloneRec
 
       {/* Footer with Session Timer */}
       <footer className="bg-white border-t border-gray-200 px-4 py-2 flex items-center justify-between text-xs text-gray-500">
-        <span>C-Space Niya • Reception Kiosk • {branchName}</span>
+        <span>C-Space Niya • ServiceHub • {branchName}</span>
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1">
             <Clock className="w-3 h-3" />
@@ -216,7 +213,7 @@ function KioskInner({ branchId, branchName, expiresAt, onLogout }: StandaloneRec
             onClick={onLogout}
             className="px-2 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors font-medium"
           >
-            Exit Kiosk
+            Exit
           </button>
         </div>
       </footer>
@@ -239,7 +236,7 @@ export function StandaloneReceptionUI(props: StandaloneReceptionUIProps) {
   const kioskUser: UserType = {
     id: `kiosk:${props.branchId}`,
     email: '',
-    name: 'Reception Kiosk',
+    name: 'ServiceHub Kiosk',
     role: 'reception_kiosk',
     branchId: props.branchId,
     createdAt: new Date(),
@@ -248,9 +245,9 @@ export function StandaloneReceptionUI(props: StandaloneReceptionUIProps) {
 
   return (
     <AuthProvider initialUser={kioskUser}>
-      <ReceptionModeProvider>
+      <ServiceHubProvider>
         <KioskInner {...props} />
-      </ReceptionModeProvider>
+      </ServiceHubProvider>
     </AuthProvider>
   );
 }

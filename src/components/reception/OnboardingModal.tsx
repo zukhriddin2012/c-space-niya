@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { X, ChevronLeft, ChevronRight, HelpCircle, Check, Lightbulb } from 'lucide-react';
-import { useReceptionMode, getOperatorHeaders } from '@/contexts/ReceptionModeContext';
+import { useServiceHub, getOperatorHeaders } from '@/contexts/ServiceHubContext';
 
 // ============================================
 // TYPES
@@ -232,7 +232,7 @@ interface OnboardingModalProps {
 }
 
 export default function OnboardingModal({ moduleKey, isOpen, onClose }: OnboardingModalProps) {
-  const { currentOperator, selectedBranchId } = useReceptionMode();
+  const { currentOperator, selectedBranchId } = useServiceHub();
   const [guide, setGuide] = useState<OnboardingGuide | null>(null);
   const [steps, setSteps] = useState<OnboardingStep[]>([]);
   const [currentStep, setCurrentStep] = useState(0);

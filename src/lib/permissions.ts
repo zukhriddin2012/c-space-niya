@@ -418,7 +418,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     PERMISSIONS.ACCOUNTING_REQUESTS_CREATE,
     PERMISSIONS.ACCOUNTING_REQUESTS_EDIT_OWN,
     PERMISSIONS.ACCOUNTING_REQUESTS_CANCEL_OWN,
-    // Reception - Full access for their branch
+    // Reception - Operational access for their branch (RECEPTION_ADMIN removed — CSN-028: GM only)
     PERMISSIONS.RECEPTION_VIEW,
     PERMISSIONS.RECEPTION_TRANSACTIONS_CREATE,
     PERMISSIONS.RECEPTION_TRANSACTIONS_VIEW,
@@ -428,7 +428,6 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     PERMISSIONS.RECEPTION_EXPENSES_VIEW,
     PERMISSIONS.RECEPTION_EXPENSES_EDIT,
     PERMISSIONS.RECEPTION_EXPENSES_VOID,
-    PERMISSIONS.RECEPTION_ADMIN,
     PERMISSIONS.RECEPTION_REPORTS,
     // Shift Planning - Own branch only
     PERMISSIONS.SHIFTS_VIEW,
@@ -441,9 +440,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     PERMISSIONS.RECEPTION_MAINTENANCE_REPORT,
     PERMISSIONS.RECEPTION_MAINTENANCE_VIEW,
     PERMISSIONS.RECEPTION_SHIFTS_VIEW,
-    // Cash Management - View, settings, request dividend
+    // Cash Management - View + request dividend (RECEPTION_CASH_SETTINGS removed — CSN-028: GM only)
     PERMISSIONS.RECEPTION_CASH_VIEW,
-    PERMISSIONS.RECEPTION_CASH_SETTINGS,
     PERMISSIONS.RECEPTION_CASH_DIVIDEND_REQUEST,
     // Metronome Sync - View + edit own
     PERMISSIONS.METRONOME_VIEW,
@@ -643,7 +641,7 @@ export function getRoleLabel(role: UserRole): string {
     branch_manager: 'Branch Manager',
     recruiter: 'Recruiter',
     employee: 'Employee',
-    reception_kiosk: 'Reception Kiosk',
+    reception_kiosk: 'ServiceHub Kiosk',
   };
   return labels[role] ?? role;
 }
@@ -750,7 +748,7 @@ export const PERMISSION_GROUPS = {
     { key: PERMISSIONS.ACCOUNTING_REQUESTS_APPROVE_HIGH, label: 'Approve 10M+ UZS' },
     { key: PERMISSIONS.ACCOUNTING_REQUESTS_REPORTS, label: 'View Reports' },
   ],
-  'Reception Mode': [
+  'ServiceHub': [
     { key: PERMISSIONS.RECEPTION_VIEW, label: 'Access Reception Mode' },
     { key: PERMISSIONS.RECEPTION_TRANSACTIONS_CREATE, label: 'Record Transactions' },
     { key: PERMISSIONS.RECEPTION_TRANSACTIONS_VIEW, label: 'View Transactions' },

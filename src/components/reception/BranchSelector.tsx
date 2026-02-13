@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Building2, ChevronDown, Check, Globe } from 'lucide-react';
-import { useReceptionMode } from '@/contexts/ReceptionModeContext';
+import { useServiceHub } from '@/contexts/ServiceHubContext';
 
 export function BranchSelector() {
   const {
@@ -10,7 +10,7 @@ export function BranchSelector() {
     accessibleBranches,
     isLoadingBranches,
     requestBranchSwitch,
-  } = useReceptionMode();
+  } = useServiceHub();
 
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);

@@ -7,7 +7,7 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Modal from '@/components/ui/Modal';
 import Badge from '@/components/ui/Badge';
-import { useReceptionMode } from '@/contexts/ReceptionModeContext';
+import { useServiceHub } from '@/contexts/ServiceHubContext';
 import { useTranslation } from '@/contexts/LanguageContext';
 import type { ServiceType, ExpenseType, PaymentMethodConfig, ReceptionBranchAccess } from '@/modules/reception/types';
 
@@ -22,7 +22,7 @@ interface Employee {
 }
 
 export default function ReceptionSettings() {
-  const { selectedBranchId, selectedBranch } = useReceptionMode();
+  const { selectedBranchId, selectedBranch } = useServiceHub();
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<Tab>('services');
   const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);

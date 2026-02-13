@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useReceptionMode, getOperatorHeaders } from '@/contexts/ReceptionModeContext';
+import { useServiceHub, getOperatorHeaders } from '@/contexts/ServiceHubContext';
 import type { MaintenanceIssue, MaintenanceStatus, MaintenanceCategory, MaintenanceUrgency } from '@/modules/maintenance/types';
 import {
   MAINTENANCE_CATEGORY_LABELS,
@@ -55,8 +55,8 @@ const CATEGORY_ICONS: Record<MaintenanceCategory, React.ReactNode> = {
   other: '📋',
 };
 
-export default function MaintenanceIssuesPage() {
-  const { selectedBranchId, currentOperator } = useReceptionMode();
+export default function MaintenanceIssuesView() {
+  const { selectedBranchId, currentOperator } = useServiceHub();
   const [activeTab, setActiveTab] = useState<MaintenanceStatus>('open');
   const [selectedCategory, setSelectedCategory] = useState<MaintenanceCategory | 'all'>('all');
   const [selectedUrgency, setSelectedUrgency] = useState<MaintenanceUrgency | 'all'>('all');
@@ -66,6 +66,7 @@ export default function MaintenanceIssuesPage() {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [showNewForm, setShowNewForm] = useState(false);
 
   useEffect(() => {
     if (!selectedBranchId) return;
@@ -129,8 +130,7 @@ export default function MaintenanceIssuesPage() {
   };
 
   const handleReportIssue = () => {
-    // Navigate to report issue page - would be implemented with router
-    window.location.href = '/reception/requests/maintenance/new';
+    setShowNewForm(!showNewForm);
   };
 
   const tabs = [

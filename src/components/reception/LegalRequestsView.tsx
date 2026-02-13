@@ -1,13 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
 import { Plus, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Badge from '@/components/ui/Badge';
-import { useReceptionMode, getOperatorHeaders } from '@/contexts/ReceptionModeContext';
+import { useServiceHub, getOperatorHeaders } from '@/contexts/ServiceHubContext';
 import type { LegalRequest } from '@/modules/legal/types';
 import { LEGAL_REQUEST_TYPE_LABELS, LEGAL_STATUS_LABELS } from '@/modules/legal/types';
 
@@ -35,8 +34,8 @@ interface LegalRequestsResponse {
   };
 }
 
-export default function LegalRequestsPage() {
-  const { selectedBranchId, currentOperator } = useReceptionMode();
+export default function LegalRequestsView() {
+  const { selectedBranchId, currentOperator } = useServiceHub();
 
   // Data states
   const [requests, setRequests] = useState<LegalRequest[]>([]);
@@ -50,6 +49,7 @@ export default function LegalRequestsPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>('');
   const [selectedRequestType, setSelectedRequestType] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
+  const [showNewForm, setShowNewForm] = useState(false);
 
   // Pagination
   const [page, setPage] = useState(1);
@@ -140,11 +140,9 @@ export default function LegalRequestsPage() {
             Manage contract preparations, agreements, and registrations
           </p>
         </div>
-        <Link href="/reception/requests/legal/new">
-          <Button variant="primary" leftIcon={<Plus className="w-4 h-4" />}>
-            New Legal Request
-          </Button>
-        </Link>
+        <Button variant="primary" leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowNewForm(!showNewForm)}>
+          New Legal Request
+        </Button>
       </div>
 
       {/* Filter Bar */}
@@ -293,12 +291,7 @@ export default function LegalRequestsPage() {
                   {requests.map(request => (
                     <tr key={request.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 text-sm font-medium text-purple-600">
-                        <Link
-                          href={`/reception/requests/legal/${request.id}`}
-                          className="hover:underline"
-                        >
-                          {request.requestNumber}
-                        </Link>
+                        {request.requestNumber}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600">
                         {LEGAL_REQUEST_TYPE_LABELS[request.requestType]}
@@ -315,12 +308,9 @@ export default function LegalRequestsPage() {
                         {request.assignedToName || 'Unassigned'}
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <Link
-                          href={`/reception/requests/legal/${request.id}`}
-                          className="text-purple-600 hover:text-purple-700 text-sm font-medium"
-                        >
+                        <span className="text-purple-600 hover:text-purple-700 text-sm font-medium cursor-pointer">
                           View
-                        </Link>
+                        </span>
                       </td>
                     </tr>
                   ))}

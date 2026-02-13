@@ -10,12 +10,7 @@ interface BranchData {
   totalBranchCount: number;
 }
 
-interface ReceptionModeContextType {
-  // Mode state
-  isReceptionMode: boolean;
-  toggleReceptionMode: () => void;
-  setReceptionMode: (value: boolean) => void;
-
+interface ServiceHubContextType {
   // Branch state
   selectedBranchId: string | null;
   selectedBranch: BranchOption | null;
@@ -43,35 +38,12 @@ interface ReceptionModeContextType {
   refreshBranches: () => Promise<void>;
 }
 
-const ReceptionModeContext = createContext<ReceptionModeContextType | undefined>(undefined);
+const ServiceHubContext = createContext<ServiceHubContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'reception_selected_branch';
-const MODE_STORAGE_KEY = 'reception_mode_active';
 const OPERATOR_STORAGE_KEY = 'reception_current_operator';
 
-export function ReceptionModeProvider({ children }: { children: ReactNode }) {
-  // Mode state — restore synchronously to prevent operator being cleared on mount
-  const [isReceptionMode, setIsReceptionModeState] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return sessionStorage.getItem(MODE_STORAGE_KEY) === 'true';
-  });
-  const isInitialMount = useRef(true);
-
-  // Mark initial mount complete after first render
-  useEffect(() => {
-    setTimeout(() => {
-      isInitialMount.current = false;
-    }, 0);
-  }, []);
-
-  // Wrapper to persist mode changes
-  const setIsReceptionMode = useCallback((value: boolean) => {
-    setIsReceptionModeState(value);
-    if (!isInitialMount.current) {
-      sessionStorage.setItem(MODE_STORAGE_KEY, value ? 'true' : 'false');
-    }
-  }, []);
-
+export function ServiceHubProvider({ children }: { children: ReactNode }) {
   // Branch state
   const [branchData, setBranchData] = useState<BranchData>({
     branches: [],
@@ -117,7 +89,6 @@ export function ReceptionModeProvider({ children }: { children: ReactNode }) {
   const persistOperator = useCallback((operator: OperatorIdentity | null) => {
     setCurrentOperator(operator);
     if (operator) {
-      // H-06: Store with timestamp for session expiry validation
       sessionStorage.setItem(OPERATOR_STORAGE_KEY, JSON.stringify({
         operator,
         timestamp: Date.now(),
@@ -148,7 +119,7 @@ export function ReceptionModeProvider({ children }: { children: ReactNode }) {
 
       return result;
     } catch (error) {
-      console.error('[ReceptionMode] Operator switch failed:', error);
+      console.error('[ServiceHub] Operator switch failed:', error);
       return { success: false, error: 'invalid_pin' };
     }
   }, [selectedBranchId, persistOperator]);
@@ -174,7 +145,7 @@ export function ReceptionModeProvider({ children }: { children: ReactNode }) {
 
       return result;
     } catch (error) {
-      console.error('[ReceptionMode] Cross-branch switch failed:', error);
+      console.error('[ServiceHub] Cross-branch switch failed:', error);
       return { success: false, error: 'employee_not_found' };
     }
   }, [selectedBranchId, persistOperator]);
@@ -212,43 +183,19 @@ export function ReceptionModeProvider({ children }: { children: ReactNode }) {
         }
       } else {
         const errorData = await response.json().catch(() => ({}));
-        console.error('[ReceptionMode] Failed to fetch branches:', response.status, errorData);
+        console.error('[ServiceHub] Failed to fetch branches:', response.status, errorData);
       }
     } catch (error) {
-      console.error('[ReceptionMode] Error fetching branches:', error);
+      console.error('[ServiceHub] Error fetching branches:', error);
     } finally {
       setIsLoadingBranches(false);
     }
   }, []);
 
-
-  // Fetch branches when entering reception mode
+  // CSN-028: Fetch branches on mount (no longer gated by isReceptionMode)
   useEffect(() => {
-    if (isReceptionMode) {
-      fetchBranches();
-    }
-  }, [isReceptionMode, fetchBranches]);
-
-  // Clear operator when leaving reception mode — but skip on initial mount
-  // (isReceptionMode starts false and gets restored from sessionStorage async)
-  const hasReceptionModeBeenSet = useRef(false);
-  useEffect(() => {
-    if (isReceptionMode) {
-      hasReceptionModeBeenSet.current = true;
-    } else if (hasReceptionModeBeenSet.current) {
-      // Only clear when user actually leaves reception mode, not on initial mount
-      persistOperator(null);
-    }
-  }, [isReceptionMode, persistOperator]);
-
-  const toggleReceptionMode = useCallback(() => {
-    const newValue = !isReceptionMode;
-    setIsReceptionMode(newValue);
-  }, [isReceptionMode, setIsReceptionMode]);
-
-  const setReceptionMode = useCallback((value: boolean) => {
-    setIsReceptionMode(value);
-  }, [setIsReceptionMode]);
+    fetchBranches();
+  }, [fetchBranches]);
 
   // Get selected branch object
   const selectedBranch = branchData.branches.find(b => b.id === selectedBranchId) || null;
@@ -297,13 +244,8 @@ export function ReceptionModeProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <ReceptionModeContext.Provider
+    <ServiceHubContext.Provider
       value={{
-        // Mode
-        isReceptionMode,
-        toggleReceptionMode,
-        setReceptionMode,
-
         // Branch state
         selectedBranchId,
         selectedBranch,
@@ -332,14 +274,14 @@ export function ReceptionModeProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
-    </ReceptionModeContext.Provider>
+    </ServiceHubContext.Provider>
   );
 }
 
-export function useReceptionMode() {
-  const context = useContext(ReceptionModeContext);
+export function useServiceHub() {
+  const context = useContext(ServiceHubContext);
   if (context === undefined) {
-    throw new Error('useReceptionMode must be used within a ReceptionModeProvider');
+    throw new Error('useServiceHub must be used within a ServiceHubProvider');
   }
   return context;
 }

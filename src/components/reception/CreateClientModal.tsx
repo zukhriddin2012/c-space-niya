@@ -6,7 +6,7 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { Building2, User, MapPin } from 'lucide-react';
 import type { ClientOption } from './ClientAutocomplete';
-import { useReceptionMode } from '@/contexts/ReceptionModeContext';
+import { useServiceHub } from '@/contexts/ServiceHubContext';
 
 interface CreateClientModalProps {
   isOpen: boolean;
@@ -37,7 +37,7 @@ export function CreateClientModal({
   branchId,
   onCreated,
 }: CreateClientModalProps) {
-  const { accessibleBranches } = useReceptionMode();
+  const { accessibleBranches } = useServiceHub();
   const [formData, setFormData] = useState({
     name: '',
     type: 'individual' as 'company' | 'individual',

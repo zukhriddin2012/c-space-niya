@@ -119,5 +119,6 @@ async function handleDelete(
   }
 }
 
-export const POST = withAuth(handlePost, { roles: ['general_manager', 'ceo', 'branch_manager'] });
-export const DELETE = withAuth(handleDelete, { roles: ['general_manager', 'ceo', 'branch_manager'] });
+// CSN-028: Restricted to general_manager only
+export const POST = withAuth(handlePost, { roles: ['general_manager'] });
+export const DELETE = withAuth(handleDelete, { roles: ['general_manager'] });

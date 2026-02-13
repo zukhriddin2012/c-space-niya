@@ -63,4 +63,4 @@ export const DELETE = withAuth(async (request: NextRequest, { user, params }) =>
     console.error('Error in DELETE /api/reception/admin/branch-access:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-}, { allowKiosk: true });
+}, { roles: ['general_manager'], allowKiosk: true });

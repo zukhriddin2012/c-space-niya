@@ -1,12 +1,10 @@
 import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth-server';
 import { Sidebar, MobileNav, NotificationBell, SidebarToggle, QuickSwitch } from '@/components/layout';
-import { ReceptionModeToggle } from '@/components/layout/ReceptionModeToggle';
 import { TestBannerWrapper, FloatingFeedbackButton, LanguageSwitcher } from '@/components/ui';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { SidebarProvider } from '@/contexts/SidebarContext';
 import { LanguageProvider } from '@/contexts/LanguageContext';
-import { ReceptionModeProvider } from '@/contexts/ReceptionModeContext';
 import { DashboardContent } from '@/components/layout/DashboardContent';
 import SessionManager from '@/components/auth/SessionManager';
 
@@ -22,13 +20,10 @@ export default async function DashboardLayout({
   }
 
   const showNotifications = ['general_manager', 'ceo', 'hr'].includes(user.role);
-  // Show Reception Mode toggle for Operations: BMs, CMs, HR, and managers
-  const showReceptionMode = ['general_manager', 'ceo', 'hr', 'branch_manager', 'chief_accountant', 'accountant'].includes(user.role);
 
   return (
     <LanguageProvider>
     <AuthProvider initialUser={user}>
-      <ReceptionModeProvider>
       <SidebarProvider>
         <TestBannerWrapper />
         <div className="flex min-h-screen bg-gray-50">
@@ -45,8 +40,6 @@ export default async function DashboardLayout({
           <div className="hidden lg:flex sticky top-0 z-40 bg-white border-b border-gray-200 px-6 py-3 items-center justify-between">
             <SidebarToggle />
             <div className="flex items-center gap-4">
-            {showReceptionMode && <ReceptionModeToggle />}
-            <div className="h-8 w-px bg-gray-200" />
             <LanguageSwitcher />
             {showNotifications && <NotificationBell />}
             <div className="h-8 w-px bg-gray-200" />
@@ -80,7 +73,6 @@ export default async function DashboardLayout({
           <SessionManager />
         </div>
       </SidebarProvider>
-      </ReceptionModeProvider>
     </AuthProvider>
     </LanguageProvider>
   );

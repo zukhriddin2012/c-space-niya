@@ -8,7 +8,7 @@ import Input from '@/components/ui/Input';
 import Modal from '@/components/ui/Modal';
 import Badge from '@/components/ui/Badge';
 import { formatCurrency, EXPENSE_PAYMENT_METHODS_LIST } from '@/modules/reception/lib/constants';
-import { useReceptionMode, getOperatorHeaders } from '@/contexts/ReceptionModeContext';
+import { useServiceHub, getOperatorHeaders } from '@/contexts/ServiceHubContext';
 import { useTranslation } from '@/contexts/LanguageContext';
 import type { Expense, ExpenseType, CreateExpenseInput } from '@/modules/reception/types';
 
@@ -96,7 +96,7 @@ const initialFormData: ExpenseFormData = {
 };
 
 export default function ReceptionExpenses() {
-  const { selectedBranchId, currentOperator } = useReceptionMode();
+  const { selectedBranchId, currentOperator } = useServiceHub();
   const { t } = useTranslation();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [expenseTypes, setExpenseTypes] = useState<ExpenseType[]>([]);

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { ArrowLeftRight, Building2, Calendar, ChevronDown } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import { formatCurrency } from '@/modules/reception/lib/constants';
-import { useReceptionMode } from '@/contexts/ReceptionModeContext';
+import { useServiceHub } from '@/contexts/ServiceHubContext';
 import { useTranslation } from '@/contexts/LanguageContext';
 
 type PeriodType = 'today' | 'this_week' | 'this_month' | 'last_month' | 'this_quarter' | 'this_year' | 'all_time' | 'custom';
@@ -111,7 +111,7 @@ function formatFullNumber(num: number): string {
 }
 
 export default function ReceptionDashboard() {
-  const { selectedBranchId } = useReceptionMode();
+  const { selectedBranchId } = useServiceHub();
   const { t } = useTranslation();
   const periodLabels = useMemo(() => getPeriodLabels(t), [t]);
   const [stats, setStats] = useState<DashboardStats | null>(null);

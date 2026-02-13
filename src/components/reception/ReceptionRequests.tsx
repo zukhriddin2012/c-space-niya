@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useReceptionMode, getOperatorHeaders } from '@/contexts/ReceptionModeContext';
+import { useServiceHub, getOperatorHeaders } from '@/contexts/ServiceHubContext';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import { Scale, Wrench, Calculator, Plus, ArrowLeft, Loader2 } from 'lucide-react';
@@ -15,19 +15,19 @@ interface RequestCount {
   maintenance: number;
 }
 
-// Lazy-import the actual sub-page components
+// Lazy-import the shared request view components (CSN-028: extracted from deleted routes)
 const AccountingRequestsPage = React.lazy(
-  () => import('@/app/(dashboard)/reception/requests/accounting/page')
+  () => import('@/components/reception/AccountingRequestsView')
 );
 const LegalRequestsPage = React.lazy(
-  () => import('@/app/(dashboard)/reception/requests/legal/page')
+  () => import('@/components/reception/LegalRequestsView')
 );
 const MaintenanceIssuesPage = React.lazy(
-  () => import('@/app/(dashboard)/reception/requests/maintenance/page')
+  () => import('@/components/reception/MaintenanceIssuesView')
 );
 
 export default function ReceptionRequests() {
-  const { selectedBranchId, currentOperator } = useReceptionMode();
+  const { selectedBranchId, currentOperator } = useServiceHub();
   const [subView, setSubView] = useState<RequestSubView>('hub');
   const [counts, setCounts] = useState<RequestCount>({ accounting: 0, legal: 0, maintenance: 0 });
   const [isLoading, setIsLoading] = useState(true);

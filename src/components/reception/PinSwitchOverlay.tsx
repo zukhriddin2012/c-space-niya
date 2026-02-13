@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { useReceptionMode } from '@/contexts/ReceptionModeContext';
+import { useServiceHub } from '@/contexts/ServiceHubContext';
 import type { EmployeeSearchResult } from '@/modules/reception/types';
 import { Loader2, ChevronLeft, X } from 'lucide-react';
 
@@ -37,7 +37,7 @@ export function PinSwitchOverlay({ isOpen, onClose }: PinSwitchOverlayProps) {
   const pinInputRef = useRef<HTMLInputElement>(null);
 
   // Context
-  const { switchOperator, switchOperatorCrossBranch, selectedBranchId } = useReceptionMode();
+  const { switchOperator, switchOperatorCrossBranch, selectedBranchId } = useServiceHub();
 
   // Reset state when overlay opens/closes
   useEffect(() => {
