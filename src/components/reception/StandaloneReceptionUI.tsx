@@ -13,6 +13,7 @@ import {
   FileText,
   Calendar,
   Clock,
+  Banknote,
 } from 'lucide-react';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ReceptionModeProvider, useReceptionMode } from '@/contexts/ReceptionModeContext';
@@ -27,13 +28,15 @@ const ReceptionExpenses = lazy(() => import('@/components/reception/ReceptionExp
 const ReceptionSettings = lazy(() => import('@/components/reception/ReceptionSettings'));
 const ReceptionRequests = lazy(() => import('@/components/reception/ReceptionRequests'));
 const ReceptionShifts = lazy(() => import('@/components/reception/ReceptionShifts'));
+const CashManagementPage = lazy(() => import('@/app/(dashboard)/reception/cash-management/page'));
 
-type KioskTab = 'dashboard' | 'transactions' | 'expenses' | 'requests' | 'shifts' | 'settings';
+type KioskTab = 'dashboard' | 'transactions' | 'expenses' | 'cash-management' | 'requests' | 'shifts' | 'settings';
 
 const tabs = [
   { id: 'dashboard' as const, label: 'Dashboard', icon: LayoutDashboard },
   { id: 'transactions' as const, label: 'Transactions', icon: ArrowLeftRight },
   { id: 'expenses' as const, label: 'Expenses', icon: Wallet },
+  { id: 'cash-management' as const, label: 'Cash', icon: Banknote },
   { id: 'requests' as const, label: 'Requests', icon: FileText },
   { id: 'shifts' as const, label: 'Shifts', icon: Calendar },
   { id: 'settings' as const, label: 'Settings', icon: Settings },
@@ -193,6 +196,7 @@ function KioskInner({ branchId, branchName, expiresAt, onLogout }: StandaloneRec
             {activeTab === 'dashboard' && <ReceptionDashboard />}
             {activeTab === 'transactions' && <ReceptionTransactions />}
             {activeTab === 'expenses' && <ReceptionExpenses />}
+            {activeTab === 'cash-management' && <CashManagementPage />}
             {activeTab === 'requests' && <ReceptionRequests />}
             {activeTab === 'shifts' && <ReceptionShifts />}
             {activeTab === 'settings' && <ReceptionSettings />}
