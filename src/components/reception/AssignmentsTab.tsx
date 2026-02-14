@@ -2,9 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Users, Search, Building2, Calendar, UserCog } from 'lucide-react';
-import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
-import { useServiceHub } from '@/contexts/ServiceHubContext';
 import { useTranslation } from '@/contexts/LanguageContext';
 import { CreateAssignmentModal } from './CreateAssignmentModal';
 import { BulkAssignmentModal } from './BulkAssignmentModal';
@@ -18,7 +16,6 @@ interface AssignmentsTabProps {
 }
 
 export function AssignmentsTab({ branchId }: AssignmentsTabProps) {
-  const { accessibleBranches } = useServiceHub();
   const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<ViewMode>('by-branch');
   const [assignments, setAssignments] = useState<BranchAssignment[]>([]);
@@ -30,8 +27,28 @@ export function AssignmentsTab({ branchId }: AssignmentsTabProps) {
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [endingAssignment, setEndingAssignment] = useState<BranchAssignment | null>(null);
   const [total, setTotal] = useState(0);
+  const [branches, setBranches] = useState<BranchOption[]>([]);
 
-  const realBranches = accessibleBranches.filter((b: BranchOption) => !b.isAllBranches);
+  // Fetch branches from API (works outside ServiceHub context)
+  useEffect(() => {
+    async function fetchBranches() {
+      try {
+        const response = await fetch('/api/reception/branches');
+        if (response.ok) {
+          const data = await response.json();
+          const branchList = (data.branches || data || []).filter(
+            (b: BranchOption) => !b.isAllBranches
+          );
+          setBranches(branchList);
+        }
+      } catch {
+        console.error('Failed to fetch branches');
+      }
+    }
+    fetchBranches();
+  }, []);
+
+  const realBranches = branches;
 
   const fetchAssignments = useCallback(async () => {
     if (!filterBranchId && viewMode === 'by-branch') return;

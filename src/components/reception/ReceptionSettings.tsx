@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Settings, Package, Wallet, CreditCard, Plus, Pencil, Trash2, Users, Building2, Search, X, UserCog } from 'lucide-react';
+import { Settings, Package, Wallet, CreditCard, Plus, Pencil, Trash2, Users, Building2, Search, X } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -9,10 +9,9 @@ import Modal from '@/components/ui/Modal';
 import Badge from '@/components/ui/Badge';
 import { useServiceHub } from '@/contexts/ServiceHubContext';
 import { useTranslation } from '@/contexts/LanguageContext';
-import { AssignmentsTab } from './AssignmentsTab';
 import type { ServiceType, ExpenseType, PaymentMethodConfig, ReceptionBranchAccess } from '@/modules/reception/types';
 
-type Tab = 'services' | 'expenses' | 'payments' | 'branch_access' | 'assignments';
+type Tab = 'services' | 'expenses' | 'payments' | 'branch_access';
 
 interface Employee {
   id: string;
@@ -250,7 +249,6 @@ export default function ReceptionSettings() {
     { id: 'expenses' as const, label: t.reception.expenseTypes, icon: Wallet },
     { id: 'payments' as const, label: t.reception.paymentMethods, icon: CreditCard },
     ...(selectedBranchId && selectedBranchId !== 'all' ? [{ id: 'branch_access' as const, label: t.reception.branchAccess, icon: Users }] : []),
-    { id: 'assignments' as const, label: t.reception.assignments || 'Assignments', icon: UserCog },
   ];
 
   const emojiList = ['📦', '👥', '🪑', '🗓️', '🎤', '🏢', '🖥️', '🔄', '📅', '📆', '🎓', '🛒', '⚡', '👷', '🧾', '🔧', '📢', '🏗️', '❤️', '💵', '📱', '🖱️', '🍇', '💳', '🏦'];
@@ -286,13 +284,8 @@ export default function ReceptionSettings() {
         })}
       </div>
 
-      {/* Content - Assignments Tab (CSN-029) */}
-      {activeTab === 'assignments' && (
-        <AssignmentsTab branchId={selectedBranchId || undefined} />
-      )}
-
       {/* Content - Config Types */}
-      {activeTab !== 'branch_access' && activeTab !== 'assignments' && (
+      {activeTab !== 'branch_access' && (
         <Card>
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-semibold text-gray-900">

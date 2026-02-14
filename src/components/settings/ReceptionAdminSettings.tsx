@@ -21,12 +21,14 @@ import {
   Building2,
   ExternalLink,
   Wallet,
+  UserCog,
 } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
 import { useAuth } from '@/contexts/AuthContext';
+import { AssignmentsTab } from '@/components/reception/AssignmentsTab';
 
 // ============================================
 // TYPES
@@ -56,7 +58,7 @@ interface PinAssignment {
   pin: string;
 }
 
-type SubTab = 'service-types' | 'expense-types' | 'payment-methods' | 'operator-pins' | 'kiosk-passwords' | 'cash-settings';
+type SubTab = 'service-types' | 'expense-types' | 'payment-methods' | 'operator-pins' | 'kiosk-passwords' | 'cash-settings' | 'assignments';
 
 const subTabs: Array<{ id: SubTab; label: string; icon: React.ReactNode }> = [
   { id: 'service-types', label: 'Service Types', icon: <Layers size={16} /> },
@@ -65,6 +67,7 @@ const subTabs: Array<{ id: SubTab; label: string; icon: React.ReactNode }> = [
   { id: 'operator-pins', label: 'Operator PINs', icon: <KeyRound size={16} /> },
   { id: 'kiosk-passwords', label: 'Kiosk Passwords', icon: <Building2 size={16} /> },
   { id: 'cash-settings', label: 'Cash Settings', icon: <Wallet size={16} /> },
+  { id: 'assignments', label: 'Assignments', icon: <UserCog size={16} /> },
 ];
 
 const commonEmojis = ['📦', '💵', '📱', '💳', '🏦', '👥', '🪑', '🗓️', '🎤', '🏢', '🖥️', '🔄', '📅', '📆', '🎓', '🛒', '⚡', '👷', '🧾', '🔧', '📢', '🏗️', '❤️', '🍇', '🖱️'];
@@ -110,6 +113,9 @@ export default function ReceptionAdminSettings() {
 
       {/* Cash Settings (PR2-066) */}
       {activeSubTab === 'cash-settings' && <CashSettingsPanel />}
+
+      {/* Branch Assignments (CSN-029) */}
+      {activeSubTab === 'assignments' && <AssignmentsTab />}
     </div>
   );
 }
