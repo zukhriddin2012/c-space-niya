@@ -61,13 +61,13 @@ interface PinAssignment {
 type SubTab = 'service-types' | 'expense-types' | 'payment-methods' | 'operator-pins' | 'kiosk-passwords' | 'cash-settings' | 'assignments';
 
 const subTabs: Array<{ id: SubTab; label: string; icon: React.ReactNode }> = [
+  { id: 'assignments', label: 'Assignments', icon: <UserCog size={16} /> },
   { id: 'service-types', label: 'Service Types', icon: <Layers size={16} /> },
   { id: 'expense-types', label: 'Expense Types', icon: <Package size={16} /> },
   { id: 'payment-methods', label: 'Payment Methods', icon: <CreditCard size={16} /> },
   { id: 'operator-pins', label: 'Operator PINs', icon: <KeyRound size={16} /> },
   { id: 'kiosk-passwords', label: 'Kiosk Passwords', icon: <Building2 size={16} /> },
   { id: 'cash-settings', label: 'Cash Settings', icon: <Wallet size={16} /> },
-  { id: 'assignments', label: 'Assignments', icon: <UserCog size={16} /> },
 ];
 
 const commonEmojis = ['📦', '💵', '📱', '💳', '🏦', '👥', '🪑', '🗓️', '🎤', '🏢', '🖥️', '🔄', '📅', '📆', '🎓', '🛒', '⚡', '👷', '🧾', '🔧', '📢', '🏗️', '❤️', '🍇', '🖱️'];
@@ -77,7 +77,7 @@ const commonEmojis = ['📦', '💵', '📱', '💳', '🏦', '👥', '🪑', '�
 // ============================================
 
 export default function ReceptionAdminSettings() {
-  const [activeSubTab, setActiveSubTab] = useState<SubTab>('service-types');
+  const [activeSubTab, setActiveSubTab] = useState<SubTab>('assignments');
 
   return (
     <div className="space-y-4">
