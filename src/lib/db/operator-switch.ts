@@ -8,6 +8,7 @@ import {
   type OperatorSwitchLogRow,
   type BranchAssignment,
   type BranchAssignmentRow,
+  type AssignmentType,
   type EmployeeSearchResult,
 } from '@/modules/reception/types';
 
@@ -299,65 +300,338 @@ export async function searchEmployeesForCrossBranch(
 // BRANCH EMPLOYEE ASSIGNMENTS
 // ============================================
 
-// Create a new branch assignment
+// CSN-029: Create a new branch assignment with full validation
 export async function createBranchAssignment(params: {
   employeeId: string;
-  homeBranchId: string;
   assignedBranchId: string;
+  assignmentType: string;
   assignedBy: string;
-  startsAt: string;
-  endsAt?: string;
+  startsAt?: string;
+  endsAt?: string | null;
+  notes?: string | null;
 }): Promise<{ success: boolean; data?: BranchAssignment; error?: string }> {
   if (!isSupabaseAdminConfigured()) {
     return { success: false, error: 'Database not configured' };
   }
 
-  const { data, error } = await supabaseAdmin!
-    .from('branch_employee_assignments')
-    .insert({
-      employee_id: params.employeeId,
-      home_branch_id: params.homeBranchId,
-      assigned_branch_id: params.assignedBranchId,
-      assigned_by: params.assignedBy,
-      starts_at: params.startsAt,
-      ends_at: params.endsAt || null,
-    })
-    .select()
-    .single();
+  try {
+    // 1. Verify employee exists and has PIN
+    const { data: emp, error: empError } = await supabaseAdmin!
+      .from('employees')
+      .select('id, full_name, branch_id, operator_pin_hash')
+      .eq('id', params.employeeId)
+      .single();
 
-  if (error) {
-    console.error('Error creating branch assignment:', error);
-    return { success: false, error: error.message };
+    if (empError || !emp) {
+      return { success: false, error: 'Employee not found' };
+    }
+    if (!emp.operator_pin_hash) {
+      return { success: false, error: 'Employee does not have a PIN set' };
+    }
+    if (emp.branch_id === params.assignedBranchId) {
+      return { success: false, error: 'Cannot assign employee to their home branch' };
+    }
+
+    // 2. Check for existing active assignment
+    const { data: existing } = await supabaseAdmin!
+      .from('branch_employee_assignments')
+      .select('id')
+      .eq('employee_id', params.employeeId)
+      .eq('assigned_branch_id', params.assignedBranchId)
+      .is('removed_at', null)
+      .or(`ends_at.is.null,ends_at.gt.${new Date().toISOString()}`)
+      .maybeSingle();
+
+    if (existing) {
+      return { success: false, error: 'Employee already has active assignment to this branch' };
+    }
+
+    // 3. Insert assignment
+    const { data, error } = await supabaseAdmin!
+      .from('branch_employee_assignments')
+      .insert({
+        employee_id: params.employeeId,
+        home_branch_id: emp.branch_id,
+        assigned_branch_id: params.assignedBranchId,
+        assigned_by: params.assignedBy,
+        assignment_type: params.assignmentType,
+        starts_at: params.startsAt || new Date().toISOString(),
+        ends_at: params.endsAt || null,
+        notes: params.notes || null,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating branch assignment:', error);
+      return { success: false, error: error.message };
+    }
+
+    const assignment = transformBranchAssignment(data as BranchAssignmentRow);
+    assignment.employeeName = emp.full_name;
+
+    return { success: true, data: assignment };
+  } catch (error) {
+    console.error('Error in createBranchAssignment:', error);
+    return { success: false, error: 'Internal error' };
   }
-
-  return {
-    success: true,
-    data: transformBranchAssignment(data as BranchAssignmentRow),
-  };
 }
 
-// Remove a branch assignment by setting removed_at
+// CSN-029: Remove assignment with auto-revoke of granted access
 export async function removeBranchAssignment(
   id: string,
-  removedBy: string
-): Promise<{ success: boolean; error?: string }> {
+  _removedBy?: string
+): Promise<{ success: boolean; accessRevoked: boolean; error?: string }> {
+  if (!isSupabaseAdminConfigured()) {
+    return { success: false, accessRevoked: false, error: 'Database not configured' };
+  }
+
+  try {
+    // 1. Soft-delete the assignment
+    const { data, error } = await supabaseAdmin!
+      .from('branch_employee_assignments')
+      .update({ removed_at: new Date().toISOString() })
+      .eq('id', id)
+      .is('removed_at', null)
+      .select()
+      .single();
+
+    if (error || !data) {
+      return { success: false, accessRevoked: false, error: 'Assignment not found or already removed' };
+    }
+
+    // 2. Revoke auto-granted access (AT-3)
+    const { data: accessRow } = await supabaseAdmin!
+      .from('reception_branch_access')
+      .select('id')
+      .eq('auto_granted_from', id)
+      .maybeSingle();
+
+    let accessRevoked = false;
+    if (accessRow) {
+      await supabaseAdmin!
+        .from('reception_branch_access')
+        .delete()
+        .eq('id', accessRow.id);
+      accessRevoked = true;
+    }
+
+    return { success: true, accessRevoked };
+  } catch (error) {
+    console.error('Error in removeBranchAssignment:', error);
+    return { success: false, accessRevoked: false, error: 'Internal error' };
+  }
+}
+
+// CSN-029: Auto-grant branch access when assignment is created
+export async function autoGrantBranchAccess(
+  assignmentId: string,
+  employeeId: string,
+  branchId: string,
+  grantedBy: string
+): Promise<{ granted: boolean }> {
+  if (!isSupabaseAdminConfigured()) return { granted: false };
+  try {
+    // Check if access already exists
+    const { data: existing } = await supabaseAdmin!
+      .from('reception_branch_access')
+      .select('id')
+      .eq('user_id', employeeId)
+      .eq('branch_id', branchId)
+      .maybeSingle();
+
+    if (existing) return { granted: false }; // Already has access
+
+    // Auto-grant with link to assignment
+    await supabaseAdmin!
+      .from('reception_branch_access')
+      .insert({
+        user_id: employeeId,
+        branch_id: branchId,
+        granted_by: grantedBy,
+        notes: 'Auto-granted via assignment CSN-029',
+        auto_granted_from: assignmentId,
+      });
+
+    return { granted: true };
+  } catch (error) {
+    console.error('Error in autoGrantBranchAccess:', error);
+    return { granted: false };
+  }
+}
+
+// CSN-029: Update an existing assignment
+export async function updateBranchAssignment(
+  id: string,
+  updates: {
+    endsAt?: string | null;
+    assignmentType?: string;
+    notes?: string | null;
+  }
+): Promise<{ success: boolean; data?: BranchAssignment; error?: string }> {
   if (!isSupabaseAdminConfigured()) {
     return { success: false, error: 'Database not configured' };
   }
 
-  const { error } = await supabaseAdmin!
-    .from('branch_employee_assignments')
-    .update({
-      removed_at: new Date().toISOString(),
-    })
-    .eq('id', id);
+  try {
+    const updateData: Record<string, unknown> = {};
+    if (updates.endsAt !== undefined) updateData.ends_at = updates.endsAt;
+    if (updates.assignmentType !== undefined) updateData.assignment_type = updates.assignmentType;
+    if (updates.notes !== undefined) updateData.notes = updates.notes;
 
-  if (error) {
-    console.error('Error removing branch assignment:', error);
-    return { success: false, error: error.message };
+    const { data, error } = await supabaseAdmin!
+      .from('branch_employee_assignments')
+      .update(updateData)
+      .eq('id', id)
+      .is('removed_at', null)
+      .select()
+      .single();
+
+    if (error || !data) {
+      return { success: false, error: 'Assignment not found or already removed' };
+    }
+
+    return { success: true, data: transformBranchAssignment(data as BranchAssignmentRow) };
+  } catch (error) {
+    console.error('Error in updateBranchAssignment:', error);
+    return { success: false, error: 'Internal error' };
   }
+}
 
-  return { success: true };
+// CSN-029: Get assignments by branch with pagination, filtering, and joins
+export async function getAssignmentsByBranch(
+  branchId: string,
+  options: {
+    type?: string;
+    search?: string;
+    includeExpired?: boolean;
+    page?: number;
+    pageSize?: number;
+  } = {}
+): Promise<{
+  success: boolean;
+  data?: BranchAssignment[];
+  total?: number;
+  error?: string;
+}> {
+  if (!isSupabaseAdminConfigured()) {
+    return { success: false, error: 'Database not configured' };
+  }
+  try {
+    const page = options.page || 1;
+    const pageSize = options.pageSize || 50;
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    let query = supabaseAdmin!
+      .from('branch_employee_assignments')
+      .select(`
+        *,
+        employee:employees!branch_employee_assignments_employee_id_fkey(id, full_name, branch_id),
+        assigned_branch:branches!branch_employee_assignments_assigned_branch_id_fkey(id, name),
+        home_branch:branches!branch_employee_assignments_home_branch_id_fkey(id, name),
+        assignor:employees!branch_employee_assignments_assigned_by_fkey(id, full_name)
+      `, { count: 'exact' })
+      .eq('assigned_branch_id', branchId)
+      .is('removed_at', null);
+
+    if (!options.includeExpired) {
+      query = query.or(`ends_at.is.null,ends_at.gt.${new Date().toISOString()}`);
+    }
+
+    if (options.type) {
+      query = query.eq('assignment_type', options.type);
+    }
+
+    query = query.order('starts_at', { ascending: false }).range(from, to);
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      console.error('Error fetching assignments by branch:', error);
+      return { success: false, error: error.message };
+    }
+
+    const assignments = (data || []).map((row: Record<string, unknown>) => {
+      const emp = row.employee as { id: string; full_name: string; branch_id: string } | null;
+      const assignedBranch = row.assigned_branch as { id: string; name: string } | null;
+      const homeBranch = row.home_branch as { id: string; name: string } | null;
+      const assignor = row.assignor as { id: string; full_name: string } | null;
+
+      const base = transformBranchAssignment(row as unknown as BranchAssignmentRow);
+      base.employeeName = emp?.full_name;
+      base.homeBranchName = homeBranch?.name;
+      base.assignedBranchName = assignedBranch?.name;
+      base.assignedByName = assignor?.full_name;
+      return base;
+    });
+
+    // Client-side search filter (Supabase can't ILIKE on FK-joined columns)
+    let filtered = assignments;
+    if (options.search) {
+      const term = options.search.toLowerCase();
+      filtered = assignments.filter(a =>
+        a.employeeName?.toLowerCase().includes(term)
+      );
+    }
+
+    return { success: true, data: filtered, total: count || 0 };
+  } catch (error) {
+    console.error('Error in getAssignmentsByBranch:', error);
+    return { success: false, error: 'Internal error' };
+  }
+}
+
+// CSN-029: Get all active assignments for an employee
+export async function getAssignmentsByEmployee(
+  employeeId: string,
+  options: { includeExpired?: boolean } = {}
+): Promise<{ success: boolean; data?: BranchAssignment[]; error?: string }> {
+  if (!isSupabaseAdminConfigured()) {
+    return { success: false, error: 'Database not configured' };
+  }
+  try {
+    let query = supabaseAdmin!
+      .from('branch_employee_assignments')
+      .select(`
+        *,
+        assigned_branch:branches!branch_employee_assignments_assigned_branch_id_fkey(id, name),
+        home_branch:branches!branch_employee_assignments_home_branch_id_fkey(id, name),
+        assignor:employees!branch_employee_assignments_assigned_by_fkey(id, full_name)
+      `)
+      .eq('employee_id', employeeId)
+      .is('removed_at', null);
+
+    if (!options.includeExpired) {
+      query = query.or(`ends_at.is.null,ends_at.gt.${new Date().toISOString()}`);
+    }
+
+    query = query.order('starts_at', { ascending: false });
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching assignments by employee:', error);
+      return { success: false, error: error.message };
+    }
+
+    const assignments = (data || []).map((row: Record<string, unknown>) => {
+      const assignedBranch = row.assigned_branch as { id: string; name: string } | null;
+      const homeBranch = row.home_branch as { id: string; name: string } | null;
+      const assignor = row.assignor as { id: string; full_name: string } | null;
+
+      const base = transformBranchAssignment(row as unknown as BranchAssignmentRow);
+      base.homeBranchName = homeBranch?.name;
+      base.assignedBranchName = assignedBranch?.name;
+      base.assignedByName = assignor?.full_name;
+      return base;
+    });
+
+    return { success: true, data: assignments };
+  } catch (error) {
+    console.error('Error in getAssignmentsByEmployee:', error);
+    return { success: false, error: 'Internal error' };
+  }
 }
 
 // Get all active branch assignments for a branch
@@ -385,6 +659,8 @@ export async function getActiveBranchAssignments(
       ends_at,
       removed_at,
       created_at,
+      assignment_type,
+      notes,
       employees!branch_employee_assignments_employee_id_fkey(id, full_name),
       assigned_branch:branches!assigned_branch_id(id, name),
       home_branch:branches!home_branch_id(id, name),
