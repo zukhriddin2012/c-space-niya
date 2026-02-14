@@ -43,7 +43,7 @@ interface DashboardData {
 }
 
 interface ReceptionDashboardProps {
-  onTabChange?: (tab: string) => void;
+  onTabChange?: (tab: string, subTab?: string) => void;
   onQuickAction?: (action: 'new-transaction' | 'new-expense') => void;
 }
 
@@ -54,10 +54,13 @@ export default function ReceptionDashboard({ onTabChange, onQuickAction }: Recep
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchDashboard = useCallback(async () => {
+  const fetchDashboard = useCallback(async (silent = false) => {
     if (!selectedBranchId) return;
 
-    setIsLoading(true);
+    // BUG-1 FIX: Only show loading skeleton on initial load, not on auto-refresh
+    if (!silent) {
+      setIsLoading(true);
+    }
     setError(null);
     try {
       const headers = getOperatorHeaders(
@@ -78,19 +81,25 @@ export default function ReceptionDashboard({ onTabChange, onQuickAction }: Recep
       const result: DashboardData = await response.json();
       setData(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load dashboard');
+      // Only set error on initial load — silent refresh failures are non-disruptive
+      if (!silent) {
+        setError(err instanceof Error ? err.message : 'Failed to load dashboard');
+      }
     } finally {
-      setIsLoading(false);
+      if (!silent) {
+        setIsLoading(false);
+      }
     }
   }, [selectedBranchId, currentOperator]);
 
+  // Initial load
   useEffect(() => {
-    fetchDashboard();
+    fetchDashboard(false);
   }, [fetchDashboard]);
 
-  // Auto-refresh every 60s
+  // Auto-refresh every 60s — silent (no loading skeleton)
   useEffect(() => {
-    const interval = setInterval(fetchDashboard, 60000);
+    const interval = setInterval(() => fetchDashboard(true), 60000);
     return () => clearInterval(interval);
   }, [fetchDashboard]);
 
@@ -98,8 +107,9 @@ export default function ReceptionDashboard({ onTabChange, onQuickAction }: Recep
     onQuickAction?.(action);
   }, [onQuickAction]);
 
-  const handleNavigateRequests = useCallback(() => {
-    onTabChange?.('requests');
+  // BUG-2 FIX: Pass sub-tab (legal/maintenance/accounting) when navigating to requests
+  const handleNavigateRequests = useCallback((subTab?: string) => {
+    onTabChange?.('requests', subTab);
   }, [onTabChange]);
 
   const handleNavigateCash = useCallback(() => {

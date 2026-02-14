@@ -72,6 +72,8 @@ function KioskInner({ branchId, branchName, expiresAt, onLogout }: StandaloneRec
   const [showOperatorSwitch, setShowOperatorSwitch] = useState(false);
   const [remainingTime, setRemainingTime] = useState(() => calculateRemainingTime(expiresAt));
   const [pendingQuickAction, setPendingQuickAction] = useState<'new-transaction' | 'new-expense' | null>(null);
+  // BUG-2 FIX: Track pending request sub-tab for navigation from dashboard cards
+  const [pendingRequestSubTab, setPendingRequestSubTab] = useState<string | null>(null);
 
   const { currentOperator, setSelectedBranch } = useServiceHub();
 
@@ -82,7 +84,9 @@ function KioskInner({ branchId, branchName, expiresAt, onLogout }: StandaloneRec
   }, []);
 
   // CSN-030: Dashboard tab change handler
-  const handleDashboardTabChange = useCallback((tab: string) => {
+  // BUG-2 FIX: Accept optional subTab for request card navigation
+  const handleDashboardTabChange = useCallback((tab: string, subTab?: string) => {
+    if (subTab) setPendingRequestSubTab(subTab);
     setActiveTab(tab as KioskTab);
   }, []);
 
@@ -226,7 +230,12 @@ function KioskInner({ branchId, branchName, expiresAt, onLogout }: StandaloneRec
               />
             )}
             {activeTab === 'cash-management' && <CashManagementDashboard />}
-            {activeTab === 'requests' && <ReceptionRequests />}
+            {activeTab === 'requests' && (
+              <ReceptionRequests
+                defaultSubView={pendingRequestSubTab as 'legal' | 'maintenance' | 'accounting' | undefined}
+                onSubViewConsumed={() => setPendingRequestSubTab(null)}
+              />
+            )}
             {activeTab === 'shifts' && <ReceptionShifts />}
             {activeTab === 'settings' && <ReceptionSettings />}
           </Suspense>

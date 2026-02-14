@@ -52,10 +52,11 @@ function CoveragePill({ assigned, required }: { assigned: number; required: numb
   );
 }
 
-function SkeletonShifts() {
+// BUG-3 FIX: Accept title prop for i18n instead of hardcoding English
+function SkeletonShifts({ title }: { title: string }) {
   return (
     <div className="space-y-3">
-      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Shifts</h3>
+      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{title}</h3>
       <div className="p-4 rounded-xl border border-gray-200 bg-white shadow-sm space-y-4">
         <div className="h-20 bg-gray-50 rounded-lg animate-pulse" />
         <div className="h-16 bg-gray-50 rounded-lg animate-pulse" />
@@ -67,7 +68,7 @@ function SkeletonShifts() {
 export function ShiftsSummaryWidget({ data, isLoading, onNavigate }: ShiftsSummaryWidgetProps) {
   const { t } = useTranslation();
 
-  if (isLoading) return <SkeletonShifts />;
+  if (isLoading) return <SkeletonShifts title={t.reception.dashboard?.shiftsTitle || 'Shifts Overview'} />;
 
   // No published schedule
   if (!data) {

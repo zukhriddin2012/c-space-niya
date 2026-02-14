@@ -16,11 +16,12 @@ interface CashSummaryWidgetProps {
   onNavigate: () => void;
 }
 
-function SkeletonCash() {
+// BUG-3 FIX: Accept title prop for i18n instead of hardcoding English
+function SkeletonCash({ title }: { title: string }) {
   return (
     <div className="space-y-3">
       <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-        Cash Summary
+        {title}
       </h3>
       <div className="p-4 rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="flex items-center gap-3 mb-4">
@@ -39,7 +40,7 @@ function SkeletonCash() {
 export function CashSummaryWidget({ data, isLoading, onNavigate }: CashSummaryWidgetProps) {
   const { t } = useTranslation();
 
-  if (isLoading) return <SkeletonCash />;
+  if (isLoading) return <SkeletonCash title={t.reception.dashboard?.cashTitle || 'Cash Summary'} />;
   if (!data) return null;
 
   return (

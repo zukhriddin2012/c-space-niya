@@ -26,9 +26,24 @@ const MaintenanceIssuesPage = React.lazy(
   () => import('@/components/reception/MaintenanceIssuesView')
 );
 
-export default function ReceptionRequests() {
+// BUG-2 FIX: Accept optional defaultSubView for dashboard card navigation
+export default function ReceptionRequests({
+  defaultSubView,
+  onSubViewConsumed,
+}: {
+  defaultSubView?: 'legal' | 'maintenance' | 'accounting';
+  onSubViewConsumed?: () => void;
+} = {}) {
   const { selectedBranchId, currentOperator } = useServiceHub();
-  const [subView, setSubView] = useState<RequestSubView>('hub');
+  const [subView, setSubView] = useState<RequestSubView>(defaultSubView || 'hub');
+
+  // BUG-2 FIX: Navigate to sub-view when defaultSubView prop is set from dashboard
+  useEffect(() => {
+    if (defaultSubView) {
+      setSubView(defaultSubView);
+      onSubViewConsumed?.();
+    }
+  }, [defaultSubView, onSubViewConsumed]);
   const [counts, setCounts] = useState<RequestCount>({ accounting: 0, legal: 0, maintenance: 0 });
   const [isLoading, setIsLoading] = useState(true);
 
