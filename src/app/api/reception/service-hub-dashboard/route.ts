@@ -32,8 +32,10 @@ export const GET = withAuth(async (request: NextRequest, { user }) => {
     return NextResponse.json({ error: 'Branch ID is required' }, { status: 400 });
   }
 
-  // 2. Resolve operator employee ID from header
-  const operatorId = request.headers.get('X-Operator-Id') || null;
+  // 2. Resolve operator employee ID from header (SEC-030 L-01: validate UUID format)
+  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const rawOperatorId = request.headers.get('X-Operator-Id') || null;
+  const operatorId = rawOperatorId && UUID_REGEX.test(rawOperatorId) ? rawOperatorId : null;
 
   // 3. Check sub-permissions for graceful degradation
   const userRole = user.role as UserRole;
@@ -60,12 +62,13 @@ export const GET = withAuth(async (request: NextRequest, { user }) => {
   const cashData = cashResult.status === 'fulfilled' ? cashResult.value : null;
   const shiftsData = shiftsResult.status === 'fulfilled' ? shiftsResult.value : null;
 
-  // Log errors for debugging (non-blocking)
-  if (legalResult.status === 'rejected') console.error('[Dashboard] Legal stats failed:', legalResult.reason);
-  if (maintenanceResult.status === 'rejected') console.error('[Dashboard] Maintenance stats failed:', maintenanceResult.reason);
-  if (accountingResult.status === 'rejected') console.error('[Dashboard] Accounting stats failed:', accountingResult.reason);
-  if (cashResult.status === 'rejected') console.error('[Dashboard] Cash data failed:', cashResult.reason);
-  if (shiftsResult.status === 'rejected') console.error('[Dashboard] Shifts data failed:', shiftsResult.reason);
+  // Log errors for debugging — sanitized to avoid leaking internals (SEC-030 L-02)
+  const safeErrorMsg = (reason: unknown) => reason instanceof Error ? reason.message : 'Unknown error';
+  if (legalResult.status === 'rejected') console.error('[Dashboard] Legal stats failed:', safeErrorMsg(legalResult.reason));
+  if (maintenanceResult.status === 'rejected') console.error('[Dashboard] Maintenance stats failed:', safeErrorMsg(maintenanceResult.reason));
+  if (accountingResult.status === 'rejected') console.error('[Dashboard] Accounting stats failed:', safeErrorMsg(accountingResult.reason));
+  if (cashResult.status === 'rejected') console.error('[Dashboard] Cash data failed:', safeErrorMsg(cashResult.reason));
+  if (shiftsResult.status === 'rejected') console.error('[Dashboard] Shifts data failed:', safeErrorMsg(shiftsResult.reason));
 
   // 6. Shape response
   return NextResponse.json({
