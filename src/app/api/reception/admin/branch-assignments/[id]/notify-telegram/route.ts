@@ -18,9 +18,6 @@ const ASSIGNMENT_TYPE_LABELS: Record<string, string> = {
  * Sends assignment details to the employee via Telegram, including:
  * - Assignment info (branch, type, period)
  * - Branch password (from branches.reception_password_plain)
- * - Employee's existing PIN (from employees.operator_pin_plain)
- *
- * Does NOT generate a new PIN — sends the existing one.
  */
 export const POST = withAuth(
   async (request: NextRequest, { user, params }) => {
@@ -43,7 +40,7 @@ export const POST = withAuth(
         .from('branch_employee_assignments')
         .select(`
           id, employee_id, assigned_branch_id, assignment_type, starts_at, ends_at,
-          employee:employees!branch_employee_assignments_employee_id_fkey(id, full_name, telegram_id, operator_pin_plain),
+          employee:employees!branch_employee_assignments_employee_id_fkey(id, full_name, telegram_id),
           assigned_branch:branches!branch_employee_assignments_assigned_branch_id_fkey(id, name, reception_password_plain)
         `)
         .eq('id', assignmentId)
@@ -51,6 +48,7 @@ export const POST = withAuth(
         .single();
 
       if (assignmentError || !assignment) {
+        console.error('Assignment query error:', assignmentError);
         return NextResponse.json({ error: 'Assignment not found' }, { status: 404 });
       }
 
@@ -58,7 +56,6 @@ export const POST = withAuth(
         id: string;
         full_name: string;
         telegram_id: string | null;
-        operator_pin_plain: string | null;
       } | null;
 
       const branch = assignment.assigned_branch as unknown as {
@@ -81,7 +78,6 @@ export const POST = withAuth(
       // 2. Build Telegram message
       const branchName = branch?.name || 'N/A';
       const branchPassword = branch?.reception_password_plain || null;
-      const employeePin = employee.operator_pin_plain || null;
       const typeLabel = ASSIGNMENT_TYPE_LABELS[assignment.assignment_type] || assignment.assignment_type;
       const startsAt = new Date(assignment.starts_at).toLocaleDateString();
       const endsAt = assignment.ends_at
@@ -96,9 +92,6 @@ export const POST = withAuth(
 
       if (branchPassword) {
         message += `🔑 <b>Filial paroli:</b> <code>${branchPassword}</code>\n`;
-      }
-      if (employeePin) {
-        message += `📟 <b>Sizning PIN:</b> <code>${employeePin}</code>\n`;
       }
       message += `\n⚠️ Bu ma'lumotlarni maxfiy saqlang.\n`;
       message += `Keep this information secure.`;
