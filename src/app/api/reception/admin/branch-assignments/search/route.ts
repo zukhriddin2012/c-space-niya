@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api-auth';
 import { searchEmployeesForAssignment } from '@/lib/db/operator-switch';
 
-async function handler(request: Request) {
+export const GET = withAuth(async (request: NextRequest, { user }) => {
   try {
     const { searchParams } = new URL(request.url);
     const q = searchParams.get('q');
@@ -21,6 +21,4 @@ async function handler(request: Request) {
       { status: 500 }
     );
   }
-}
-
-export const GET = withAuth(handler, { roles: ['general_manager'] });
+}, { roles: ['general_manager'] });

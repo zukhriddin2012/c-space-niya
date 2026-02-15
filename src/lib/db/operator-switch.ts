@@ -314,12 +314,10 @@ export async function searchEmployeesForAssignment(
       branch_id,
       role,
       operator_pin_hash,
-      status,
-      branches!inner(id, name)
+      branches(id, name)
     `
     )
     .ilike('full_name', `%${escapeIlike(query)}%`)
-    .eq('status', 'active')
     .limit(limit);
 
   if (empError) {
