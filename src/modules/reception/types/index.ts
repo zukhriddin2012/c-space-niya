@@ -629,6 +629,7 @@ export interface BranchAssignment {
   id: string;
   employeeId: string;
   employeeName?: string;
+  employeeTelegramId?: string;
   homeBranchId: string;
   homeBranchName?: string;
   assignedBranchId: string;

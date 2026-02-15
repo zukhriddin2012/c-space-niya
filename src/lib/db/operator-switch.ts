@@ -566,7 +566,7 @@ export async function getAssignmentsByBranch(
       .from('branch_employee_assignments')
       .select(`
         *,
-        employee:employees!branch_employee_assignments_employee_id_fkey(id, full_name, branch_id),
+        employee:employees!branch_employee_assignments_employee_id_fkey(id, full_name, branch_id, telegram_id),
         assigned_branch:branches!branch_employee_assignments_assigned_branch_id_fkey(id, name),
         home_branch:branches!branch_employee_assignments_home_branch_id_fkey(id, name),
         assignor:employees!branch_employee_assignments_assigned_by_fkey(id, full_name)
@@ -592,13 +592,14 @@ export async function getAssignmentsByBranch(
     }
 
     const assignments = (data || []).map((row: Record<string, unknown>) => {
-      const emp = row.employee as { id: string; full_name: string; branch_id: string } | null;
+      const emp = row.employee as { id: string; full_name: string; branch_id: string; telegram_id: string | null } | null;
       const assignedBranch = row.assigned_branch as { id: string; name: string } | null;
       const homeBranch = row.home_branch as { id: string; name: string } | null;
       const assignor = row.assignor as { id: string; full_name: string } | null;
 
       const base = transformBranchAssignment(row as unknown as BranchAssignmentRow);
       base.employeeName = emp?.full_name;
+      base.employeeTelegramId = emp?.telegram_id ?? undefined;
       base.homeBranchName = homeBranch?.name;
       base.assignedBranchName = assignedBranch?.name;
       base.assignedByName = assignor?.full_name;

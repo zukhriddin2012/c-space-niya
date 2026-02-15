@@ -34,7 +34,8 @@ export type AuditAction =
   | 'assignment.bulk_created'
   | 'assignment.access_auto_granted'
   | 'assignment.access_auto_revoked'
-  | 'assignment.permanent_transfer';
+  | 'assignment.permanent_transfer'
+  | 'assignment.telegram_notified';
 
 export type AuditSeverity = 'info' | 'warning' | 'critical' | 'high' | 'medium';
 

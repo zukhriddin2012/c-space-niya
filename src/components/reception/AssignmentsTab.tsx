@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Users, Search, Building2, Calendar, UserCog } from 'lucide-react';
+import { Plus, Users, Search, Building2, Calendar, UserCog, Send, Check } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { useTranslation } from '@/contexts/LanguageContext';
 import { CreateAssignmentModal } from './CreateAssignmentModal';
@@ -28,6 +28,8 @@ export function AssignmentsTab({ branchId }: AssignmentsTabProps) {
   const [endingAssignment, setEndingAssignment] = useState<BranchAssignment | null>(null);
   const [total, setTotal] = useState(0);
   const [branches, setBranches] = useState<BranchOption[]>([]);
+  const [sendingTelegramId, setSendingTelegramId] = useState<string | null>(null);
+  const [sentTelegramId, setSentTelegramId] = useState<string | null>(null);
 
   // Fetch branches from API (works outside ServiceHub context)
   useEffect(() => {
@@ -99,6 +101,27 @@ export function AssignmentsTab({ branchId }: AssignmentsTabProps) {
       }
     } catch {
       console.error('Failed to end assignment');
+    }
+  };
+
+  const handleSendTelegram = async (assignment: BranchAssignment) => {
+    setSendingTelegramId(assignment.id);
+    try {
+      const response = await fetch(
+        `/api/reception/admin/branch-assignments/${assignment.id}/notify-telegram`,
+        { method: 'POST' }
+      );
+      if (response.ok) {
+        setSentTelegramId(assignment.id);
+        setTimeout(() => setSentTelegramId(null), 3000);
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Failed to send Telegram notification');
+      }
+    } catch {
+      alert('Failed to send Telegram notification');
+    } finally {
+      setSendingTelegramId(null);
     }
   };
 
@@ -225,8 +248,8 @@ export function AssignmentsTab({ branchId }: AssignmentsTabProps) {
           </Button>
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <table className="w-full">
+        <div className="bg-white rounded-lg border border-gray-200 overflow-x-auto">
+          <table className="w-full min-w-[900px]">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left text-xs font-medium text-gray-500 uppercase px-4 py-3">Employee</th>
@@ -283,12 +306,37 @@ export function AssignmentsTab({ branchId }: AssignmentsTabProps) {
                       {assignment.assignedByName || '—'}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={() => setEndingAssignment(assignment)}
-                        className="text-sm text-red-600 hover:text-red-700 font-medium"
-                      >
-                        End
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleSendTelegram(assignment)}
+                          disabled={!assignment.employeeTelegramId || sendingTelegramId === assignment.id}
+                          className={`inline-flex items-center gap-1 text-sm font-medium transition-colors ${
+                            !assignment.employeeTelegramId
+                              ? 'text-gray-300 cursor-not-allowed'
+                              : sentTelegramId === assignment.id
+                                ? 'text-green-600'
+                                : 'text-blue-600 hover:text-blue-700'
+                          }`}
+                          title={!assignment.employeeTelegramId ? 'Employee not connected to Telegram' : 'Send assignment details via Telegram'}
+                        >
+                          {sendingTelegramId === assignment.id ? (
+                            <div className="w-3.5 h-3.5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                          ) : sentTelegramId === assignment.id ? (
+                            <Check className="w-3.5 h-3.5" />
+                          ) : (
+                            <Send className="w-3.5 h-3.5" />
+                          )}
+                          <span className="hidden lg:inline">
+                            {sentTelegramId === assignment.id ? 'Sent' : 'Send'}
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => setEndingAssignment(assignment)}
+                          className="text-sm text-red-600 hover:text-red-700 font-medium"
+                        >
+                          End
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
