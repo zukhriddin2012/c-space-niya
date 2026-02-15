@@ -21,12 +21,14 @@ import {
   Building2,
   ExternalLink,
   Wallet,
+  UserCog,
 } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
 import { useAuth } from '@/contexts/AuthContext';
+import { AssignmentsTab } from '@/components/reception/AssignmentsTab';
 
 // ============================================
 // TYPES
@@ -56,9 +58,10 @@ interface PinAssignment {
   pin: string;
 }
 
-type SubTab = 'service-types' | 'expense-types' | 'payment-methods' | 'operator-pins' | 'kiosk-passwords' | 'cash-settings';
+type SubTab = 'service-types' | 'expense-types' | 'payment-methods' | 'operator-pins' | 'kiosk-passwords' | 'cash-settings' | 'assignments';
 
 const subTabs: Array<{ id: SubTab; label: string; icon: React.ReactNode }> = [
+  { id: 'assignments', label: 'Assignments', icon: <UserCog size={16} /> },
   { id: 'service-types', label: 'Service Types', icon: <Layers size={16} /> },
   { id: 'expense-types', label: 'Expense Types', icon: <Package size={16} /> },
   { id: 'payment-methods', label: 'Payment Methods', icon: <CreditCard size={16} /> },
@@ -74,7 +77,7 @@ const commonEmojis = ['📦', '💵', '📱', '💳', '🏦', '👥', '🪑', '�
 // ============================================
 
 export default function ReceptionAdminSettings() {
-  const [activeSubTab, setActiveSubTab] = useState<SubTab>('service-types');
+  const [activeSubTab, setActiveSubTab] = useState<SubTab>('assignments');
 
   return (
     <div className="space-y-4">
@@ -110,6 +113,9 @@ export default function ReceptionAdminSettings() {
 
       {/* Cash Settings (PR2-066) */}
       {activeSubTab === 'cash-settings' && <CashSettingsPanel />}
+
+      {/* Branch Assignments (CSN-029) */}
+      {activeSubTab === 'assignments' && <AssignmentsTab />}
     </div>
   );
 }

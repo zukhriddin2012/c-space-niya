@@ -26,7 +26,15 @@ export type AuditAction =
   | 'cash.dividend_spend_approved'
   | 'cash.dividend_spend_rejected'
   // Expenses (PR2-066 security alignment)
-  | 'expense.created';
+  | 'expense.created'
+  // Branch Assignments (CSN-029)
+  | 'assignment.created'
+  | 'assignment.updated'
+  | 'assignment.removed'
+  | 'assignment.bulk_created'
+  | 'assignment.access_auto_granted'
+  | 'assignment.access_auto_revoked'
+  | 'assignment.permanent_transfer';
 
 export type AuditSeverity = 'info' | 'warning' | 'critical' | 'high' | 'medium';
 

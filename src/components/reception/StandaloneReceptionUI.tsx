@@ -19,6 +19,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { ServiceHubProvider, useServiceHub } from '@/contexts/ServiceHubContext';
 import { PinSwitchOverlay } from '@/components/reception/PinSwitchOverlay';
 import { BranchSwitchModal } from '@/components/reception/BranchSwitchModal';
+import { BranchAlertBanner } from '@/components/reception/BranchAlertBanner';
 import type { User as UserType } from '@/types';
 
 // Lazy load reception components
@@ -209,7 +210,9 @@ function KioskInner({ branchId, branchName, expiresAt, onLogout }: StandaloneRec
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
-        <div className="max-w-7xl mx-auto p-4 sm:p-6">
+        <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-4">
+          {/* CSN-029: Non-home branch alert */}
+          <BranchAlertBanner />
           <Suspense fallback={<LoadingSpinner />}>
             {activeTab === 'dashboard' && (
               <ReceptionDashboard

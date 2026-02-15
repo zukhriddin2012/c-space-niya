@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api-auth';
 import { supabaseAdmin } from '@/lib/supabase';
-import type { BranchOption } from '@/modules/reception/types';
+import type { BranchOption, AssignmentType } from '@/modules/reception/types';
 
 // GET /api/reception/branches
 // Returns the list of branches the current user can access in Reception Mode
@@ -152,6 +152,25 @@ export const GET = withAuth(async (request, { user }) => {
       console.log('[Branches API] Skipping reception_branch_access query — employeeId is not a UUID:', employeeId);
     }
 
+    // CSN-029: Also fetch active assignments for this employee
+    let assignmentMap = new Map<string, { type: string; endsAt: string | null }>();
+
+    if (isValidUUID) {
+      const { data: assignments } = await supabaseAdmin
+        .from('branch_employee_assignments')
+        .select('assigned_branch_id, assignment_type, ends_at')
+        .eq('employee_id', employeeId)
+        .is('removed_at', null)
+        .or(`ends_at.is.null,ends_at.gt.${new Date().toISOString()}`);
+
+      for (const a of assignments || []) {
+        assignmentMap.set(a.assigned_branch_id, {
+          type: a.assignment_type,
+          endsAt: a.ends_at,
+        });
+      }
+    }
+
     // Build the list of accessible branches
     const branches: BranchOption[] = [];
 
@@ -169,27 +188,35 @@ export const GET = withAuth(async (request, { user }) => {
     // For executives and HR, add all branches
     if (canSeeAllBranches || canSeeAllButNoTotal) {
       for (const branch of allBranches || []) {
+        const assignment = assignmentMap.get(branch.id);
         branches.push({
           id: branch.id,
           name: branch.name,
           isAllBranches: false,
           isAssigned: branch.id === assignedBranchId,
           isGranted: grantedBranchIds.has(branch.id),
+          isFromAssignment: !!assignment,
+          assignmentType: assignment?.type as AssignmentType | undefined,
+          assignmentEndsAt: assignment?.endsAt ?? undefined,
         });
       }
     } else {
-      // For regular users, only show assigned + granted branches
+      // For regular users, show assigned + granted + assignment branches
       for (const branch of allBranches || []) {
         const isAssigned = branch.id === assignedBranchId;
         const isGranted = grantedBranchIds.has(branch.id);
+        const assignment = assignmentMap.get(branch.id);
 
-        if (isAssigned || isGranted) {
+        if (isAssigned || isGranted || assignment) {
           branches.push({
             id: branch.id,
             name: branch.name,
             isAllBranches: false,
             isAssigned,
             isGranted,
+            isFromAssignment: !!assignment,
+            assignmentType: assignment?.type as AssignmentType | undefined,
+            assignmentEndsAt: assignment?.endsAt ?? undefined,
           });
         }
       }

@@ -506,6 +506,8 @@ export interface ReceptionBranchAccess {
   userName?: string;
   branchName?: string;
   grantedByName?: string;
+  // CSN-029: Auto-grant tracking
+  autoGrantedFrom?: string;  // UUID of source assignment
 }
 
 export interface BranchOption {
@@ -515,6 +517,10 @@ export interface BranchOption {
   isAllBranches?: boolean;  // For "All Branches" option (executives only)
   isAssigned?: boolean;      // Is this the user's assigned branch?
   isGranted?: boolean;       // Was access granted via reception_branch_access?
+  // CSN-029: Assignment fields
+  isFromAssignment?: boolean;  // Is this branch available via assignment?
+  assignmentType?: AssignmentType;
+  assignmentEndsAt?: string;   // ISO datetime string
 }
 
 export interface ReceptionBranchAccessRow {
@@ -524,6 +530,7 @@ export interface ReceptionBranchAccessRow {
   granted_by: string;
   granted_at: string;
   notes: string | null;
+  auto_granted_from: string | null;
 }
 
 export function transformBranchAccess(row: ReceptionBranchAccessRow): ReceptionBranchAccess {
@@ -534,6 +541,7 @@ export function transformBranchAccess(row: ReceptionBranchAccessRow): ReceptionB
     grantedBy: row.granted_by,
     grantedAt: row.granted_at,
     notes: row.notes ?? undefined,
+    autoGrantedFrom: row.auto_granted_from ?? undefined,
   };
 }
 
@@ -614,6 +622,9 @@ export function transformOperatorSwitchLog(row: OperatorSwitchLogRow): OperatorS
 
 // ═══ Branch Employee Assignment (cross-branch coverage) ═══
 
+// CSN-029: Assignment types
+export type AssignmentType = 'temporary' | 'regular' | 'permanent_transfer';
+
 export interface BranchAssignment {
   id: string;
   employeeId: string;
@@ -628,6 +639,9 @@ export interface BranchAssignment {
   endsAt?: string;
   removedAt?: string;
   createdAt: string;
+  // CSN-029: New fields
+  assignmentType: AssignmentType;
+  notes?: string;
 }
 
 export interface BranchAssignmentRow {
@@ -640,6 +654,9 @@ export interface BranchAssignmentRow {
   ends_at: string | null;
   removed_at: string | null;
   created_at: string;
+  // CSN-029: New fields
+  assignment_type: string;
+  notes: string | null;
 }
 
 export function transformBranchAssignment(row: BranchAssignmentRow): BranchAssignment {
@@ -653,7 +670,44 @@ export function transformBranchAssignment(row: BranchAssignmentRow): BranchAssig
     endsAt: row.ends_at ?? undefined,
     removedAt: row.removed_at ?? undefined,
     createdAt: row.created_at,
+    assignmentType: row.assignment_type as AssignmentType,
+    notes: row.notes ?? undefined,
   };
+}
+
+// CSN-029 AT-6: Branch Briefing
+export interface BranchBriefing {
+  branchId: string;
+  branchName: string;
+  todaySummary: {
+    transactionCount: number;
+    transactionTotal: number;
+    expenseCount: number;
+    expenseTotal: number;
+    netAmount: number;
+  };
+  activeOperators: Array<{
+    employeeId: string;
+    employeeName: string;
+    switchedAt: string;
+    isCrossBranch: boolean;
+  }>;
+  branchSettings: {
+    serviceTypeCount: number;
+    expenseTypeCount: number;
+    paymentMethodCount: number;
+    serviceTypeNames: string[];
+    expenseTypeNames: string[];
+    paymentMethodNames: string[];
+  };
+  recentActivity: Array<{
+    type: 'transaction' | 'expense';
+    id: string;
+    description: string;
+    amount: number;
+    operatorName: string;
+    timestamp: string;
+  }>;
 }
 
 // ═══ Employee search result (for cross-branch) ═══

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Building2, ChevronDown, Check, Globe } from 'lucide-react';
+import { Building2, ChevronDown, Check, Globe, UserCog, Calendar } from 'lucide-react';
 import { useServiceHub } from '@/contexts/ServiceHubContext';
 
 export function BranchSelector() {
@@ -106,15 +106,31 @@ export function BranchSelector() {
                   <Building2 className="w-4 h-4 text-gray-400" />
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium truncate ${
-                    branch.isAllBranches ? 'text-red-600' : ''
-                  }`}>
-                    {branch.name}
-                  </p>
+                  <div className="flex items-center gap-1">
+                    <p className={`text-sm font-medium truncate ${
+                      branch.isAllBranches ? 'text-red-600' : ''
+                    }`}>
+                      {branch.name}
+                    </p>
+                    {branch.isFromAssignment && (
+                      <UserCog className="w-3 h-3 text-amber-500 flex-shrink-0" />
+                    )}
+                  </div>
                   {branch.isAssigned && (
                     <p className="text-xs text-gray-400">Your assigned branch</p>
                   )}
-                  {branch.isGranted && !branch.isAssigned && (
+                  {branch.isFromAssignment && !branch.isAssigned && (
+                    <p className="text-xs text-amber-500 flex items-center gap-1">
+                      <span>Assignment</span>
+                      {branch.assignmentEndsAt && (
+                        <>
+                          <Calendar className="w-2.5 h-2.5" />
+                          <span>{new Date(branch.assignmentEndsAt).toLocaleDateString()}</span>
+                        </>
+                      )}
+                    </p>
+                  )}
+                  {branch.isGranted && !branch.isAssigned && !branch.isFromAssignment && (
                     <p className="text-xs text-gray-400">Additional access</p>
                   )}
                 </div>

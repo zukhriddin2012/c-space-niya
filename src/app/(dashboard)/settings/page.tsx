@@ -372,7 +372,7 @@ export default function SettingsPage() {
               <div className="bg-white rounded-xl border border-gray-200 p-4 lg:p-6">
                 <h2 className="text-base lg:text-lg font-semibold text-gray-900 mb-2">ServiceHub Configuration</h2>
                 <p className="text-sm text-gray-500 mb-4 lg:mb-6">
-                  Manage service types, expenses, payment methods, operator PINs, and kiosk access.
+                  Manage branch assignments, service types, expenses, payment methods, operator PINs, and kiosk access.
                 </p>
                 <ReceptionAdminSettings />
               </div>
