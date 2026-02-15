@@ -314,7 +314,7 @@ export async function searchEmployeesForAssignment(
       branch_id,
       role,
       operator_pin_hash,
-      branches(id, name)
+      branches!employees_branch_id_fkey(id, name)
     `
     )
     .ilike('full_name', `%${escapeIlike(query)}%`)

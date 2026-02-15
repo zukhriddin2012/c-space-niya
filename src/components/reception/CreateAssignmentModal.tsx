@@ -83,6 +83,8 @@ export function CreateAssignmentModal({ isOpen, onClose, onCreated, branches }: 
       if (response.ok) {
         const data = await response.json();
         setSearchResults(data.employees || []);
+      } else {
+        console.error('Employee search failed:', response.status);
       }
     } catch {
       console.error('Search failed');
