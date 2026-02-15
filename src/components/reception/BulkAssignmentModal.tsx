@@ -68,6 +68,8 @@ export function BulkAssignmentModal({ isOpen, onClose, onCreated, branches }: Bu
         // Filter out already selected
         const selectedIds = new Set(selectedEmployees.map(e => e.id));
         setSearchResults((data.employees || []).filter((e: EmployeeResult) => !selectedIds.has(e.id)));
+      } else {
+        console.error('Employee search failed:', response.status);
       }
     } catch {
       console.error('Search failed');
