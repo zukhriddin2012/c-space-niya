@@ -22,6 +22,7 @@ import { PinSwitchOverlay } from '@/components/reception/PinSwitchOverlay';
 import { BranchSwitchModal } from '@/components/reception/BranchSwitchModal';
 import { BranchAlertBanner } from '@/components/reception/BranchAlertBanner';
 import { BranchBriefingPanel } from '@/components/reception/BranchBriefingPanel';
+import { BranchSelector } from '@/components/reception/BranchSelector';
 import type { User as UserType } from '@/types';
 
 // Lazy load reception components
@@ -153,7 +154,7 @@ function KioskInner({ branchId, branchName, expiresAt, onLogout }: StandaloneRec
                 </div>
                 <div className="hidden sm:block">
                   <h1 className="text-xl font-bold">ServiceHub <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold uppercase rounded-full bg-green-400/30 text-green-100 leading-none align-middle">v1</span></h1>
-                  <p className="text-sky-200 text-xs">{branchName}</p>
+                  <BranchSelector />
                 </div>
               </div>
             </div>

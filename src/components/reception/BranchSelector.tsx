@@ -34,7 +34,7 @@ export function BranchSelector() {
     return (
       <div className="flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-lg">
         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-        <span className="text-sm text-purple-200">Loading...</span>
+        <span className="text-sm text-sky-200">Loading...</span>
       </div>
     );
   }
@@ -96,7 +96,7 @@ export function BranchSelector() {
                 }}
                 className={`w-full flex items-center gap-3 px-3 py-2 text-left transition-colors ${
                   branch.id === selectedBranch.id
-                    ? 'bg-purple-50 text-purple-700'
+                    ? 'bg-sky-50 text-sky-700'
                     : 'hover:bg-gray-50 text-gray-700'
                 } ${branch.isAllBranches ? 'border-t border-gray-100 mt-1' : ''}`}
               >
@@ -135,7 +135,7 @@ export function BranchSelector() {
                   )}
                 </div>
                 {branch.id === selectedBranch.id && (
-                  <Check className="w-4 h-4 text-purple-600" />
+                  <Check className="w-4 h-4 text-sky-600" />
                 )}
               </button>
             ))}
