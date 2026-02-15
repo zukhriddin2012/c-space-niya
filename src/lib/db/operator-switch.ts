@@ -253,7 +253,7 @@ export async function searchEmployeesForCrossBranch(
       id,
       full_name,
       branch_id,
-      role,
+      system_role,
       operator_pin_hash,
       branches!inner(id, name)
     `
@@ -291,7 +291,7 @@ export async function searchEmployeesForCrossBranch(
       name: emp.full_name,
       branchId: emp.branch_id,
       branchName: emp.branches?.name || '',
-      role: emp.role || '',
+      role: emp.system_role || '',
       hasPinSet: !!emp.operator_pin_hash,
     }));
 }
@@ -312,7 +312,7 @@ export async function searchEmployeesForAssignment(
       id,
       full_name,
       branch_id,
-      role,
+      system_role,
       operator_pin_hash,
       branches!employees_branch_id_fkey(id, name)
     `
@@ -330,7 +330,7 @@ export async function searchEmployeesForAssignment(
     name: emp.full_name,
     branchId: emp.branch_id,
     branchName: emp.branches?.name || '',
-    role: emp.role || '',
+    role: emp.system_role || '',
     hasPinSet: !!emp.operator_pin_hash,
   }));
 }
