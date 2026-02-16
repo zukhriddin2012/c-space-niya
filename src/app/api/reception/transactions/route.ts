@@ -192,8 +192,9 @@ export const POST = withAuth(async (request: NextRequest, { employee }) => {
       return NextResponse.json({ error: 'Validation failed', details: errors }, { status: 400 });
     }
 
-    // Use provided branch or employee's branch
-    const branchId = body.branchId || employee.branchId;
+    // Use provided branch, header branch (from ServiceHub), or employee's home branch
+    const headerBranchId = request.headers.get('X-Branch-Id');
+    const branchId = body.branchId || headerBranchId || employee.branchId;
     if (!branchId) {
       return NextResponse.json({ error: 'Branch is required' }, { status: 400 });
     }

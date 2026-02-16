@@ -342,7 +342,7 @@ export async function createAssignment(input: CreateAssignmentInput): Promise<Sh
     .insert(input)
     .select(`
       *,
-      employees(full_name, employee_id, position),
+      employees(full_name, employee_id, position, primary_branch_id, branch_id),
       branches(name)
     `)
     .single();
@@ -351,7 +351,9 @@ export async function createAssignment(input: CreateAssignmentInput): Promise<Sh
     console.error('Error creating assignment:', error);
     return null;
   }
-  return data;
+  const enriched = enrichAssignmentsWithCrossBranch([data]);
+  const withNames = await enrichAssignmentsWithHomeBranchNames(enriched);
+  return withNames[0];
 }
 
 export async function createAssignmentsBulk(inputs: CreateAssignmentInput[]): Promise<ShiftAssignment[]> {
@@ -362,7 +364,7 @@ export async function createAssignmentsBulk(inputs: CreateAssignmentInput[]): Pr
     .insert(inputs)
     .select(`
       *,
-      employees(full_name, employee_id, position),
+      employees(full_name, employee_id, position, primary_branch_id, branch_id),
       branches(name)
     `);
 
@@ -370,7 +372,8 @@ export async function createAssignmentsBulk(inputs: CreateAssignmentInput[]): Pr
     console.error('Error creating bulk assignments:', error);
     return [];
   }
-  return data || [];
+  const enriched = enrichAssignmentsWithCrossBranch(data || []);
+  return enrichAssignmentsWithHomeBranchNames(enriched);
 }
 
 export async function updateAssignment(

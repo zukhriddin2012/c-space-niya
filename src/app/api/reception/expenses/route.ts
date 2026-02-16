@@ -160,7 +160,8 @@ export const POST = withAuth(async (request: NextRequest, { user, employee }) =>
     const body: CreateExpenseInput = await request.json();
 
     // H-02: Validate branch access (IDOR prevention) — PR2-066 security alignment
-    const branchAccess = validateBranchAccess(user, body.branchId || employee.branchId);
+    const headerBranchId = request.headers.get('X-Branch-Id');
+    const branchAccess = validateBranchAccess(user, body.branchId || headerBranchId || employee.branchId);
     if (branchAccess.error) {
       return NextResponse.json({ error: branchAccess.error }, { status: branchAccess.status });
     }

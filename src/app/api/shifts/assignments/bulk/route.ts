@@ -64,7 +64,7 @@ export const POST = withAuth(async (request: NextRequest, context: { user: User 
     }
 
     // Validate custom time format if provided (HH:MM)
-    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    const timeRegex = /^([01][0-9]|2[0-3]):[0-5][0-9]$/;
     if (body.start_time && !timeRegex.test(body.start_time)) {
       return NextResponse.json(
         { error: 'start_time must be in HH:MM format' },
@@ -168,7 +168,18 @@ export const POST = withAuth(async (request: NextRequest, context: { user: User 
         ...(body.end_time && { end_time: body.end_time }),
       }));
 
-      created = await createAssignmentsBulk(inputs);
+      try {
+        created = await createAssignmentsBulk(inputs);
+      } catch (err: unknown) {
+        const pgError = err as { code?: string };
+        if (pgError?.code === '23505') {
+          return NextResponse.json(
+            { error: 'Some employees were assigned by another request. Please refresh and retry.' },
+            { status: 409 }
+          );
+        }
+        throw err;
+      }
     }
 
     // If all had conflicts
