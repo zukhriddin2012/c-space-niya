@@ -40,6 +40,21 @@ export const POST = withAuth(async (request: NextRequest, context: { user: User 
       );
     }
 
+    if (body.employee_ids.length > 50) {
+      return NextResponse.json(
+        { error: 'Maximum 50 employees per bulk operation' },
+        { status: 400 }
+      );
+    }
+
+    // Validate date format
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(body.date)) {
+      return NextResponse.json(
+        { error: 'date must be in YYYY-MM-DD format' },
+        { status: 400 }
+      );
+    }
+
     // Validate shift_type
     if (!['day', 'night'].includes(body.shift_type)) {
       return NextResponse.json(
@@ -172,4 +187,4 @@ export const POST = withAuth(async (request: NextRequest, context: { user: User 
     console.error('Error creating bulk assignments:', error);
     return NextResponse.json({ error: 'Failed to create assignments' }, { status: 500 });
   }
-}, { permission: PERMISSIONS.SHIFTS_VIEW });
+}, { permissions: [PERMISSIONS.SHIFTS_EDIT, PERMISSIONS.SHIFTS_EDIT_OWN_BRANCH] });

@@ -29,6 +29,11 @@ export const GET = withAuth(async (request: NextRequest, context: { user: User }
 
     // Away assignments for a branch's home employees
     if (scheduleId && awayForBranch) {
+      if (!hasPermission(context.user.role, PERMISSIONS.SHIFTS_VIEW_ALL)) {
+        if (context.user.branchId !== awayForBranch) {
+          return NextResponse.json({ error: 'Cannot view other branches' }, { status: 403 });
+        }
+      }
       const awayAssignments = await getAwayAssignmentsForBranch(scheduleId, awayForBranch);
       return NextResponse.json({ away_assignments: awayAssignments });
     }
@@ -85,6 +90,14 @@ export const POST = withAuth(async (request: NextRequest, context: { user: User 
     if (!body.schedule_id || !body.branch_id || !body.date || !body.shift_type || !body.employee_id) {
       return NextResponse.json(
         { error: 'schedule_id, branch_id, date, shift_type, and employee_id are required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate date format
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(body.date)) {
+      return NextResponse.json(
+        { error: 'date must be in YYYY-MM-DD format' },
         { status: 400 }
       );
     }
@@ -199,4 +212,4 @@ export const POST = withAuth(async (request: NextRequest, context: { user: User 
     console.error('Error creating assignment:', error);
     return NextResponse.json({ error: 'Failed to create assignment' }, { status: 500 });
   }
-}, { permission: PERMISSIONS.SHIFTS_VIEW });
+}, { permissions: [PERMISSIONS.SHIFTS_EDIT, PERMISSIONS.SHIFTS_EDIT_OWN_BRANCH] });
