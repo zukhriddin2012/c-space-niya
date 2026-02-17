@@ -73,9 +73,7 @@ export const PERMISSIONS = {
   // Finance/Transactions
   FINANCES_VIEW: 'finances:view',
   FINANCES_VIEW_ALL: 'finances:view_all',
-  FINANCES_CREATE: 'finances:create',
   FINANCES_EDIT: 'finances:edit',
-  FINANCES_APPROVE: 'finances:approve',
   FINANCES_EXPORT: 'finances:export',
 
   // Accounting Requests
@@ -234,9 +232,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     // Finance - Full access
     PERMISSIONS.FINANCES_VIEW,
     PERMISSIONS.FINANCES_VIEW_ALL,
-    PERMISSIONS.FINANCES_CREATE,
     PERMISSIONS.FINANCES_EDIT,
-    PERMISSIONS.FINANCES_APPROVE,
     PERMISSIONS.FINANCES_EXPORT,
     // Reception - Full access
     PERMISSIONS.RECEPTION_VIEW,
@@ -321,7 +317,6 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     // Finance - View all and approve
     PERMISSIONS.FINANCES_VIEW,
     PERMISSIONS.FINANCES_VIEW_ALL,
-    PERMISSIONS.FINANCES_APPROVE,
     PERMISSIONS.FINANCES_EXPORT,
     // Reception - View all
     PERMISSIONS.RECEPTION_VIEW,
@@ -411,7 +406,6 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     PERMISSIONS.FEEDBACK_SUBMIT,
     // Finance - View and create for their branch
     PERMISSIONS.FINANCES_VIEW,
-    PERMISSIONS.FINANCES_CREATE,
     PERMISSIONS.FINANCES_EXPORT,
     // Accounting - Create and manage own requests
     PERMISSIONS.ACCOUNTING_REQUESTS_VIEW,
@@ -504,9 +498,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     // Finance - Full access
     PERMISSIONS.FINANCES_VIEW,
     PERMISSIONS.FINANCES_VIEW_ALL,
-    PERMISSIONS.FINANCES_CREATE,
     PERMISSIONS.FINANCES_EDIT,
-    PERMISSIONS.FINANCES_APPROVE,
     PERMISSIONS.FINANCES_EXPORT,
     // Reception - View and reports
     PERMISSIONS.RECEPTION_VIEW,
@@ -533,9 +525,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     // Finance - View all, create, edit
     PERMISSIONS.FINANCES_VIEW,
     PERMISSIONS.FINANCES_VIEW_ALL,
-    PERMISSIONS.FINANCES_CREATE,
     PERMISSIONS.FINANCES_EDIT,
-    PERMISSIONS.FINANCES_APPROVE,
     PERMISSIONS.FINANCES_EXPORT,
     // Reception - View and reports
     PERMISSIONS.RECEPTION_VIEW,
@@ -732,9 +722,7 @@ export const PERMISSION_GROUPS = {
   'Finance': [
     { key: PERMISSIONS.FINANCES_VIEW, label: 'View Own Branch Finances' },
     { key: PERMISSIONS.FINANCES_VIEW_ALL, label: 'View All Branches Finances' },
-    { key: PERMISSIONS.FINANCES_CREATE, label: 'Create Transactions' },
-    { key: PERMISSIONS.FINANCES_EDIT, label: 'Edit Transactions' },
-    { key: PERMISSIONS.FINANCES_APPROVE, label: 'Approve Transactions' },
+    { key: PERMISSIONS.FINANCES_EDIT, label: 'Manage Profit Deals' },
     { key: PERMISSIONS.FINANCES_EXPORT, label: 'Export Finance Data' },
   ],
   'Accounting Requests': [
