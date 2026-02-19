@@ -1390,4 +1390,13 @@ export const en: Translations = {
     transferThreshold: 'Transfer threshold',
     allocationPreview: 'Allocation Preview',
   },
+  ramadan: {
+    greeting: 'Ramadan Mubarak!',
+    dayOf: 'Day {current} of {total}',
+    suhur: 'Suhur',
+    iftar: 'Iftar',
+    dismiss: 'Dismiss',
+    ramadanKareem: 'Ramadan Kareem',
+    botGreeting: '☪️ Ramadan Mubarak! Day {day}/30',
+  },
 };

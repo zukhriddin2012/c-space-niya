@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { getRamadanDay, type RamadanDay } from '@/data/ramadan';
 
 type Lang = 'uz' | 'ru' | 'en';
 
@@ -21,6 +22,10 @@ const t = {
   noTelegramId: { uz: 'Telegram ID topilmadi', ru: 'Telegram ID не найден', en: 'Telegram ID not found' },
   activeCheckin: { uz: 'Sizda yopilmagan kirish mavjud', ru: 'У вас есть незакрытый вход', en: 'You have an active check-in' },
   loading: { uz: 'Yuklanmoqda...', ru: 'Загрузка...', en: 'Loading...' },
+  ramadanGreeting: { uz: 'Ramazon Muborak!', ru: 'Рамадан Мубарак!', en: 'Ramadan Mubarak!' },
+  ramadanDay: { uz: '-kun', ru: '-й день', en: 'Day ' },
+  ramadanSuhur: { uz: 'Saharlik', ru: 'Сухур', en: 'Suhur' },
+  ramadanIftar: { uz: 'Iftorlik', ru: 'Ифтар', en: 'Iftar' },
 };
 
 function TelegramCheckinContent() {
@@ -33,6 +38,7 @@ function TelegramCheckinContent() {
   const [message, setMessage] = useState('');
   const [data, setData] = useState<any>(null);
   const [lang, setLang] = useState<Lang>(langParam || 'uz');
+  const [ramadanDay, setRamadanDay] = useState<RamadanDay | null>(null);
   const hasCheckedIn = useRef(false);
 
   const performCheckin = useCallback(async () => {
@@ -112,13 +118,34 @@ function TelegramCheckinContent() {
       window.Telegram.WebApp.expand();
     }
 
+    // Check Ramadan
+    setRamadanDay(getRamadanDay());
+
     // Perform check-in
     performCheckin();
   }, [performCheckin]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-500 to-teal-600 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full text-center">
+      <div className="max-w-sm w-full space-y-3">
+        {/* CSN-174: Ramadan compact banner */}
+        {ramadanDay && (
+          <div className="bg-gradient-to-r from-indigo-950 via-blue-950 to-slate-900 rounded-xl px-3 py-2.5 text-center text-xs text-white">
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <span className="text-amber-500">☪</span>
+              <span className="font-semibold text-amber-500">{t.ramadanGreeting[lang]}</span>
+            </div>
+            <div className="text-blue-200 mb-1">
+              {lang === 'en' ? `Day ${ramadanDay.day} of 30` : lang === 'uz' ? `30 kundan ${ramadanDay.day}-kun` : `День ${ramadanDay.day} из 30`}
+            </div>
+            <div className="flex items-center justify-center gap-3 text-blue-100">
+              <span>{t.ramadanSuhur[lang]}: <strong className="text-white">{ramadanDay.suhur}</strong></span>
+              <span className="text-blue-300/50">|</span>
+              <span>{t.ramadanIftar[lang]}: <strong className="text-white">{ramadanDay.iftar}</strong></span>
+            </div>
+          </div>
+        )}
+      <div className="bg-white rounded-2xl shadow-xl p-6 w-full text-center">
         {status === 'loading' && (
           <>
             <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-emerald-100 flex items-center justify-center">
@@ -187,6 +214,7 @@ function TelegramCheckinContent() {
             <p className="text-gray-500 text-sm">{message}</p>
           </>
         )}
+      </div>
       </div>
     </div>
   );

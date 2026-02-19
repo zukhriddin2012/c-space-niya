@@ -1386,4 +1386,13 @@ export const ru: Translations = {
     transferThreshold: 'Порог перевода',
     allocationPreview: 'Предпросмотр распределения',
   },
+  ramadan: {
+    greeting: 'Рамадан Мубарак!',
+    dayOf: 'День {current} из {total}',
+    suhur: 'Сухур',
+    iftar: 'Ифтар',
+    dismiss: 'Скрыть',
+    ramadanKareem: 'Рамадан Карим',
+    botGreeting: '☪️ Рамадан Мубарак! День {day}/30',
+  },
 };

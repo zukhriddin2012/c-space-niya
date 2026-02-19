@@ -3,6 +3,8 @@
 // - Payment requests are approved/paid
 // - Leave requests are approved/rejected
 
+import { isRamadanPeriod, getRamadanDay } from '@/data/ramadan';
+
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_API_BASE = 'https://api.telegram.org/bot';
 
@@ -59,6 +61,15 @@ function formatCurrency(amount: number): string {
 }
 
 /**
+ * CSN-174: Get Ramadan greeting prefix for positive notifications
+ */
+function getRamadanGreeting(): string {
+  if (!isRamadanPeriod()) return '';
+  const day = getRamadanDay()!;
+  return `🌙 Ramazon muborak! Bugun ${day.day}-kun.\n⏰ Saharlik: ${day.suhur} | Iftorlik: ${day.iftar}\n━━━━━━━━━━━━━━━━━━━━\n`;
+}
+
+/**
  * Get month name in Uzbek
  */
 function getMonthName(month: number): string {
@@ -87,7 +98,7 @@ interface PaymentNotificationData {
  */
 export async function notifyPaymentApproved(data: PaymentNotificationData): Promise<boolean> {
   const typeLabel = data.type === 'advance' ? 'Avans' : 'Oylik';
-  const message = `
+  const message = `${getRamadanGreeting()}
 ✅ <b>To'lov tasdiqlandi!</b>
 
 👤 ${data.employeeName}
@@ -111,7 +122,7 @@ export async function notifyPaymentPaid(
     ? `\n📋 Havola: ${data.paymentReference}`
     : '';
 
-  const message = `
+  const message = `${getRamadanGreeting()}
 💵 <b>To'lov amalga oshirildi!</b>
 
 👤 ${data.employeeName}
@@ -176,7 +187,7 @@ function formatDate(dateString: string): string {
  * Notify employee that their leave request was approved
  */
 export async function notifyLeaveApproved(data: LeaveNotificationData): Promise<boolean> {
-  const message = `
+  const message = `${getRamadanGreeting()}
 ✅ <b>Ta'til so'rovi tasdiqlandi!</b>
 
 👤 ${data.employeeName}

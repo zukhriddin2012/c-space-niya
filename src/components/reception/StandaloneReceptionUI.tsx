@@ -21,6 +21,7 @@ import { ServiceHubProvider, useServiceHub } from '@/contexts/ServiceHubContext'
 import { PinSwitchOverlay } from '@/components/reception/PinSwitchOverlay';
 import { BranchSwitchModal } from '@/components/reception/BranchSwitchModal';
 import { BranchAlertBanner } from '@/components/reception/BranchAlertBanner';
+import { RamadanBanner } from '@/components/ramadan';
 import { BranchBriefingPanel } from '@/components/reception/BranchBriefingPanel';
 import { BranchSelector } from '@/components/reception/BranchSelector';
 import type { User as UserType } from '@/types';
@@ -237,6 +238,8 @@ function KioskInner({ branchId, branchName, expiresAt, onLogout }: StandaloneRec
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
         <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-4">
+          {/* CSN-174: Ramadan banner */}
+          <RamadanBanner variant="kiosk" />
           {/* CSN-029: Non-home branch alert */}
           <BranchAlertBanner />
           {/* CSN-029: Branch briefing panel for non-home branches */}

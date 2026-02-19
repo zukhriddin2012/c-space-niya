@@ -1386,4 +1386,13 @@ export const uz: Translations = {
     transferThreshold: 'O\'tkazma chegarasi',
     allocationPreview: 'Taqsimot ko\'rinishi',
   },
+  ramadan: {
+    greeting: 'Ramazon Muborak!',
+    dayOf: '{total} kundan {current}-kun',
+    suhur: 'Saharlik',
+    iftar: 'Iftorlik',
+    dismiss: 'Yopish',
+    ramadanKareem: 'Ramazon Karim',
+    botGreeting: '☪️ Ramazon Muborak! {day}/30-kun',
+  },
 };

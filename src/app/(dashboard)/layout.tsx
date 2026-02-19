@@ -6,6 +6,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { SidebarProvider } from '@/contexts/SidebarContext';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { DashboardContent } from '@/components/layout/DashboardContent';
+import { RamadanBanner } from '@/components/ramadan';
 import SessionManager from '@/components/auth/SessionManager';
 
 export default async function DashboardLayout({
@@ -26,6 +27,7 @@ export default async function DashboardLayout({
     <AuthProvider initialUser={user}>
       <SidebarProvider>
         <TestBannerWrapper />
+        <RamadanBanner variant="default" />
         <div className="flex min-h-screen bg-gray-50">
           {/* Desktop Sidebar - hidden on mobile */}
           <div className="hidden lg:block">

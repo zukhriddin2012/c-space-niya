@@ -1421,4 +1421,13 @@ export interface Translations {
     transferThreshold: string;
     allocationPreview: string;
   };
+  ramadan: {
+    greeting: string;
+    dayOf: string;
+    suhur: string;
+    iftar: string;
+    dismiss: string;
+    ramadanKareem: string;
+    botGreeting: string;
+  };
 }
