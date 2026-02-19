@@ -73,7 +73,17 @@ export async function createBranch(branch: {
       || `branch-${Date.now()}`; // Fallback if name is empty after processing
   };
 
-  const branchId = generateId(branch.name);
+  let branchId = generateId(branch.name);
+
+  // Check for existing branches with same base slug to prevent pkey collision
+  const { data: existing } = await supabaseAdmin!
+    .from('branches')
+    .select('id')
+    .like('id', `${branchId}%`);
+
+  if (existing && existing.length > 0) {
+    branchId = `${branchId}-${existing.length + 1}`;
+  }
 
   const { data, error } = await supabaseAdmin!
     .from('branches')
