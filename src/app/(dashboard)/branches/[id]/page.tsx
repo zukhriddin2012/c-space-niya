@@ -143,7 +143,6 @@ export default function BranchDetailPage() {
       }
     } catch (err: any) {
       setError(err.message);
-    } finally {
       setSaving(false);
     }
   };
