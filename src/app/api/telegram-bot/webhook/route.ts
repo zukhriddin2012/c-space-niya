@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { isRamadanPeriod, getRamadanDay } from '@/data/ramadan';
+import { getRamadanDay } from '@/data/ramadan';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const WEBAPP_URL = process.env.NEXT_PUBLIC_WEBAPP_URL || 'https://c-space-niya.vercel.app';
@@ -210,7 +210,10 @@ async function handleCallbackQuery(callbackQuery: any): Promise<void> {
               .eq('id', reminderId);
           }
 
-          const ramadanPrefix = isRamadanPeriod() ? `🌙 ${lang === 'ru' ? 'Рамадан Мубарак!' : lang === 'en' ? 'Ramadan Mubarak!' : 'Ramazon muborak!'} ${(() => { const d = getRamadanDay(); return d ? (lang === 'ru' ? `День ${d.day}/30` : lang === 'en' ? `Day ${d.day}/30` : `${d.day}/30-kun`) : ''; })()}\n\n` : '';
+          const rd = getRamadanDay();
+          const ramadanPrefix = rd
+            ? `🌙 ${lang === 'ru' ? 'Рамадан Мубарак!' : lang === 'en' ? 'Ramadan Mubarak!' : 'Ramazon muborak!'} ${lang === 'ru' ? `День ${rd.day}/30` : lang === 'en' ? `Day ${rd.day}/30` : `${rd.day}/30-kun`}\n\n`
+            : '';
           await sendTelegramMessage(chatId, ramadanPrefix + messages.checkoutDone[lang], messageId);
         } else {
           await sendTelegramMessage(chatId, messages.error[lang], messageId);

@@ -23,7 +23,6 @@ const t = {
   activeCheckin: { uz: 'Sizda yopilmagan kirish mavjud', ru: 'У вас есть незакрытый вход', en: 'You have an active check-in' },
   loading: { uz: 'Yuklanmoqda...', ru: 'Загрузка...', en: 'Loading...' },
   ramadanGreeting: { uz: 'Ramazon Muborak!', ru: 'Рамадан Мубарак!', en: 'Ramadan Mubarak!' },
-  ramadanDay: { uz: '-kun', ru: '-й день', en: 'Day ' },
   ramadanSuhur: { uz: 'Saharlik', ru: 'Сухур', en: 'Suhur' },
   ramadanIftar: { uz: 'Iftorlik', ru: 'Ифтар', en: 'Iftar' },
 };
