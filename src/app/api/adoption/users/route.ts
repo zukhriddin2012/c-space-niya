@@ -13,8 +13,19 @@ export const GET = withAuth(async (request: NextRequest) => {
 
     const limit = Math.min(Math.max(parseInt(params.get('limit') || '10', 10), 1), 100);
     const offset = Math.max(parseInt(params.get('offset') || '0', 10), 0);
+
+    // SEC: Whitelist sort/order params — reject unknown values
+    const VALID_SORT = ['score', 'name', 'actions'] as const;
+    const VALID_ORDER = ['asc', 'desc'] as const;
     const sort = params.get('sort') || 'score';
     const order = params.get('order') || 'desc';
+
+    if (!VALID_SORT.includes(sort as typeof VALID_SORT[number])) {
+      return NextResponse.json({ error: 'Invalid sort field. Use score, name, or actions' }, { status: 400 });
+    }
+    if (!VALID_ORDER.includes(order as typeof VALID_ORDER[number])) {
+      return NextResponse.json({ error: 'Invalid order. Use asc or desc' }, { status: 400 });
+    }
 
     const data = await getUserScores(period, { limit, offset, sort, order });
     if (!data) {

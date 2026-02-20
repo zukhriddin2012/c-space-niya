@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api-auth';
 import { PERMISSIONS } from '@/lib/permissions';
-import { getModuleDetail, type AdoptionPeriod } from '@/lib/db';
+import { getModuleDetail, ALL_MODULES, type AdoptionPeriod } from '@/lib/db';
 
 export const GET = withAuth(async (request: NextRequest, { params }) => {
   try {
     const moduleName = params?.module;
     if (!moduleName) {
       return NextResponse.json({ error: 'Module name required' }, { status: 400 });
+    }
+
+    // SEC: Validate module against whitelist — reject unknown modules at boundary
+    if (!ALL_MODULES.includes(moduleName)) {
+      return NextResponse.json({ error: 'Invalid module' }, { status: 400 });
     }
 
     const period = (request.nextUrl.searchParams.get('period') || '7d') as AdoptionPeriod;
