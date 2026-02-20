@@ -38,6 +38,7 @@ import {
   Briefcase,
   Target,
   Terminal,
+  Activity,
 } from 'lucide-react';
 import type { User, UserRole } from '@/types';
 import { getRoleLabel } from '@/lib/auth';
@@ -229,6 +230,12 @@ const navItems: NavItem[] = [
         icon: BarChart3,
         roles: ['general_manager', 'ceo'],
       },
+      {
+        nameKey: 'systemAdoption',
+        href: '/adoption',
+        icon: Activity,
+        roles: ['general_manager', 'ceo'],
+      },
     ],
   },
   // Feedback
@@ -328,6 +335,7 @@ export default function Sidebar({ user }: SidebarProps) {
       metronomeSync: t.nav.metronomeSync || 'Metronome Sync',
       operations: t.nav.operations || 'Operations',
       strategy: t.nav.strategy || 'Strategy',
+      systemAdoption: t.nav.systemAdoption || 'System Adoption',
       developer: t.nav.developer || 'Developer',
     };
     return labels[key] || key;

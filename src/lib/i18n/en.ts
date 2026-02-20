@@ -86,6 +86,7 @@ export const en: Translations = {
     metronomeSync: 'Metronome Sync',
     operations: 'Operations',
     strategy: 'Strategy',
+    systemAdoption: 'System Adoption',
     developer: 'Developer',
     telegramBot: 'Telegram Bot',
     finances: 'Finances',

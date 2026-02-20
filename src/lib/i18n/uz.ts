@@ -86,6 +86,7 @@ export const uz: Translations = {
     metronomeSync: 'Metronom Sink',
     operations: 'Operatsiyalar',
     strategy: 'Strategiya',
+    systemAdoption: 'Tizim qo\'llanilishi',
     developer: 'Dasturchi',
     telegramBot: 'Telegram Bot',
     finances: 'Moliya',

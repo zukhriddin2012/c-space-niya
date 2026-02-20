@@ -86,6 +86,7 @@ export interface Translations {
     metronomeSync: string;
     operations: string;
     strategy: string;
+    systemAdoption: string;
     developer: string;
     telegramBot: string;
     finances: string;
