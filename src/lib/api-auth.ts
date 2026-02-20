@@ -172,7 +172,10 @@ export function withAuth(
           pathname,
           user.branchId,
           employee ? { operatorId: employee.id } : undefined
-        ).catch(() => {});
+        ).catch((err) => {
+          // SEC: Log tracking failures for observability (never block response)
+          console.warn('[UsageTracking] Failed to record event:', err?.message || err);
+        });
       }
 
       return response;
