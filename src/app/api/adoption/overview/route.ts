@@ -20,7 +20,9 @@ export const GET = withAuth(async (request: NextRequest) => {
       return NextResponse.json({ error: 'Failed to compute adoption score' }, { status: 500 });
     }
 
-    return NextResponse.json({ ...data, trendData });
+    return NextResponse.json({ ...data, trendData }, {
+      headers: { 'Cache-Control': 'private, max-age=300' },
+    });
   } catch (error) {
     console.error('Error in GET /api/adoption/overview:', error);
     return NextResponse.json({ error: 'Failed to fetch adoption overview' }, { status: 500 });
