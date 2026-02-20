@@ -260,8 +260,27 @@ export async function getOverviewScore(period: AdoptionPeriod): Promise<Overview
     const prevActiveUsers = new Set(prevEvents?.map(e => e.user_id) || []).size;
     const prevActionCount = prevEvents?.length || 0;
 
+    // Look up yesterday's snapshot for accurate scoreDelta
+    let scoreDelta = 0;
+    try {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const { data: prevSnapshot } = await supabaseAdmin!
+        .from('adoption_snapshots')
+        .select('score')
+        .eq('period', period)
+        .eq('snapshot_date', yesterday.toISOString().slice(0, 10))
+        .single();
+
+      if (prevSnapshot) {
+        scoreDelta = Math.round(score) - prevSnapshot.score;
+      }
+    } catch {
+      // No previous snapshot yet — keep 0
+    }
+
     const trend = {
-      scoreDelta: 0, // Would need prev score computation for accuracy; simplified
+      scoreDelta,
       usersDelta: activeUsers - prevActiveUsers,
       actionsDeltaPct: prevActionCount > 0
         ? Math.round(((events.length - prevActionCount) / prevActionCount) * 100)
@@ -656,6 +675,92 @@ export async function getBranchScores(period: AdoptionPeriod): Promise<BranchSco
   } catch (error) {
     console.error('[Adoption] Error computing branch scores:', error);
     return null;
+  }
+}
+
+// ============================================
+// SNAPSHOTS — Daily pre-computed scores
+// ============================================
+
+export interface SnapshotPoint {
+  date: string;
+  score: number;
+}
+
+/**
+ * Compute adoption scores for all 3 periods and upsert into adoption_snapshots.
+ * Called by the daily cron at /api/cron/adoption-snapshot.
+ */
+export async function computeAndStoreSnapshot(): Promise<{
+  success: boolean;
+  periods: AdoptionPeriod[];
+  error?: string;
+}> {
+  if (!isSupabaseAdminConfigured()) {
+    return { success: false, periods: [], error: 'DB not configured' };
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const periods: AdoptionPeriod[] = ['7d', '30d', '90d'];
+  const stored: AdoptionPeriod[] = [];
+
+  for (const period of periods) {
+    try {
+      const data = await getOverviewScore(period);
+      if (!data) continue;
+
+      await supabaseAdmin!.from('adoption_snapshots').upsert(
+        {
+          snapshot_date: today,
+          period,
+          score: data.score,
+          breadth: data.breadth,
+          depth: data.depth,
+          frequency: data.frequency,
+          active_users: data.activeUsers,
+          total_users: data.totalUsers,
+          action_count: data.actionsToday,
+          module_scores: data.modules,
+        },
+        { onConflict: 'snapshot_date,period' }
+      );
+      stored.push(period);
+    } catch (err) {
+      console.error(`[Adoption] Snapshot failed for ${period}:`, err);
+    }
+  }
+
+  return { success: stored.length > 0, periods: stored };
+}
+
+/**
+ * Fetch recent daily snapshots for a given period — used to power the trend chart.
+ * Returns data points ordered ascending by date (oldest first).
+ */
+export async function getSnapshotTrend(
+  period: AdoptionPeriod,
+  days?: number
+): Promise<SnapshotPoint[]> {
+  if (!isSupabaseAdminConfigured()) return [];
+
+  const limit = days || periodToDays(period);
+
+  try {
+    const { data } = await supabaseAdmin!
+      .from('adoption_snapshots')
+      .select('snapshot_date, score')
+      .eq('period', period)
+      .order('snapshot_date', { ascending: false })
+      .limit(limit);
+
+    // Reverse to ascending order (oldest first) for chart rendering
+    return (data || []).reverse().map(row => ({
+      date: row.snapshot_date,
+      score: row.score,
+    }));
+  } catch (error) {
+    console.error('[Adoption] Error fetching snapshot trend:', error);
+    return [];
   }
 }
 

@@ -22,6 +22,7 @@ interface OverviewData {
   activeModules: number;
   totalModules: number;
   trend: { scoreDelta: number; usersDelta: number; actionsDeltaPct: number };
+  trendData?: Array<{ date: string; score: number }>;
   modules: Array<{ module: string; label: string; score: number; userCount: number; actionCount: number }>;
   topUsers: Array<{
     userId: string; name: string; role: string; score: number;
@@ -196,6 +197,7 @@ export default function AdoptionPage() {
               breadth={overview.breadth}
               depth={overview.depth}
               frequency={overview.frequency}
+              dataPoints={overview.trendData}
             />
           </div>
 

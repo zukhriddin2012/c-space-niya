@@ -1,5 +1,10 @@
 'use client';
 
+interface DataPoint {
+  date: string;
+  score: number;
+}
+
 interface ScoreTrendProps {
   trend: {
     scoreDelta: number;
@@ -9,9 +14,12 @@ interface ScoreTrendProps {
   breadth: number;
   depth: number;
   frequency: number;
+  dataPoints?: DataPoint[];
 }
 
-export function ScoreTrend({ trend, breadth, depth, frequency }: ScoreTrendProps) {
+export function ScoreTrend({ trend, breadth, depth, frequency, dataPoints }: ScoreTrendProps) {
+  const hasData = dataPoints && dataPoints.length >= 2;
+
   return (
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
       <div className="px-5 py-4 border-b border-gray-200">
@@ -23,7 +31,6 @@ export function ScoreTrend({ trend, breadth, depth, frequency }: ScoreTrendProps
         </div>
       </div>
       <div className="p-5">
-        {/* Placeholder SVG trend line */}
         <div className="w-full">
           <svg viewBox="0 0 600 100" preserveAspectRatio="none" className="w-full h-24">
             <line x1="0" y1="25" x2="600" y2="25" stroke="#f3f4f6" strokeWidth="1" />
@@ -35,13 +42,20 @@ export function ScoreTrend({ trend, breadth, depth, frequency }: ScoreTrendProps
                 <stop offset="100%" stopColor="#7c3aed" stopOpacity="0.01" />
               </linearGradient>
             </defs>
-            <path d="M0,60 L100,55 L200,50 L300,45 L400,40 L500,35 L600,30 L600,100 L0,100 Z" fill="url(#areaGrad)" />
-            <polyline points="0,60 100,55 200,50 300,45 400,40 500,35 600,30"
-              fill="none" stroke="#7c3aed" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-            <circle cx="600" cy="30" r="4" fill="#7c3aed" stroke="#7c3aed" strokeWidth="2" />
+
+            {hasData ? (
+              <RealTrendLine dataPoints={dataPoints} />
+            ) : (
+              <>
+                <path d="M0,60 L100,55 L200,50 L300,45 L400,40 L500,35 L600,30 L600,100 L0,100 Z" fill="url(#areaGrad)" />
+                <polyline points="0,60 100,55 200,50 300,45 400,40 500,35 600,30"
+                  fill="none" stroke="#7c3aed" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="600" cy="30" r="4" fill="#7c3aed" stroke="#7c3aed" strokeWidth="2" />
+              </>
+            )}
           </svg>
           <div className="flex justify-between px-0 text-xs text-gray-400 mt-1">
-            <span>7 days ago</span>
+            <span>{hasData ? formatDateLabel(dataPoints[0].date) : '7 days ago'}</span>
             <span className="text-purple-600 font-semibold">Today</span>
           </div>
         </div>
@@ -57,6 +71,51 @@ export function ScoreTrend({ trend, breadth, depth, frequency }: ScoreTrendProps
     </div>
   );
 }
+
+// ── Real trend line from snapshot data points ──
+
+function RealTrendLine({ dataPoints }: { dataPoints: DataPoint[] }) {
+  const svgW = 600;
+  const svgH = 100;
+  const pad = 5;
+
+  const points = dataPoints.map((p, i) => {
+    const x = dataPoints.length === 1 ? svgW / 2 : (i / (dataPoints.length - 1)) * svgW;
+    const y = svgH - pad - ((p.score / 100) * (svgH - pad * 2));
+    return { x, y };
+  });
+
+  const polylineStr = points.map(p => `${p.x},${p.y}`).join(' ');
+  const last = points[points.length - 1];
+
+  // Area fill: polyline path closed to bottom-right and bottom-left
+  const areaPath =
+    `M${points[0].x},${points[0].y} ` +
+    points.slice(1).map(p => `L${p.x},${p.y}`).join(' ') +
+    ` L${svgW},${svgH} L0,${svgH} Z`;
+
+  return (
+    <>
+      <path d={areaPath} fill="url(#areaGrad)" />
+      <polyline
+        points={polylineStr}
+        fill="none"
+        stroke="#7c3aed"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx={last.x} cy={last.y} r="4" fill="#7c3aed" />
+    </>
+  );
+}
+
+function formatDateLabel(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// ── Dimension summary card ──
 
 function TrendDimension({ label, value, color, delta, up }: {
   label: string; value: number; color: string; delta: string; up: boolean;
