@@ -188,12 +188,16 @@ export async function trackUsage(
 
     if (existing && existing.length > 0) return;
 
+    // branch_id column is UUID type — skip non-UUID slugs (e.g. kiosk branch IDs)
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const safeBranchId = branchId && UUID_RE.test(branchId) ? branchId : null;
+
     await supabaseAdmin!.from('usage_events').insert({
       user_id: userId,
       module,
       action_type: actionType,
       endpoint,
-      branch_id: branchId || null,
+      branch_id: safeBranchId,
       metadata: metadata || {},
     });
   } catch (error) {
