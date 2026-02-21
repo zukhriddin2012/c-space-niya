@@ -768,6 +768,108 @@ export async function getSnapshotTrend(
 }
 
 // ============================================
+// KIOSK USAGE BY BRANCH
+// ============================================
+
+export interface KioskBranchUsage {
+  branchId: string;
+  branchName: string;
+  totalActions: number;
+  modules: Array<{ module: string; label: string; actionCount: number }>;
+  actionTypes: Record<string, number>;
+  activeDays: number;
+  avgActionsPerDay: number;
+}
+
+/**
+ * Aggregate kiosk usage events grouped by branch.
+ * Branch is extracted from user_id ('kiosk:{slug}'), not branch_id column.
+ */
+export async function getKioskUsageByBranch(
+  period: AdoptionPeriod
+): Promise<KioskBranchUsage[] | null> {
+  if (!isSupabaseAdminConfigured()) return null;
+
+  try {
+    const startDate = periodToStartDate(period);
+
+    // Fetch kiosk events
+    const { data: events, error: evtErr } = await supabaseAdmin!
+      .from('usage_events')
+      .select('user_id, module, action_type, created_at')
+      .like('user_id', 'kiosk:%')
+      .gte('created_at', startDate);
+
+    if (evtErr) {
+      console.error('[Adoption] Kiosk events query error:', evtErr);
+      return null;
+    }
+    if (!events || events.length === 0) return [];
+
+    // Fetch branch names for lookup
+    const { data: branchRows } = await supabaseAdmin!
+      .from('branches')
+      .select('id, name');
+
+    const branchNameMap = new Map<string, string>();
+    for (const b of branchRows || []) {
+      branchNameMap.set(b.id, b.name);
+    }
+
+    // Group events by branch slug (extracted from user_id)
+    const grouped = new Map<string, typeof events>();
+    for (const evt of events) {
+      const slug = evt.user_id.replace('kiosk:', '');
+      const arr = grouped.get(slug) || [];
+      arr.push(evt);
+      grouped.set(slug, arr);
+    }
+
+    // Compute metrics per branch
+    const results: KioskBranchUsage[] = [];
+
+    for (const [slug, branchEvents] of grouped) {
+      // Module breakdown
+      const moduleCounts = new Map<string, number>();
+      const actionTypeCounts: Record<string, number> = {};
+      const activeDateSet = new Set<string>();
+
+      for (const evt of branchEvents) {
+        moduleCounts.set(evt.module, (moduleCounts.get(evt.module) || 0) + 1);
+        actionTypeCounts[evt.action_type] = (actionTypeCounts[evt.action_type] || 0) + 1;
+        activeDateSet.add(evt.created_at.slice(0, 10)); // YYYY-MM-DD
+      }
+
+      const modules = Array.from(moduleCounts.entries())
+        .map(([mod, count]) => ({
+          module: mod,
+          label: MODULE_LABELS[mod] || mod,
+          actionCount: count,
+        }))
+        .sort((a, b) => b.actionCount - a.actionCount);
+
+      const activeDays = activeDateSet.size;
+
+      results.push({
+        branchId: slug,
+        branchName: branchNameMap.get(slug) || slug.charAt(0).toUpperCase() + slug.slice(1),
+        totalActions: branchEvents.length,
+        modules,
+        actionTypes: actionTypeCounts,
+        activeDays,
+        avgActionsPerDay: activeDays > 0 ? Math.round((branchEvents.length / activeDays) * 10) / 10 : 0,
+      });
+    }
+
+    results.sort((a, b) => b.totalActions - a.totalActions);
+    return results;
+  } catch (error) {
+    console.error('[Adoption] Error computing kiosk usage:', error);
+    return null;
+  }
+}
+
+// ============================================
 // EMPTY STATE HELPER
 // ============================================
 

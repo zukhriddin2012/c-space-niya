@@ -8,6 +8,7 @@ import { ScoreTrend } from '@/components/adoption/ScoreTrend';
 import { ModuleScoreList } from '@/components/adoption/ModuleScoreList';
 import { TopUsersTable } from '@/components/adoption/TopUsersTable';
 import { BranchComparison } from '@/components/adoption/BranchComparison';
+import { KioskUsageByBranch } from '@/components/adoption/KioskUsageByBranch';
 
 type Period = '7d' | '30d' | '90d';
 
@@ -212,6 +213,13 @@ export default function AdoptionPage() {
             <BranchComparison branches={branches} />
           </div>
         </>
+      )}
+
+      {/* Kiosk Activity — always shown (separate from employee adoption) */}
+      {!loading && !error && (
+        <div className="mt-6">
+          <KioskUsageByBranch period={period} />
+        </div>
       )}
 
       {/* Empty State */}
