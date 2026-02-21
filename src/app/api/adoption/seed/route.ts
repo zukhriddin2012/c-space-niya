@@ -27,6 +27,13 @@ function pickWeightedAction(): string {
 }
 
 /** Map module name → a realistic API endpoint path */
+/** UUID v4 pattern — usage_events.branch_id is UUID type */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isUUID(val: unknown): boolean {
+  return typeof val === 'string' && UUID_RE.test(val);
+}
+
 function moduleToEndpoint(module: string): string {
   const entry = MODULE_MAP.find(m => m.module === module);
   return entry ? entry.prefix : `/api/${module}`;
@@ -105,7 +112,7 @@ export const POST = withAuth(async (request: NextRequest) => {
             module,
             action_type: actionType,
             endpoint: moduleToEndpoint(module),
-            branch_id: emp.branch_id || null,
+            branch_id: isUUID(emp.branch_id) ? emp.branch_id : null,
             metadata: {},
             created_at: randomTimestamp(date),
           });
