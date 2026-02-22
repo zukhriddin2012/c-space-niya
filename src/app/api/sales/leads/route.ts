@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api-auth';
 import { PERMISSIONS, hasPermission } from '@/lib/permissions';
-import { getLeads, createLead } from '@/lib/db';
+import { getLeads, createLead, checkLeadDuplicates, buildDuplicateWarning } from '@/lib/db';
 import { CreateLeadSchema, LeadQuerySchema } from '@/lib/validators/sales';
 import type { User } from '@/types';
 
@@ -60,16 +60,30 @@ export const POST = withAuth(
         );
       }
 
-      const result = await createLead({
-        ...parsed.data,
-        captured_by: user.employeeId ?? user.id,
-      });
+      // Run duplicate check and lead creation concurrently
+      const [duplicateMatches, createResult] = await Promise.all([
+        checkLeadDuplicates({
+          phone: parsed.data.phone,
+          fullName: parsed.data.full_name,
+          branchId: parsed.data.branch_id,
+        }),
+        createLead({
+          ...parsed.data,
+          captured_by: user.employeeId ?? user.id,
+        }),
+      ]);
 
-      if (!result.success) {
-        return NextResponse.json({ error: result.error }, { status: 400 });
+      if (!createResult.success) {
+        return NextResponse.json({ error: createResult.error }, { status: 400 });
       }
 
-      return NextResponse.json({ success: true, lead: result.lead }, { status: 201 });
+      const duplicateWarning = buildDuplicateWarning(duplicateMatches);
+
+      return NextResponse.json({
+        success: true,
+        lead: createResult.lead,
+        ...(duplicateWarning && { duplicate_warning: duplicateWarning }),
+      }, { status: 201 });
     } catch (error) {
       console.error('Error in POST /api/sales/leads:', error);
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

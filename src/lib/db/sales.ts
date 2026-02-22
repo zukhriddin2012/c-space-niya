@@ -95,6 +95,73 @@ const ACTIVITY_SELECT = `
 `;
 
 // ============================================
+// DUPLICATE DETECTION
+// ============================================
+
+export interface DuplicateMatch {
+  match_type: 'phone' | 'name';
+  lead_id: string;
+  full_name: string;
+  stage: string;
+  created_at: string;
+  similarity_score: number;
+}
+
+export async function checkLeadDuplicates(params: {
+  phone?: string | null;
+  fullName?: string | null;
+  branchId: string;
+}): Promise<DuplicateMatch[]> {
+  if (!isSupabaseAdminConfigured()) {
+    return [];
+  }
+
+  const { data, error } = await supabaseAdmin!.rpc('check_lead_duplicates', {
+    p_phone: params.phone || null,
+    p_full_name: params.fullName || null,
+    p_branch_id: params.branchId,
+  });
+
+  if (error) {
+    console.error('Error checking lead duplicates:', error);
+    return [];
+  }
+
+  return (data as DuplicateMatch[]) || [];
+}
+
+/**
+ * Build a human-readable duplicate warning from the best match.
+ * Phone matches are prioritized over name matches.
+ */
+export function buildDuplicateWarning(matches: DuplicateMatch[]): {
+  existing_lead_id: string;
+  existing_lead_name: string;
+  message: string;
+} | null {
+  if (matches.length === 0) return null;
+
+  const best = matches[0]; // Already sorted: phone first, then by similarity desc
+  const daysAgo = Math.floor(
+    (Date.now() - new Date(best.created_at).getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  let message: string;
+  if (best.match_type === 'phone') {
+    message = `This number was logged ${daysAgo} day${daysAgo !== 1 ? 's' : ''} ago as ${best.full_name} (${best.stage}). Log anyway?`;
+  } else {
+    const pct = Math.round(best.similarity_score * 100);
+    message = `Similar name found: ${best.full_name} (${best.stage}, ${pct}% match) at this branch. Log anyway?`;
+  }
+
+  return {
+    existing_lead_id: best.lead_id,
+    existing_lead_name: best.full_name,
+    message,
+  };
+}
+
+// ============================================
 // LEAD SOURCES
 // ============================================
 
