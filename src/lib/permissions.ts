@@ -153,6 +153,21 @@ export const PERMISSIONS = {
   METRONOME_CREATE: 'metronome:create',
   METRONOME_RUN_MEETING: 'metronome:run_meeting',
   METRONOME_MANAGE_DATES: 'metronome:manage_dates',
+
+  // Sales / Lead Management (CSC-002)
+  SALES_VIEW: 'sales:view',
+  SALES_VIEW_ALL: 'sales:view_all',
+  SALES_CREATE: 'sales:create',
+  SALES_EDIT: 'sales:edit',
+  SALES_ASSIGN: 'sales:assign',
+  SALES_DELETE: 'sales:delete',
+  SALES_REPORTS: 'sales:reports',
+
+  // Call Analytics (CSC-002)
+  CALLS_VIEW: 'calls:view',
+  CALLS_VIEW_ALL: 'calls:view_all',
+  CALLS_ANALYTICS: 'calls:analytics',
+  CALLS_CLASSIFY: 'calls:classify',
 } as const;
 
 export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];
@@ -163,10 +178,12 @@ export const ROLE_HIERARCHY: Record<UserRole, number> = {
   ceo: 95,
   chief_accountant: 80,
   hr: 75,
+  sales_manager: 70,
   accountant: 70,
   legal_manager: 65,
   reports_manager: 62,
   branch_manager: 60,
+  bd_manager: 55,
   recruiter: 50,
   employee: 10,
   reception_kiosk: 5,
@@ -283,6 +300,19 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     PERMISSIONS.METRONOME_CREATE,
     PERMISSIONS.METRONOME_RUN_MEETING,
     PERMISSIONS.METRONOME_MANAGE_DATES,
+    // Sales - Full access
+    PERMISSIONS.SALES_VIEW,
+    PERMISSIONS.SALES_VIEW_ALL,
+    PERMISSIONS.SALES_CREATE,
+    PERMISSIONS.SALES_EDIT,
+    PERMISSIONS.SALES_ASSIGN,
+    PERMISSIONS.SALES_DELETE,
+    PERMISSIONS.SALES_REPORTS,
+    // Call Analytics - Full access
+    PERMISSIONS.CALLS_VIEW,
+    PERMISSIONS.CALLS_VIEW_ALL,
+    PERMISSIONS.CALLS_ANALYTICS,
+    PERMISSIONS.CALLS_CLASSIFY,
   ],
 
   ceo: [
@@ -346,6 +376,14 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     PERMISSIONS.METRONOME_EDIT_OWN,
     PERMISSIONS.METRONOME_RUN_MEETING,
     PERMISSIONS.METRONOME_MANAGE_DATES,
+    // Sales - View all + reports (oversight)
+    PERMISSIONS.SALES_VIEW,
+    PERMISSIONS.SALES_VIEW_ALL,
+    PERMISSIONS.SALES_REPORTS,
+    // Call Analytics - View all
+    PERMISSIONS.CALLS_VIEW,
+    PERMISSIONS.CALLS_VIEW_ALL,
+    PERMISSIONS.CALLS_ANALYTICS,
   ],
 
   hr: [
@@ -392,6 +430,32 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     // Metronome Sync - View + edit own
     PERMISSIONS.METRONOME_VIEW,
     PERMISSIONS.METRONOME_EDIT_OWN,
+  ],
+
+  sales_manager: [
+    // Sales Manager — oversees all sales activity across all branches
+    PERMISSIONS.EMPLOYEES_VIEW,
+    PERMISSIONS.BRANCHES_VIEW,
+    PERMISSIONS.DASHBOARD_VIEW,
+    PERMISSIONS.FEEDBACK_SUBMIT,
+    // Accounting - Create and manage own requests
+    PERMISSIONS.ACCOUNTING_REQUESTS_VIEW,
+    PERMISSIONS.ACCOUNTING_REQUESTS_CREATE,
+    PERMISSIONS.ACCOUNTING_REQUESTS_EDIT_OWN,
+    PERMISSIONS.ACCOUNTING_REQUESTS_CANCEL_OWN,
+    // Sales - Full access
+    PERMISSIONS.SALES_VIEW,
+    PERMISSIONS.SALES_VIEW_ALL,
+    PERMISSIONS.SALES_CREATE,
+    PERMISSIONS.SALES_EDIT,
+    PERMISSIONS.SALES_ASSIGN,
+    PERMISSIONS.SALES_DELETE,
+    PERMISSIONS.SALES_REPORTS,
+    // Call Analytics - Full access
+    PERMISSIONS.CALLS_VIEW,
+    PERMISSIONS.CALLS_VIEW_ALL,
+    PERMISSIONS.CALLS_ANALYTICS,
+    PERMISSIONS.CALLS_CLASSIFY,
   ],
 
   branch_manager: [
@@ -446,6 +510,33 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     // Metronome Sync - View + edit own
     PERMISSIONS.METRONOME_VIEW,
     PERMISSIONS.METRONOME_EDIT_OWN,
+    // Sales - View own branch + create leads
+    PERMISSIONS.SALES_VIEW,
+    PERMISSIONS.SALES_CREATE,
+    // Call Analytics - View own branch
+    PERMISSIONS.CALLS_VIEW,
+  ],
+
+  bd_manager: [
+    // BD Manager — works leads and closes deals
+    PERMISSIONS.EMPLOYEES_VIEW,
+    PERMISSIONS.BRANCHES_VIEW,
+    PERMISSIONS.DASHBOARD_VIEW,
+    PERMISSIONS.FEEDBACK_SUBMIT,
+    // Accounting - Create and manage own requests
+    PERMISSIONS.ACCOUNTING_REQUESTS_VIEW,
+    PERMISSIONS.ACCOUNTING_REQUESTS_CREATE,
+    PERMISSIONS.ACCOUNTING_REQUESTS_EDIT_OWN,
+    PERMISSIONS.ACCOUNTING_REQUESTS_CANCEL_OWN,
+    // Sales - View assigned + unassigned, edit, move pipeline, reports
+    PERMISSIONS.SALES_VIEW,
+    PERMISSIONS.SALES_CREATE,
+    PERMISSIONS.SALES_EDIT,
+    PERMISSIONS.SALES_REPORTS,
+    // Call Analytics - View own branch + classify
+    PERMISSIONS.CALLS_VIEW,
+    PERMISSIONS.CALLS_ANALYTICS,
+    PERMISSIONS.CALLS_CLASSIFY,
   ],
 
   recruiter: [
@@ -600,6 +691,9 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     // Cash Management - View + request dividend
     PERMISSIONS.RECEPTION_CASH_VIEW,
     PERMISSIONS.RECEPTION_CASH_DIVIDEND_REQUEST,
+    // Sales - Capture leads only (quick-capture form at kiosk)
+    PERMISSIONS.SALES_VIEW,
+    PERMISSIONS.SALES_CREATE,
   ],
 };
 
@@ -642,6 +736,8 @@ export function getRoleLabel(role: UserRole): string {
     recruiter: 'Recruiter',
     employee: 'Employee',
     reception_kiosk: 'ServiceHub Kiosk',
+    sales_manager: 'Sales Manager',
+    bd_manager: 'BD Manager',
   };
   return labels[role] ?? role;
 }
@@ -660,13 +756,15 @@ export function getRoleBadgeColor(role: UserRole): string {
     recruiter: 'bg-green-100 text-green-800 border-green-200',
     employee: 'bg-gray-100 text-gray-800 border-gray-200',
     reception_kiosk: 'bg-violet-100 text-violet-800 border-violet-200',
+    sales_manager: 'bg-rose-100 text-rose-800 border-rose-200',
+    bd_manager: 'bg-pink-100 text-pink-800 border-pink-200',
   };
   return colors[role] ?? 'bg-gray-100 text-gray-800 border-gray-200';
 }
 
 // Get all available roles
 export function getAllRoles(): UserRole[] {
-  return ['general_manager', 'ceo', 'chief_accountant', 'accountant', 'hr', 'legal_manager', 'reports_manager', 'branch_manager', 'recruiter', 'employee'];
+  return ['general_manager', 'ceo', 'chief_accountant', 'accountant', 'hr', 'sales_manager', 'legal_manager', 'reports_manager', 'branch_manager', 'bd_manager', 'recruiter', 'employee'];
 }
 
 // Permission groups for UI display
@@ -794,5 +892,20 @@ export const PERMISSION_GROUPS = {
     { key: PERMISSIONS.METRONOME_CREATE, label: 'Create Initiatives' },
     { key: PERMISSIONS.METRONOME_RUN_MEETING, label: 'Run Sync Meeting' },
     { key: PERMISSIONS.METRONOME_MANAGE_DATES, label: 'Manage Key Dates' },
+  ],
+  'Sales & Leads': [
+    { key: PERMISSIONS.SALES_VIEW, label: 'View Leads (Own Branch)' },
+    { key: PERMISSIONS.SALES_VIEW_ALL, label: 'View All Leads' },
+    { key: PERMISSIONS.SALES_CREATE, label: 'Capture New Leads' },
+    { key: PERMISSIONS.SALES_EDIT, label: 'Edit Leads & Pipeline' },
+    { key: PERMISSIONS.SALES_ASSIGN, label: 'Assign Leads' },
+    { key: PERMISSIONS.SALES_DELETE, label: 'Archive/Delete Leads' },
+    { key: PERMISSIONS.SALES_REPORTS, label: 'View Sales Reports' },
+  ],
+  'Call Analytics': [
+    { key: PERMISSIONS.CALLS_VIEW, label: 'View Own Branch Calls' },
+    { key: PERMISSIONS.CALLS_VIEW_ALL, label: 'View All Branch Calls' },
+    { key: PERMISSIONS.CALLS_ANALYTICS, label: 'View Call Analytics' },
+    { key: PERMISSIONS.CALLS_CLASSIFY, label: 'Classify Calls' },
   ],
 };
